@@ -1,0 +1,26 @@
+{
+    "name": "sinap-core",
+    "version": "0.0.0",
+    "description": "Core utilities for sinap",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/2graphic/sinap-core"
+    },
+    "main": "lib/index.js",
+    "typings": "lib/index",
+    "files": [
+        "lib/"
+    ],
+    "scripts": {
+        "build": "tsc --project ."
+    },
+    "dependencies": {
+        "typescript-compiler": "1.4.1-2"
+    },
+    "devDependencies": {
+        "typescript": "2.1.x",
+        "typescript-formatter": "4.0.x",
+        "pegjs": "0.10.0"
+    }
+}
