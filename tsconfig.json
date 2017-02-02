@@ -1,11 +1,24 @@
 {
 	"version": "2.1.4",
 	"compilerOptions": {
+		"target": "es6",
 		"module": "commonjs",
-		"declaration": true,
-		"outDir": "lib/"
-	},
-	"files": [
-		"./src/index.ts"
-	]
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"removeComments": true,
+		"pretty": true,
+		"alwaysStrict": true,
+		"forceConsistentCasingInFileNames": true,
+		"noImplicitReturns": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": false, // TODO: remove
+		"strictNullChecks": true,
+		"skipLibCheck": false,
+		"outDir": "lib/",
+		"allowJs": true
+	}
 }

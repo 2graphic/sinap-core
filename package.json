@@ -13,7 +13,8 @@
         "lib/"
     ],
     "scripts": {
-        "build": "tsc --project ."
+        "peg": "pegjs --allowed-start-rules Definitions,Type --dependency \"types:./type-structures\" --output src/types/type-parser-inner.js src/types/type-parser.pegjs",
+        "build": "npm run peg && tsc --project ."
     },
     "dependencies": {
         "typescript-compiler": "1.4.1-2"
