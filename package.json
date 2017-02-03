@@ -1,6 +1,7 @@
 {
   "name": "sinap-core",
-  "version": "0.0.7",
+  "version": "0.0.8",
+  "readme": "README.md",
   "description": "Core utilities for sinap",
   "license": "MIT",
   "repository": {
