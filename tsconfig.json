@@ -1,5 +1,6 @@
 {
 	"version": "2.1.4",
+	"filesGlob": "src/*",
 	"compilerOptions": {
 		"target": "es6",
 		"module": "commonjs",
@@ -19,6 +20,6 @@
 		"strictNullChecks": true,
 		"skipLibCheck": false,
 		"outDir": "lib/",
-		"allowJs": true
+		"declaration": true
 	}
 }

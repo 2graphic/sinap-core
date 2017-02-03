@@ -17,7 +17,7 @@ Type = Class / Tuple / List / Enum / Reference
 //     ....	
 // }
 Class = "class" _ conformsTo:ClassTypeList ? _ "{" _ fields:FieldList * "}" {
-	return new types.ClassType(conformsTo!==null?conformsTo:[], fields);
+	return new types.ClassMetaType(conformsTo!==null?conformsTo:[], fields);
 }
 FieldList = _ f:Field _ {
 	return f;
@@ -28,19 +28,19 @@ Field = name:Variable _ prettyName:("=" p:(a:[^:]+ {return a.join("")}) {return 
 
 // literal: List<t1>
 List = "List<" _ t:Type _ ">" {
-	return new types.ListType(t)
+	return new types.ListMetaType(t)
 }
 
 // literal: (t1, t2, ...)
 Tuple = "(" ts:TypeList ")" {
-	return new types.TupleType(ts);
+	return new types.TupleMetaType(ts);
 }
 
 // literal: enum {S1, S2, S3...}
 Enum = "enum" _ "{" _ v1:Variable vrest:( _ "," _ v:Variable {return v;})* _ "}" {
 	let results = [v1];
     results.push(...vrest);
-	return new types.EnumType(results);
+	return new types.EnumMetaType(results);
 }
 
 TypeList = _ type1: Type rest:(_ "," _ t:Type {return t;}) * _ {

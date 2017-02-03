@@ -4,7 +4,9 @@ import * as Structure from "./type-structures";
 /// Wrap up ./type-parser-inner.js
 ///////
 
-import { SyntaxError, parse } from "./type-parser-inner";
+declare function require(name:string): any;
+
+const tpi = require("./type-parser-inner");
 
 // type defintion for the kind of exception thrown by the parser
 export type SyntaxError = {
@@ -16,8 +18,8 @@ export type SyntaxError = {
 }
 export type location = { column: number, line: number, offset: number };
 
-export type Typed = [any, Structure.Type];
-export type TypedVariable = [string, Structure.Type];
+export type Typed = [any, Structure.MetaType];
+export type TypedVariable = [string, Structure.MetaType];
 
 /**
  * Check whther an exception is a syntax error
@@ -27,13 +29,13 @@ export function isSyntaxError(e: any): e is SyntaxError {
 }
 
 
-export { Type, TypeScope, ClassType, ListType, TupleType, TypeVariable } from "./type-structures";
+export { MetaType, TypeScope, ClassMetaType, ListMetaType, TupleMetaType, TypeVariable } from "./type-structures";
 
 /*
  * Parse a scope literal on its own
  */
 export function parseScopeRaw(str: string): Structure.TypeScope {
-    return parse("{" + str + "}", { startRule: "Definitions" });
+    return tpi.parse("{" + str + "}", { startRule: "Definitions" });
 }
 
 /*
@@ -49,53 +51,54 @@ export function parseScope(str: string, inject?: Structure.TypeScope): Structure
 /*
  * Parse a type literal on its own
  */
-export function parseTypeRaw(str: string): Structure.Type {
-    return parse(str, { startRule: "Type" });
+export function parseTypeRaw(str: string): Structure.MetaType {
+    return tpi.parse(str, { startRule: "Type" });
 }
 
 /*
  * Parse a type literal either in the default scope or in `inject`
  */
-export function parseType(str: string, inject?: Structure.TypeScope): Structure.Type {
+export function parseType(str: string, inject?: Structure.TypeScope): Structure.MetaType {
     if (inject === undefined) {
         inject = builtins;
     }
     return parseTypeRaw(str).feed(inject.definitions);
 }
 
-export class CharacterType extends Structure.PrimitiveType {
+export class CharacterMetaType extends Structure.PrimitiveMetaType {
     constructor() {
         super("Character");
     }
 
-    subtype(t: Structure.Type) {
+    subtype(t: Structure.MetaType) {
         // Make sure rsubtype ends up called correctly
         if (super.subtype(t)) {
             return true;
         }
-        return (t instanceof Structure.PrimitiveType) && t.name === "String";
+        return (t instanceof Structure.PrimitiveMetaType) && t.name === "String";
     }
 }
 
 /**
  * List of all primitive types
  **/
-export const String = new Structure.PrimitiveType("String");
-export const Character = new CharacterType();
-export const File = new Structure.PrimitiveType("File");
-export const Number = new Structure.PrimitiveType("Number");
-export const Color = new Structure.PrimitiveType("Color");
-export const Integer = new Structure.PrimitiveType("Integer");
-export const Boolean = new Structure.PrimitiveType("Boolean");
 
-const primitives = new Structure.TypeScope(new Map<string, Structure.Type>([
-    ["String", String],
-    ["Character", Character],
-    ["Number", Number],
-    ["Color", Color],
-    ["Integer", Integer],
-    ["Boolean", Boolean],
-    ["File", File],
+const StringType = new Structure.PrimitiveMetaType("String");
+const CharacterType = new CharacterMetaType();
+const FileType = new Structure.PrimitiveMetaType("File");
+const NumberType = new Structure.PrimitiveMetaType("Number");
+const ColorType = new Structure.PrimitiveMetaType("Color");
+const IntegerType = new Structure.PrimitiveMetaType("Integer");
+const BooleanType = new Structure.PrimitiveMetaType("Boolean");
+
+export const primitives = new Structure.TypeScope(new Map<string, Structure.MetaType>([
+    ["String", StringType],
+    ["Character", CharacterType],
+    ["Number", NumberType],
+    ["Color", ColorType],
+    ["Integer", IntegerType],
+    ["Boolean", BooleanType],
+    ["File", FileType],
 ]));
 
 /**
@@ -134,9 +137,18 @@ for (const [name, type] of primitives.definitions) {
 /**
  * Allow for easy imports of builtins.
  **/
-export const Point = builtins.definitions.get("Point") as Structure.ClassType;
-export const Graph = builtins.definitions.get("Graph") as Structure.ClassType;
-export const Node = builtins.definitions.get("Node") as Structure.ClassType;
-export const Edge = builtins.definitions.get("Edge") as Structure.ClassType;
-export const Shape = builtins.definitions.get("Shape") as Structure.EnumType;
-export const LineStyles = builtins.definitions.get("LineStyles") as Structure.EnumType;
+export const Type = {
+    String: StringType,
+    Character: CharacterType,
+    File: FileType,
+    Number: NumberType,
+    Color: ColorType,
+    Integer: IntegerType,
+    Boolean: BooleanType,
+    Point: builtins.definitions.get("Point") as Structure.ClassMetaType,
+    Graph: builtins.definitions.get("Graph") as Structure.ClassMetaType,
+    Node: builtins.definitions.get("Node") as Structure.ClassMetaType,
+    Edge: builtins.definitions.get("Edge") as Structure.ClassMetaType,
+    Shape: builtins.definitions.get("Shape") as Structure.EnumMetaType,
+    LineStyles: builtins.definitions.get("LineStyles") as Structure.EnumMetaType,
+}

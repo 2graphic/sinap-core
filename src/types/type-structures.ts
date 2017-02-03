@@ -1,7 +1,7 @@
 /**
  * Main interface for all types
  */
-export interface Type {
+export interface MetaType {
     /**
      * Return whether `this` is a subtype of `that`, in the case of variables this
      * function can add some constraints on `this` to make it allowed to return 
@@ -11,12 +11,12 @@ export interface Type {
      * variables. 
      * TODO: find a better way to enforce this.
      **/
-    subtype(that: Type): boolean;
+    subtype(that: MetaType): boolean;
 
     /*
      * Is `that` a subtype of `this`
      */
-    rsubtype?(that: Type): boolean;
+    rsubtype?(that: MetaType): boolean;
 
     /*
      * Return a new version of this type in the context 
@@ -28,12 +28,12 @@ export interface Type {
      * TODO: consider making everything return a copy
      * most mutate right now
      */
-    feed(types: Map<string, Type>): Type;
+    feed(types: Map<string, MetaType>): MetaType;
 
     /*
      * Determine whether `this` is "valid"
      * things like invalid overrides should throw a descriptive error message here
-     * mostly only used by ClassType. Needs to happen after all feeds
+     * mostly only used by ClassMetaType. Needs to happen after all feeds
      * also always throws `PREFIX+": free variable"` it it encounters a variable
      */
     validate(): void;
@@ -47,7 +47,7 @@ export interface Type {
 }
 
 export class TypeScope {
-    constructor(public definitions: Map<string, Type>) {
+    constructor(public definitions: Map<string, MetaType>) {
 
     }
 
@@ -68,13 +68,13 @@ export class TypeScope {
     }
 }
 
-export class TypeVariable implements Type {
+export class TypeVariable implements MetaType {
     readonly kind = "Variable";
 
-    constructor(public type?: Type, public lookupName?: string, public matchName?: string) {
+    constructor(public type?: MetaType, public lookupName?: string, public matchName?: string) {
 
     }
-    subtype(that: Type): boolean {
+    subtype(that: MetaType): boolean {
         if (!this.type) {
             this.type = that;
             return true;
@@ -89,7 +89,7 @@ export class TypeVariable implements Type {
         return false;
     }
 
-    rsubtype(that: Type) {
+    rsubtype(that: MetaType) {
         if (!this.type) {
             this.type = that;
             return true;
@@ -104,11 +104,11 @@ export class TypeVariable implements Type {
         return false;
     }
 
-    feed(types: Map<string, Type>): Type {
+    feed(types: Map<string, MetaType>): MetaType {
         if (this.lookupName) {
-            const replacementType = types.get(this.lookupName);
-            if (replacementType) {
-                return replacementType;
+            const replacementMetaType = types.get(this.lookupName);
+            if (replacementMetaType) {
+                return replacementMetaType;
             }
         }
         return this;
@@ -128,7 +128,7 @@ export class TypeVariable implements Type {
 }
 
 // literal: keyword
-export class PrimitiveType implements Type {
+export class PrimitiveMetaType implements MetaType {
     readonly kind: string;
     constructor(readonly name: string) {
         this.kind = name;
@@ -137,18 +137,18 @@ export class PrimitiveType implements Type {
 	/**
 	 * true if `this` is a subtype of `that`.
 	 **/
-    subtype(that: Type): boolean {
+    subtype(that: MetaType): boolean {
         if (that.rsubtype) {
             return that.rsubtype(this);
         }
-        return (that instanceof PrimitiveType) && that.name === this.name;
+        return (that instanceof PrimitiveMetaType) && that.name === this.name;
     }
 
     toString() {
         return this.name;
     }
 
-    feed(types: Map<string, Type>) {
+    feed(types: Map<string, MetaType>) {
         return this;
     }
     validate() { }
@@ -179,16 +179,16 @@ export class PrimitiveType implements Type {
 }
 
 // literal (t1, t2, ...)
-export class TupleType implements Type {
+export class TupleMetaType implements MetaType {
     readonly kind = "Tuple"
-    constructor(readonly types: Type[]) {
+    constructor(readonly types: MetaType[]) {
     }
 
-    subtype(that: Type): boolean {
+    subtype(that: MetaType): boolean {
         if (that.rsubtype) {
             return that.rsubtype(this);
         }
-        if (!(that instanceof TupleType)) {
+        if (!(that instanceof TupleMetaType)) {
             return false;
         }
         if (that.types.length !== this.types.length) {
@@ -202,7 +202,7 @@ export class TupleType implements Type {
         return true;
     }
 
-    feed(types: Map<string, Type>) {
+    feed(types: Map<string, MetaType>) {
         for (let i = 0; i < this.types.length; i++) {
             this.types[i] = this.types[i].feed(types);
         }
@@ -226,22 +226,22 @@ export class TupleType implements Type {
 }
 
 // literal List<t1>
-export class ListType implements Type {
+export class ListMetaType implements MetaType {
     readonly kind = "List"
-    constructor(public type: Type) {
+    constructor(public type: MetaType) {
     }
 
-    subtype(that: Type): boolean {
+    subtype(that: MetaType): boolean {
         if (that.rsubtype) {
             return that.rsubtype(this);
         }
-        if (!(that instanceof ListType)) {
+        if (!(that instanceof ListMetaType)) {
             return false;
         }
         return this.type.subtype(that.type);
     }
 
-    feed(types: Map<string, Type>) {
+    feed(types: Map<string, MetaType>) {
         this.type = this.type.feed(types);
         return this;
     }
@@ -272,12 +272,12 @@ function capitalize(str: string) {
 }
 
 // literal "class t1, t2, tn... { field:t ... }"
-export class ClassType implements Type {
+export class ClassMetaType implements MetaType {
     readonly kind = "Class"
-    readonly fields = new Map<string, Type>();
+    readonly fields = new Map<string, MetaType>();
     readonly names = new Map<string, string>();
 
-    constructor(readonly conformsTo: (ClassType | TypeVariable)[], readonly mappings: [string, [string | null, Type]][]) {
+    constructor(readonly conformsTo: (ClassMetaType | TypeVariable)[], readonly mappings: [string, [string | null, MetaType]][]) {
         for (const [name, [prettyName, type]] of mappings) {
             this.fields.set(name, type);
             if (prettyName) {
@@ -289,28 +289,28 @@ export class ClassType implements Type {
     validate(): void {
         for (const [k, t1] of this.fields.entries()) {
             if (t1 instanceof TypeVariable) {
-                throw "ClassType.validate: free type variable";
+                throw "ClassMetaType.validate: free type variable";
             }
 
-            for (const t2 of this.promisedTypes(k)) {
+            for (const t2 of this.promisedMetaTypes(k)) {
                 if (!t1.subtype(t2)) {
-                    throw "ClassType.validate: cannot override " + t2 + " with " + t1;
+                    throw "ClassMetaType.validate: cannot override " + t2 + " with " + t1;
                 }
             }
         }
     }
 
     toString() {
-        return "ClassType";
+        return "ClassMetaType";
     }
 
-    private promisedTypes(key: string): Type[] {
-        const result: Type[] = [];
+    private promisedMetaTypes(key: string): MetaType[] {
+        const result: MetaType[] = [];
         for (const t of this.conformsTo) {
             if (t instanceof TypeVariable) {
-                throw "ClassType.promisedTypes: free type variable";
+                throw "ClassMetaType.promisedMetaTypes: free type variable";
             }
-            result.push(...t.promisedTypes(key));
+            result.push(...t.promisedMetaTypes(key));
         }
         const myPromise = this.fields.get(key);
         if (myPromise) {
@@ -319,16 +319,16 @@ export class ClassType implements Type {
         return result;
     }
 
-    typeOf(key: string): Type {
+    typeOf(key: string): MetaType {
         const va = new TypeVariable();
-        for (const t of this.promisedTypes(key)) {
+        for (const t of this.promisedMetaTypes(key)) {
             if (!va.subtype(t)) {
-                throw "ClassType.typeOf: internal inconsistancy, please validate";
+                throw "ClassMetaType.typeOf: internal inconsistancy, please validate";
             }
         }
 
         if (!va.type) {
-            throw "ClassType.typeOf: field doesn't exist";
+            throw "ClassMetaType.typeOf: field doesn't exist";
         }
 
         return va.type;
@@ -341,7 +341,7 @@ export class ClassType implements Type {
         }
         for (const sup of this.conformsTo) {
             if (sup instanceof TypeVariable) {
-                throw "ClassType.promisedTypes: free type variable";
+                throw "ClassMetaType.promisedMetaTypes: free type variable";
             }
             const name = sup.prettyName(key);
             if (name) {
@@ -351,7 +351,7 @@ export class ClassType implements Type {
         return capitalize(key);
     }
 
-    subtype(that: Type): boolean {
+    subtype(that: MetaType): boolean {
         if (that.rsubtype) {
             return that.rsubtype(this);
         }
@@ -366,16 +366,16 @@ export class ClassType implements Type {
         return false;
     }
 
-    feed(types: Map<string, Type>) {
+    feed(types: Map<string, MetaType>) {
         for (const [key, value] of this.fields.entries()) {
             this.fields.set(key, value.feed(types));
         }
         for (let i = 0; i < this.conformsTo.length; i++) {
             const newValue = this.conformsTo[i].feed(types);
-            if (newValue instanceof ClassType || newValue instanceof TypeVariable) {
+            if (newValue instanceof ClassMetaType || newValue instanceof TypeVariable) {
                 this.conformsTo[i] = newValue;
             } else {
-                throw "ClassType.feed: cannot conform to a non class type"
+                throw "ClassMetaType.feed: cannot conform to a non class type"
             }
         }
         return this;
@@ -393,24 +393,24 @@ export class ClassType implements Type {
 }
 
 
-// export class FunctionType implements Type {
+// export class FunctionMetaType implements MetaType {
 //     readonly kind = "Function"
-//     constructor(public from: Type, public to: Type) {
+//     constructor(public from: MetaType, public to: MetaType) {
 
 //     }
 
-//     subtype(that: Type): boolean {
+//     subtype(that: MetaType): boolean {
 //         if (that.rsubtype) {
 //             return that.rsubtype(this);
 //         }
 
-//         if (!(that instanceof FunctionType)) {
+//         if (!(that instanceof FunctionMetaType)) {
 //             return false;
 //         }
 //         return that.from.subtype(this.from) && this.to.subtype(that.to);
 //     }
 
-//     feed(types: Map<string, Type>) {
+//     feed(types: Map<string, MetaType>) {
 //         this.from = this.from.feed(types);
 //         this.to = this.to.feed(types);
 //         return this;
@@ -418,18 +418,18 @@ export class ClassType implements Type {
 //     validate() { }
 // }
 
-// export class ThunkType implements Type {
+// export class ThunkMetaType implements MetaType {
 //     readonly kind = "Thunk"
-//     constructor(public to: Type) {
+//     constructor(public to: MetaType) {
 
 //     }
 
-//     subtype(that: Type): boolean {
+//     subtype(that: MetaType): boolean {
 //         if (that.rsubtype) {
 //             return that.rsubtype(this);
 //         }
 
-//         if (that instanceof ThunkType) {
+//         if (that instanceof ThunkMetaType) {
 //             if (this.to.subtype(that.to)) {
 //                 return true;
 //             }
@@ -437,7 +437,7 @@ export class ClassType implements Type {
 //         return this.to.subtype(that);
 //     }
 
-//     feed(types: Map<string, Type>) {
+//     feed(types: Map<string, MetaType>) {
 //         this.to = this.to.feed(types);
 //         return this;
 //     }
@@ -445,18 +445,18 @@ export class ClassType implements Type {
 // }
 
 
-export class EnumType implements Type {
+export class EnumMetaType implements MetaType {
     readonly kind = "Enum"
     constructor(public literals: string[]) {
 
     }
 
-    subtype(that: Type): boolean {
+    subtype(that: MetaType): boolean {
         if (that.rsubtype) {
             return that.rsubtype(this);
         }
 
-        if (that instanceof EnumType) {
+        if (that instanceof EnumMetaType) {
             for (let i = 0; i < this.literals.length; i++) {
                 if (this.literals[i] !== that.literals[i]) {
                     return false;
@@ -471,7 +471,7 @@ export class EnumType implements Type {
         return this.literals.indexOf(a) !== -1;
     }
 
-    feed(types: Map<string, Type>) {
+    feed(types: Map<string, MetaType>) {
         return this;
     }
     validate() { }

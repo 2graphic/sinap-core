@@ -1,27 +1,30 @@
 {
-    "name": "sinap-core",
-    "version": "0.0.0",
-    "description": "Core utilities for sinap",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/2graphic/sinap-core"
-    },
-    "main": "lib/index.js",
-    "typings": "lib/index",
-    "files": [
-        "lib/"
-    ],
-    "scripts": {
-        "peg": "pegjs --allowed-start-rules Definitions,Type --dependency \"types:./type-structures\" --output src/types/type-parser-inner.js src/types/type-parser.pegjs",
-        "build": "npm run peg && tsc --project ."
-    },
-    "dependencies": {
-        "typescript-compiler": "1.4.1-2"
-    },
-    "devDependencies": {
-        "typescript": "2.1.x",
-        "typescript-formatter": "4.0.x",
-        "pegjs": "0.10.0"
-    }
+  "name": "sinap-core",
+  "version": "0.0.7",
+  "description": "Core utilities for sinap",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/2graphic/sinap-core"
+  },
+  "main": "lib/index.js",
+  "typings": "lib/index",
+  "files": [
+    "lib/"
+  ],
+  "scripts": {
+    "prebuild": "mkdir -p ./lib/types",
+    "format": "tsfmt -r",
+    "peg": "pegjs --allowed-start-rules Definitions,Type --dependency \"types:./type-structures\" --output lib/types/type-parser-inner.js src/types/type-parser.pegjs",
+    "build": "npm run prebuild && npm run format && npm run peg && tsc --project ."
+  },
+  "dependencies": {
+    "typescript-compiler": "1.4.1-2"
+  },
+  "devDependencies": {
+    "typescript": "2.1.x",
+    "typescript-formatter": "4.0.x",
+    "typescript-formatter": "4.0.x",
+    "pegjs": "0.10.0"
+  }
 }
