@@ -1,25 +1,10 @@
 {
-	"version": "2.1.4",
-	"filesGlob": "src/*",
-	"compilerOptions": {
-		"target": "es6",
-		"module": "commonjs",
-		"moduleResolution": "node",
-		"sourceMap": true,
-		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true,
-		"removeComments": true,
-		"pretty": true,
-		"alwaysStrict": true,
-		"forceConsistentCasingInFileNames": true,
-		"noImplicitReturns": true,
-		"noImplicitAny": true,
-		"noImplicitThis": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": false, // TODO: remove
-		"strictNullChecks": true,
-		"skipLibCheck": false,
-		"outDir": "lib/",
-		"declaration": true
-	}
+  "extends": "./tsconfig.base.json",
+  "files": ["src/index.ts"],
+  "exclude": [
+      "tests/"
+  ],
+  "compilerOptions": {
+    "outDir": "lib"      
+  }
 }
