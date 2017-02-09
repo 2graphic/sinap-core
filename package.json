@@ -11,7 +11,8 @@
   "main": "lib/index.js",
   "typings": "lib/index",
   "files": [
-    "lib/"
+    "lib/",
+    "sinap-includes/"    
   ],
   "scripts": {
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",

@@ -8,6 +8,7 @@ var baseConfig = {
     extensions: ['.ts', '.tsx', '.js'] // note if using webpack 1 you'd also need a '' in the array as well
   },
   devtool: 'source-map',
+  target: 'node',
   module: {
     rules: [
       { test: /\.ts$/, loader: 'ts-loader'}
@@ -15,16 +16,17 @@ var baseConfig = {
   }
 };
 
-module.exports = [merge(baseConfig, {
+module.exports = [{
   entry: "./src/index.ts",
   output: {
+    libraryTarget: 'umd',
     filename: './lib/index.js'
   }
-}), merge(baseConfig, {
+}, {
   entry: "./tests/index.ts",
   output: {
     filename: './tests/build/index.js',
     devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]',
   },
-})];
+}].map(x=>merge(x, baseConfig));

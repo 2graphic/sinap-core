@@ -149,7 +149,7 @@ export function getTypes(env: TypeEnvironment, file: ts.SourceFile, searchNames:
             // it is of type: ts.SyntaxKind.Identifier
             // and the second is what we're looking for
             // it's probably a union in our use case. 
-            if (node.kind !== ts.SyntaxKind.Identifier) {
+            if (node.kind !== ts.SyntaxKind.Identifier && node.kind !== ts.SyntaxKind.ExportKeyword) {
                 r.add(env.getType(env.checker.getTypeAtLocation(node)));
             }
         });

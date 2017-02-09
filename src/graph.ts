@@ -1,21 +1,11 @@
-import { ObjectType } from "./types";
+import { ObjectType } from "./types"
+
+export enum CoreElementKind { Node, Edge, Graph };
 
 export class CoreElement {
-    constructor(public type: ObjectType) {
+    data: { [a: string]: any };
+
+    constructor(readonly type: ObjectType, readonly kind: CoreElementKind) {
+        this.data = {};
     }
-
-    serialize(): any {
-
-    }
-}
-
-export class CoreNode extends CoreElement {
-}
-
-export class CoreEdge extends CoreElement {
-}
-
-export class CoreGraph extends CoreElement {
-    nodes: CoreNode[];
-    edges: CoreEdge[];
 }

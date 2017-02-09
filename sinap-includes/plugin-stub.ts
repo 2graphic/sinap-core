@@ -20,7 +20,6 @@ interface Node extends Element {
     children: Edge[];
 }
 
-// TODO: Consider capitalization here after typechecker is built.
 interface Edge extends Element {
     source: Node;
     destination: Node;

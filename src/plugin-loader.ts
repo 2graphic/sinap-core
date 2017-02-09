@@ -1,43 +1,36 @@
 import * as ts from "typescript";
+import * as fs from "fs";
+
+import { Plugin } from "./plugin";
+
+const options: ts.CompilerOptions = {
+    noEmitOnError: false,
+    noImplicitAny: true,
+    target: ts.ScriptTarget.ES2016,
+    removeComments: false,
+    module: ts.ModuleKind.AMD,
+    outFile: "result.js",
+};
 
 /**
  * An abstract representation of a plugin 
  */
-export class Plugin {
-    /** The typescript entity corresponding to this plugin */
-    private program: ts.Program;
-    /** A virtual filesystem */
-    private host: ts.CompilerHost;
-    /** The compiled version of the plugin */
-    script: string;
-    /** The compilation results */
-    results: ts.EmitResult;
+export function loadPlugin(pluginLocation: string) {
+    let script: string;
+    const host = createCompilerHost(new Map([
+        ["plugin.ts", fs.readFileSync(pluginLocation, "utf-8")],
+        ["plugin-stub.ts", require("!!raw-loader!../sinap-includes/plugin-stub.ts")],
+        ["sinap.d.ts", require("!!raw-loader!../sinap-includes/sinap.d.ts")],
+        ["types-interfaces.d.ts", require("!!raw-loader!../sinap-includes/types-interfaces.d.ts")],
+    ]), options, (name, content) => {
+        // TODO: actually use AMD for cicular dependencies
+        script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
+    });
 
-    constructor(pluginLocation: string) {
+    const program = ts.createProgram(["plugin-stub.ts"], options, host);
 
-        const options: ts.CompilerOptions = {
-            noEmitOnError: true,
-            noImplicitAny: true,
-            target: ts.ScriptTarget.ES2016,
-            removeComments: false,
-            module: ts.ModuleKind.AMD,
-            outFile: "result.js",
-        };
-
-        this.host = createCompilerHost(new Map([
-            ["plugin.ts", ts.sys.readFile(pluginLocation)],
-            ["plugin-stub.ts", require("!!raw-loader!../sinap-includes/plugin-stub.ts")],
-            ["sinap.d.ts", require("!!raw-loader!../sinap-includes/sinap.d.ts")],
-            ["types-interfaces.d.ts", require("!!raw-loader!../sinap-includes/types-interfaces.d.ts")],
-        ]), options, (name, content) => {
-            // TODO: actually use AMD for cicular dependencies
-            this.script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
-        });
-
-        this.program = ts.createProgram(["plugin-stub.ts"], options, this.host);
-
-        this.results = this.program.emit();
-    }
+    const results = program.emit();
+    return new Plugin(program, { emitResults: results, js: script });
 }
 
 export function printDiagnostics(results: ts.EmitResult) {
@@ -72,7 +65,7 @@ function createCompilerHost(files: Map<string, string>, options: ts.CompilerOpti
                 if (fileName.indexOf("/") !== -1) {
                     throw "no relative/absolute paths here";
                 }
-                source = ts.sys.readFile("node_modules/typescript/lib/" + fileName);
+                source = fs.readFileSync("node_modules/typescript/lib/" + fileName, "utf-8");
             }
             return source ?
                 ts.createSourceFile(fileName, source, options.target ? options.target : ts.ScriptTarget.ES2016)

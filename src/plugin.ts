@@ -1,38 +1,77 @@
-/**
- * @file Provides an example plugin
- * @name ExampleInterpreter
- * @kind example.plugin.sinap-kind
- */
+import * as ts from "typescript";
+import { CoreElementKind, CoreElement } from "./graph";
+import { TypeEnvironment, getTypes, Type, UnionType, ObjectType } from "./types";
+import { printDiagnostics } from "../src/plugin-loader";
 
+function unionToList(type: Type): [string, ObjectType][] {
+    if (type instanceof UnionType) {
+        return type.types.map(unionToList).reduce((p, c) => p.concat(c));
+    } else if (type instanceof ObjectType) {
+        return [[type.name, type]];
+    }
+    throw `type must be a union type or an object type.`
 
-/**
- * This file never actually gets loaded. It's a demo file for intellisense in plugin stub.
- * It is also a demo for plugin developers. 
- */
-export class ExGraph {
-    // TODO: consider how to verify this type
-    nodes: ExNode[];
-}
-export class ExNode {
-    parents: ExEdge[];
-    children: ExEdge[];
-}
-export class ExEdge {
-    source: ExNode;
-    destination: ExNode;
 }
 
-export type Graph = ExGraph;
-export type Nodes = ExNode;
-export type Edges = ExEdge;
+function kindToKey(kind: CoreElementKind) {
+    switch (kind) {
+        case CoreElementKind.Edge:
+            return "Edges";
+        case CoreElementKind.Node:
+            return "Nodes";
+        case CoreElementKind.Graph:
+            return "Graph";
+    }
+}
 
-/**
- * A real plugin will have a narrower signature than this. 
- * That information will be introspected at plugin compile time
- * and passed to the stub. 
- * 
- * TODO: Implement this
- */
-export function compile(...args: any[]): any {
 
+export class PluginTypeEnvironment extends TypeEnvironment {
+    private pluginTypes: Map<string, Map<string, ObjectType>>;
+    constructor(program: ts.Program) {
+        super(program.getTypeChecker());
+
+        // TODO: magic "plugin.ts" string
+        const types = getTypes(this, program.getSourceFile("plugin.ts"), new Set(["Nodes", "Edges", "Graph"]));
+        this.pluginTypes = new Map([...types.entries()]
+            .map(([n, v]) => [n, new Map(unionToList(v))] as [string, Map<string, ObjectType>]));
+    }
+
+    elementTypes(kind: CoreElementKind) {
+        return this.pluginTypes.get(kindToKey(kind)).keys();
+    }
+
+    getElementType(kind: CoreElementKind, type: string): ObjectType {
+        return this.pluginTypes.get(kindToKey(kind)).get(type);
+    }
+}
+
+export class Plugin {
+    public typeEnvironment: PluginTypeEnvironment;
+
+    constructor(program: ts.Program, private results: { js: string, emitResults: ts.EmitResult }) {
+        this.typeEnvironment = new PluginTypeEnvironment(program);
+    }
+
+    // TODO: remove
+    public printResults() {
+        printDiagnostics(this.results.emitResults);
+    }
+
+    public runCode() {
+        console.log(this.results.js);
+    }
+
+    makeElement(kind: CoreElementKind, type?: string) {
+        if (kind === CoreElementKind.Graph) {
+            type = "Graph";
+        }
+        if (type === undefined) {
+            throw "Must specify a type if not a graph"
+        }
+        return new CoreElement(this.typeEnvironment.getElementType(kind, type), kind);
+    }
+
+    elementTypes(kind: CoreElementKind) {
+        return this.typeEnvironment.elementTypes(kind);
+    }
 }

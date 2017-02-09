@@ -1,10 +1,10 @@
-import { Plugin, printDiagnostics } from "../src/plugin-loader";
+import { loadPlugin } from "../src/index";
 
 export function run() {
     console.log("testing plugin loader")
-    const plugin = new Plugin("tests/dfa-definitions.ts");
+    const plugin = loadPlugin("tests/dfa-definitions.ts");
 
-    printDiagnostics(plugin.results);
+    plugin.printResults();
 
-    console.log(plugin.script);
+    plugin.runCode();
 }
