@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
+    "clean": "rm -r ./lib/ ./tests/build/ ./node_modules/",
     "build": "webpack"
   },
   "dependencies": {
