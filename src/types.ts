@@ -76,7 +76,9 @@ export class ObjectType extends Type implements interfaces.ObjectType {
     constructor(env: TypeEnvironment, type: ts.ObjectType) {
         super(env, type);
         if (this.type.symbol === undefined || this.type.symbol.members === undefined) {
-            throw "not an object type";
+            //throw "not an object type";
+            // TODO: address this
+            return;
         }
         this.type.symbol.members.forEach((value, key) => {
             this.members.set(key, this.env.getType(this.env.checker.getTypeOfSymbol(value)));
