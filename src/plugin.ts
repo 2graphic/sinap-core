@@ -74,11 +74,8 @@ export class Plugin {
     }
 
     makeElement(kind: CoreElementKind, type?: string) {
-        if (kind === CoreElementKind.Graph) {
-            type = "Graph";
-        }
         if (type === undefined) {
-            throw "Must specify a type if not a graph"
+            type = this.elementTypes(kind).next().value;
         }
         return new CoreElement(this.typeEnvironment.getElementType(kind, type), kind);
     }

@@ -111,7 +111,7 @@ export function getTypes(env: TypeEnvironment, file: ts.SourceFile, searchNames:
 
         // symbol is 1 layer of abstraction on the declaration
         // I'm not sure exactly what purpose it serves
-        if (declaration.name === undefined){
+        if (declaration.name === undefined) {
             return;
         }
         const symbol = env.checker.getSymbolAtLocation(declaration.name);
