@@ -15,8 +15,8 @@
 		"noImplicitAny": true,
 		"noImplicitThis": true,
 		"noUnusedLocals": true,
-		"noUnusedParameters": false, // TODO: remove
-		"strictNullChecks": false,
+		"noUnusedParameters": true,
+		"strictNullChecks": true,
 		"skipLibCheck": false,
 		"declaration": true
 	}

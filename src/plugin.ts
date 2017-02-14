@@ -13,7 +13,7 @@ function unionToList(type: Type): [string, ObjectType][] {
 
 }
 
-function kindToKey(kind: CoreElementKind) {
+function kindToKey(kind: CoreElementKind): string {
     switch (kind) {
         case CoreElementKind.Edge:
             return "Edges";
@@ -37,18 +37,30 @@ export class PluginTypeEnvironment extends TypeEnvironment {
     }
 
     elementTypes(kind: CoreElementKind) {
-        return this.pluginTypes.get(kindToKey(kind)).keys();
+        const type = this.pluginTypes.get(kindToKey(kind));
+        if (type === undefined) {
+            throw "kind not found";
+        }
+        return type.keys();
     }
 
     getElementType(kind: CoreElementKind, type: string): ObjectType {
-        return this.pluginTypes.get(kindToKey(kind)).get(type);
+        const t = this.pluginTypes.get(kindToKey(kind));
+        if (t === undefined) {
+            throw "kind not found";
+        }
+        const ty = t.get(type);
+        if (ty === undefined) {
+            throw "type not found";
+        }
+        return ty;
     }
 }
 
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, private results: { js: string, emitResults: ts.EmitResult }) {
+    constructor(program: ts.Program, private results: { js: string | undefined, emitResults: ts.EmitResult }) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 

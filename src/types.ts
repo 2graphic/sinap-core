@@ -75,10 +75,8 @@ export class ObjectType extends Type implements interfaces.ObjectType {
 
     constructor(env: TypeEnvironment, type: ts.ObjectType) {
         super(env, type);
-        if (this.type.symbol.members === undefined) {
-            // TODO: why does this happen
-            this.members = undefined;
-            return;
+        if (this.type.symbol === undefined || this.type.symbol.members === undefined) {
+            throw "not an object type";
         }
         this.type.symbol.members.forEach((value, key) => {
             this.members.set(key, this.env.getType(this.env.checker.getTypeOfSymbol(value)));
@@ -111,6 +109,9 @@ export function getTypes(env: TypeEnvironment, file: ts.SourceFile, searchNames:
 
         // symbol is 1 layer of abstraction on the declaration
         // I'm not sure exactly what purpose it serves
+        if (declaration.name === undefined){
+            return;
+        }
         const symbol = env.checker.getSymbolAtLocation(declaration.name);
 
         // if `symbol.name` is something we're looking for
@@ -156,28 +157,32 @@ export function getTypes(env: TypeEnvironment, file: ts.SourceFile, searchNames:
     }
 }
 
-export function validateEdge(edge: ObjectType, source: ObjectType, destination: ObjectType): boolean {
-    const destinationExpected = edge.members.get("destination");
-    const sourceExpected = edge.members.get("source");
+export function validateEdge(edge: ObjectType, source?: ObjectType, destination?: ObjectType): boolean {
+    const destinationExpected = edge !== undefined ? edge.members.get("destination") : null;
+    const sourceExpected = edge !== undefined ? edge.members.get("source") : null;
 
     // constrain that 0th is assignable to 1st
     const constraints: [Type, Type][] = [];
 
-    if (destinationExpected) {
+    if (destinationExpected && destination) {
         constraints.push([destination, destinationExpected]);
     }
 
-    if (sourceExpected) {
+    if (sourceExpected && source) {
         constraints.push([source, sourceExpected]);
     }
 
     // constrain that the edge is assignable to the child array
     // and the parent array of the source and destination nodes
     // respectively
-    addParentChildConstraint(destination.members.get("parents"));
-    addParentChildConstraint(source.members.get("children"));
+    if (destination !== undefined) {
+        addParentChildConstraint(destination.members.get("parents"));
+    }
+    if (source !== undefined) {
+        addParentChildConstraint(source.members.get("children"));
+    }
 
-    function addParentChildConstraint(listType: Type) {
+    function addParentChildConstraint(listType?: Type) {
         // if there is actually the field declared
         if (listType) {
             if (listType.type.flags & ts.TypeFlags.Object) {

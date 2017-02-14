@@ -16,13 +16,13 @@ const options: ts.CompilerOptions = {
  * An abstract representation of a plugin 
  */
 export function loadPlugin(pluginLocation: string) {
-    let script: string;
+    let script: string | undefined = undefined;
     const host = createCompilerHost(new Map([
         ["plugin.ts", fs.readFileSync(pluginLocation, "utf-8")],
         ["plugin-stub.ts", require("!!raw-loader!../sinap-includes/plugin-stub.ts")],
         ["sinap.d.ts", require("!!raw-loader!../sinap-includes/sinap.d.ts")],
         ["types-interfaces.d.ts", require("!!raw-loader!../sinap-includes/types-interfaces.d.ts")],
-    ]), options, (name, content) => {
+    ]), options, (_, content) => {
         // TODO: actually use AMD for cicular dependencies
         script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
     });
@@ -67,9 +67,11 @@ function createCompilerHost(files: Map<string, string>, options: ts.CompilerOpti
                 }
                 source = fs.readFileSync("node_modules/typescript/lib/" + fileName, "utf-8");
             }
+
+            // any to suppress strict error about undefined
             return source ?
                 ts.createSourceFile(fileName, source, options.target ? options.target : ts.ScriptTarget.ES2016)
-                : undefined;
+                : undefined as any;
         },
         writeFile: (name, text) => {
             emit(name, text);
