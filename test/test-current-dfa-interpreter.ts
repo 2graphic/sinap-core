@@ -2,8 +2,9 @@
 import { loadPlugin } from "../src/";
 import * as assert from "assert";
 
-describe("plugin loader", ()=>
-    it("emit results", ()=>{
+describe("plugin loader", ()=>{
     const plugin = loadPlugin("test/plugin1.ts");
-    assert.equal(false, plugin.results.emitResults.emitSkipped);
-}));
+    it("no dianostic errors", ()=>{
+        assert.deepEqual([], plugin.results.emitResults.diagnostics);
+    })
+});
