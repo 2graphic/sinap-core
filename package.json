@@ -12,23 +12,25 @@
   "typings": "lib/index",
   "files": [
     "lib/",
-    "sinap-includes/"    
+    "sinap-includes/"
   ],
   "scripts": {
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./tests/build/ ./node_modules/",
-    "build": "webpack"
+    "build": "webpack",
+    "test": "mocha test/build/index.js"
   },
   "dependencies": {
     "typescript": "https://github.com/2graphic/sinap-core/blob/typescript-types/typescript-2.2.0.tgz?raw=true"
   },
   "devDependencies": {
-    "webpack": "2.2.1",
-    "webpack-merge": "2.6.1",
+    "@types/node": "latest",
+    "mocha": "^3.2.0",
     "raw-loader": "0.5.1",
     "ts-loader": "2.0.0",
-    "webpack-node-externals": "1.5.4",
     "typescript-formatter": "latest",
-    "@types/node": "latest"
+    "webpack": "2.2.1",
+    "webpack-merge": "2.6.1",
+    "webpack-node-externals": "1.5.4"
   }
 }

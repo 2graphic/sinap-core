@@ -1,5 +1,6 @@
 var nodeExternals = require('webpack-node-externals');
 var merge = require("webpack-merge");
+var glob = require("glob");
 
 var baseConfig = {
   externals: [nodeExternals()],
@@ -23,9 +24,9 @@ module.exports = [{
     filename: './lib/index.js'
   }
 }, {
-  entry: "./tests/index.ts",
+  entry: glob.sync("./test/test-*.ts"),
   output: {
-    filename: './tests/build/index.js',
+    filename: './test/build/index.js',
     devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]',
   },

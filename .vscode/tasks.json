@@ -24,6 +24,10 @@
             "args": ["run", "build", "--", "--watch"],
             "isBackground": true,
             "isBuildCommand": true
+        },
+        {
+            "taskName": "test",
+            "args": ["run", "test"]
         }
     ]
 }

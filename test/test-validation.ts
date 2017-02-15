@@ -1,14 +1,16 @@
-import { getTypes, TypeEnvironment, UnionType, validateEdge, ObjectType } from "../src/types"
-import * as ts from "typescript";
+/// <reference path="../typings/globals/mocha/index.d.ts" />
 
-export function run(){
-    console.log("testing isValidEdge")
-    const program = ts.createProgram(["tests/definitions.ts"], {
+import * as assert from "assert";
+import * as ts from "typescript";
+import { getTypes, TypeEnvironment, UnionType, validateEdge, ObjectType } from "../src/"
+
+describe("isValidEdge", ()=>{
+    const program = ts.createProgram(["test/definitions.ts"], {
         target: ts.ScriptTarget.ES2016, module: ts.ModuleKind.CommonJS
     });
 
     const typeMap = getTypes(new TypeEnvironment(program.getTypeChecker()),
-                            program.getSourceFile("tests/definitions.ts"),
+                            program.getSourceFile("test/definitions.ts"),
                             new Set([
                                 "Nodes",
                                 "Edges",
@@ -23,8 +25,10 @@ export function run(){
     const edge1 = edges.types[0] as ObjectType;
     const edge2 = edges.types[1] as ObjectType;
 
-    console.log("1.", validateEdge(edge1, node1, node2) === true);
-    console.log("2.", validateEdge(edge1, node1, node3) === false);
-    console.log("3.", validateEdge(edge1, node1, node2) === true);
-    console.log("4.", validateEdge(edge2, node1, node2) === false);
-}
+    it("map edges", ()=>{
+        assert.equal(true, validateEdge(edge1, node1, node2));
+        assert.equal(false, validateEdge(edge1, node1, node3));
+        assert.equal(true, validateEdge(edge1, node1, node2));
+        assert.equal(false, validateEdge(edge2, node1, node2));
+    });
+});

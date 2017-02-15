@@ -60,7 +60,7 @@ export class PluginTypeEnvironment extends TypeEnvironment {
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, private results: { js: string | undefined, emitResults: ts.EmitResult }) {
+    constructor(program: ts.Program, public results: { js: string | undefined, emitResults: ts.EmitResult }) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 
