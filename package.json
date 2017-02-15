@@ -15,6 +15,7 @@
     "sinap-includes/"
   ],
   "scripts": {
+    "install": "typings install",
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
