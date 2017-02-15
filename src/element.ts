@@ -52,6 +52,11 @@ export class CoreModel {
         for (let i = 0; i < pojo.elements.length; i++) {
             this.elements[i].data = pojo.elements[i].data;
         }
+
+    }
+
+    addElement(kind: CoreElementKind, type?: string) {
+        this.elements.push(this.plugin.makeElement(kind, type));
     }
 
     serialize(): SerialJSO {
