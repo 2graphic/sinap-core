@@ -5,6 +5,4 @@ export function run() {
     const plugin = loadPlugin("tests/dfa-definitions.ts");
 
     plugin.printResults();
-
-    plugin.runCode();
 }

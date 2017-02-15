@@ -69,10 +69,6 @@ export class Plugin {
         printDiagnostics(this.results.emitResults);
     }
 
-    public runCode() {
-        console.log(this.results.js);
-    }
-
     makeElement(kind: CoreElementKind, type?: string) {
         if (type === undefined) {
             type = this.elementTypes(kind).next().value;

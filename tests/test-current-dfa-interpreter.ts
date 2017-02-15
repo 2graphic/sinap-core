@@ -5,5 +5,4 @@ export function run() {
     const plugin = loadPlugin("tests/plugin1.ts");
 
     plugin.printResults();
-    plugin.runCode();
 }
