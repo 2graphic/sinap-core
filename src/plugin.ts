@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { CoreElementKind, CoreElement } from "./graph";
+import { CoreElementKind, CoreElement } from "./element";
 import { TypeEnvironment, getTypes, Type, UnionType, ObjectType } from "./types";
 import { printDiagnostics } from "../src/plugin-loader";
 
