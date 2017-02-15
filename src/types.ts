@@ -81,7 +81,14 @@ export class ObjectType extends Type implements interfaces.ObjectType {
             return;
         }
         this.type.symbol.members.forEach((value, key) => {
-            this.members.set(key, this.env.getType(this.env.checker.getTypeOfSymbol(value)));
+            const tsType = this.env.checker.getTypeOfSymbol(value);
+            let wrappingType: Type;
+            if (tsType === type) {
+                wrappingType = this;
+            } else {
+                wrappingType = this.env.getType(tsType);
+            }
+            this.members.set(key, wrappingType);
         });
     }
 }

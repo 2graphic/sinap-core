@@ -1,16 +1,16 @@
 class Node1 {
-	a: boolean
+    a: boolean
 }
 
 class Node2 {
-	b: {
+    b: {
         n: Node1
     }
 }
 
 class Edge1 {
-	label: string
-	destination: Node1 | Node2
+    label: string
+    destination: Node1 | Node2
 }
 
 class Graph1 {

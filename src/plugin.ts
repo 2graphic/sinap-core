@@ -60,13 +60,15 @@ export class PluginTypeEnvironment extends TypeEnvironment {
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, public results: { js: string | undefined, emitResults: ts.EmitResult }) {
+    constructor(program: ts.Program, public results: { js: string, diagnostics: { global: ts.Diagnostic[], semantic: ts.Diagnostic[], syntactic: ts.Diagnostic[] } }) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 
     // TODO: remove
     public printResults() {
-        printDiagnostics(this.results.emitResults);
+        printDiagnostics(this.results.diagnostics.global);
+        printDiagnostics(this.results.diagnostics.semantic);
+        printDiagnostics(this.results.diagnostics.syntactic);
     }
 
     makeElement(kind: CoreElementKind, type?: string) {

@@ -1,82 +1,102 @@
 import * as plugin from "./plugin";
-import * as types from "./types-interfaces";
 
-// TODO: consider
-export interface FunctionTypeInfo {
-    args: types.Type[];
-    returnValue: types.Type;
+interface INode {
+    parents: IEdge[];
+    children: IEdge[];
+    [a: string]: any;
+}
+interface IEdge {
+    source: INode;
+    destination: INode;
+    [a: string]: any;
+}
+interface IGraph {
+    nodes: INode[];
+    edges: IEdge[];
+    [a: string]: any;
 }
 
-interface PropertyObject {
-    [propName: string]: any;
+function isNode(a: any, b: string): a is INode {
+    return b === "Node";
+}
+function isEdge(a: any, b: string): a is IEdge {
+    return b === "Edge";
+}
+function isGraph(a: any, b: string): a is IGraph {
+    return b === "Graph";
 }
 
-interface Element extends PropertyObject {
-    label: string;
-}
+type Graph = IGraph & plugin.Graph;
+type Node = INode & plugin.Nodes;
+type Edge = IEdge & plugin.Edges;
 
-interface Node extends Element {
-    parents: Edge[];
-    children: Edge[];
-}
+export type SerialJSO = { elements: { kind: string, type: string, data: any }[] };
 
-interface Edge extends Element {
-    source: Node;
-    destination: Node;
-}
+export function deserialize(pojo: SerialJSO): Graph {
+    const elements = pojo.elements.map(e => {
+        const type = (plugin as any)[e.type];
 
-function transferProperties(source: any, destination: PropertyObject) {
-    const propSet = source.pluginProperties;
-    for (const propName in propSet) {
-        destination[propName] = propSet[propName];
+        const result = (type ? new type() : {}) as Graph | Node | Edge;
+        for (const k of Object.getOwnPropertyNames(e.data)) {
+            result[k] = e.data[k];
+        }
+        return result;
+    });
+
+    const traverse = (a: any) => {
+        if (typeof (a) !== "object") {
+            return;
+        }
+        for (const k of Object.getOwnPropertyNames(a)) {
+            const el = a[k];
+            if (el.kind === "sinap-pointer") {
+                a[k] = elements[el.index];
+            } else {
+                traverse(el);
+            }
+        }
     }
-}
 
-/**
- * This class is the graph presented to the user. For convenience of reading this data structure, there are duplicate
- * and cyclical references. The constructor guarantees that these are consistent, but any changes after construction
- * should be done in a consistent fashion. TODO: Make mutator methods for plugins to utilize once mutation of the graph
- * during interpretation is added.
- */
-class Graph implements PropertyObject {
-    nodes: Node[];
-    edges: Edge[];
-    public constructor(serialGraph: any) {
+    traverse(elements);
 
-        serialGraph = serialGraph.graph;
-        transferProperties(serialGraph, this);
+    let graph: Graph = {} as any;
+    let edges: Edge[] = [];
+    let nodes: Node[] = [];
 
-        this.nodes = serialGraph.nodes.map((oldNode: any) => {
-            const result: Node = {
-                label: oldNode.drawableProperties.Label,
-                parents: [],
-                children: []
-            };
-            transferProperties(oldNode, result);
-            return result;
-        });
-
-        // This seems like duplicate code but I'm not sure how to clean it up and combine it with the code above.
-        this.edges = serialGraph.edges.map((oldEdge: any) => {
-            const source = this.nodes[oldEdge.source];
-            const destination = this.nodes[oldEdge.destination];
-
-            const result: Edge = {
-                label: oldEdge.pluginProperties.Symbol,
-                source: source,
-                destination: destination
-            };
-
-            transferProperties(oldEdge, result);
-
-            source.children.push(result);
-            destination.parents.push(result);
-            return result;
-        });
+    for (let i = 0; i < pojo.elements.length; i++) {
+        const kind = pojo.elements[i].kind;
+        const element = elements[i];
+        if (isGraph(element, kind)) {
+            graph = element;
+        } else if (isNode(element, kind)) {
+            nodes.push(element);
+            element.parents = [];
+            element.children = [];
+        } else if (isEdge(element, kind)) {
+            edges.push(element);
+        }
     }
+
+    for (const edge of edges) {
+        edge.source.children.push(edge);
+        edge.destination.parents.push(edge);
+    }
+
+    graph.nodes = nodes;
+    graph.edges = edges;
+
+    return graph;
 }
 
-export function compile(g: any) {
-    // TODO: cleanup, remove any, add try catch
-    return plugin.compile(new Graph(g) as any);
+export function run(graph: Graph, n: any) {
+    let current = plugin.start(graph, n);
+    const states: plugin.State[] = [];
+    while (current instanceof plugin.State) {
+        states.push(current);
+        current = plugin.step(current);
+    }
+    return {
+        states: states,
+        result: current,
+    };
 }

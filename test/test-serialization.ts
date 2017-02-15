@@ -2,7 +2,7 @@
 import { loadPlugin, Plugin, CoreModel } from "../src/";
 import * as assert from "assert";
 
-function roundTripJSO(plugin: Plugin, jso: any){
+function roundTripJSO(plugin: Plugin, jso: any) {
     const jsoString = JSON.stringify(jso);
 
     const model = new CoreModel(plugin, jso);
@@ -14,8 +14,8 @@ function roundTripJSO(plugin: Plugin, jso: any){
     return model2;
 }
 
-describe("Serialization", ()=>{
-    it("one", ()=>{
+describe("Serialization", () => {
+    it("one", () => {
         const test = roundTripJSO(loadPlugin("test/definitions.ts"), {
             format: "sinap-file-format",
             kind: "TODO: implement this",
@@ -25,7 +25,7 @@ describe("Serialization", ()=>{
                     kind: "Graph",
                     type: "Graph1",
                     data: {
-                        startState: {kind: "sinap-pointer", index: 1},
+                        startState: { kind: "sinap-pointer", index: 1 },
                     },
                 },
                 {
@@ -40,8 +40,8 @@ describe("Serialization", ()=>{
 
         assert.equal(true, test.elements[0].data['startState'].data.a);
     });
-    
-    it("two", ()=>{
+
+    it("two", () => {
         const test = roundTripJSO(loadPlugin("test/definitions-for-serial.ts"), {
             format: "sinap-file-format",
             kind: "TODO: implement this",
@@ -51,7 +51,7 @@ describe("Serialization", ()=>{
                     kind: "Graph",
                     type: "Graph1",
                     data: {
-                        startState: {kind: "sinap-pointer", index: 2},
+                        startState: { kind: "sinap-pointer", index: 2 },
                     },
                 },
                 {
@@ -66,7 +66,7 @@ describe("Serialization", ()=>{
                     type: "Node2",
                     data: {
                         b: {
-                            n: {kind: "sinap-pointer", index: 1},
+                            n: { kind: "sinap-pointer", index: 1 },
                         },
                     },
                 },

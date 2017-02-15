@@ -5,6 +5,7 @@ import { Plugin } from "./plugin";
 
 const options: ts.CompilerOptions = {
     noEmitOnError: false,
+
     noImplicitAny: true,
     target: ts.ScriptTarget.ES2016,
     removeComments: false,
@@ -20,21 +21,27 @@ export function loadPlugin(pluginLocation: string) {
     const host = createCompilerHost(new Map([
         ["plugin.ts", fs.readFileSync(pluginLocation, "utf-8")],
         ["plugin-stub.ts", require("!!raw-loader!../sinap-includes/plugin-stub.ts")],
-        ["sinap.d.ts", require("!!raw-loader!../sinap-includes/sinap.d.ts")],
-        ["types-interfaces.d.ts", require("!!raw-loader!../sinap-includes/types-interfaces.d.ts")],
     ]), options, (_, content) => {
         // TODO: actually use AMD for cicular dependencies
         script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
     });
 
     const program = ts.createProgram(["plugin-stub.ts"], options, host);
-
-    const results = program.emit();
-    return new Plugin(program, { emitResults: results, js: script });
+    // TODO: only compute if asked for.
+    const results = {
+        global: program.getGlobalDiagnostics(),
+        syntactic: program.getSyntacticDiagnostics(),
+        semantic: program.getSemanticDiagnostics(),
+    }
+    program.emit();
+    if (script === undefined) {
+        throw "failed to emit";
+    }
+    return new Plugin(program, { diagnostics: results, js: script });
 }
 
-export function printDiagnostics(results: ts.EmitResult) {
-    for (const result of results.diagnostics) {
+export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
+    for (const result of diagnostics) {
         console.log()
         if (result.file) {
             const { line, character } = result.file.getLineAndCharacterOfPosition(result.start);
@@ -53,7 +60,6 @@ export function printDiagnostics(results: ts.EmitResult) {
             console.log("unknown file:", result.messageText);
         }
     }
-    console.log("Emit Skipped?", results.emitSkipped)
 }
 
 function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void): ts.CompilerHost {

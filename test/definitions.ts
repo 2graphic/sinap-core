@@ -1,26 +1,26 @@
-class Character {}
+class Character { }
 
 class Node1 {
-	a: boolean
+    a: boolean
 }
 
 class Node2 {
-	parents: Edge1[]
-	b: boolean
+    parents: Edge1[]
+    b: boolean
 }
 
 class Node3 {
-	c: boolean
+    c: boolean
 }
 
 class Edge1 {
-	/** Symbol */
-	label: Character
-	destination: Node1 | Node2
+    /** Symbol */
+    label: Character
+    destination: Node1 | Node2
 }
 
 class Edge2 {
-	source: Node1 | Node2
+    source: Node1 | Node2
 }
 
 class Graph1 {

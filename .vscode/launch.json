@@ -16,6 +16,7 @@
             "runtimeArgs": [
                 "-u", "tdd",
                 "--timeout", "999999",
+                "--grep", "test ideal v2",
                 "--colors",
                 "${workspaceRoot}/test/build/index.js"
             ],

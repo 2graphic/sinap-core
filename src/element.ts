@@ -21,7 +21,7 @@ export type SerialJSO = {
     format: string,
     kind: string,
     version: string,
-    elements: {kind: string, type: string, data: any}[],
+    elements: { kind: string, type: string, data: any }[],
 };
 
 export class CoreModel {
@@ -39,9 +39,9 @@ export class CoreModel {
             this.elements = [];
             return;
         }
-        
+
         // TODO: check correct plugin kind
-        if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.6"){
+        if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.6") {
             throw "not a CoreModel";
         }
 
@@ -49,7 +49,7 @@ export class CoreModel {
 
         // TODO: typecheck all values against plugin-declared. 
         const traverse = (a: any) => {
-            if (typeof(a) !== "object"){
+            if (typeof (a) !== "object") {
                 return;
             }
             for (const k of Object.getOwnPropertyNames(a)) {
@@ -60,7 +60,7 @@ export class CoreModel {
                     traverse(el);
                 }
             }
-        }    
+        }
 
         traverse(pojo.elements);
 
@@ -88,11 +88,11 @@ export class CoreModel {
             format: "sinap-file-format",
             kind: "TODO: implement this",
             version: "0.0.6",
-            elements: this.elements.map((element)=>{
+            elements: this.elements.map((element) => {
                 return {
                     kind: CoreElementKind[element.kind],
                     type: element.type.name,
-                    data: JSON.parse(JSON.stringify(element.data, (_, v)=>{
+                    data: JSON.parse(JSON.stringify(element.data, (_, v) => {
                         const idx = this.elements.indexOf(v);
                         if (idx !== -1) {
                             return {
