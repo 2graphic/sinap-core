@@ -34,4 +34,4 @@ node_modules/
 
 # Visual Studio Code Stuff
 lib/**
-tests/build/**
+test/build/**
