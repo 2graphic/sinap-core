@@ -1,6 +1,6 @@
 {
   "name": "sinap-core",
-  "version": "0.0.16",
+  "version": "0.0.18",
   "readme": "README.md",
   "description": "Core utilities for sinap",
   "license": "MIT",
@@ -15,7 +15,6 @@
     "sinap-includes/"
   ],
   "scripts": {
-    "install": "typings install",
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",

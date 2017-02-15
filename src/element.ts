@@ -3,6 +3,9 @@ import { Plugin } from "./plugin";
 
 export enum CoreElementKind { Node, Edge, Graph };
 
+/**
+ * Represents nodes, edges, and graphs.
+ */
 export class CoreElement {
     data: { [a: string]: any };
 
@@ -11,6 +14,9 @@ export class CoreElement {
     }
 }
 
+/**
+ * The file format.
+ */
 export type SerialJSO = {
     format: string,
     kind: string,
@@ -22,10 +28,15 @@ export class CoreModel {
     elements: CoreElement[];
 
     /**
-     * Modifies pojo
+     * Create a new CoreModel. If `pojo` is provided, build the model from the
+     * serial represnetation. 
+     * 
+     * Note that this modifies the pojo object given and once it is passed to this
+     * constructor, it should not be reused. 
      */
     constructor(private plugin: Plugin, pojo?: SerialJSO) {
         if (pojo === undefined) {
+            this.elements = [];
             return;
         }
         
@@ -59,10 +70,19 @@ export class CoreModel {
 
     }
 
+    /**
+     * Store a new element with this model
+     */
     addElement(kind: CoreElementKind, type?: string) {
-        this.elements.push(this.plugin.makeElement(kind, type));
+        const element = this.plugin.makeElement(kind, type);
+        this.elements.push(element);
+        return element;
     }
 
+    /**
+     * Generate an acyclic JS object which can be used to reconstruct this 
+     * model.
+     */
     serialize(): SerialJSO {
         return {
             format: "sinap-file-format",
