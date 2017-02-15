@@ -24,7 +24,11 @@ export class CoreModel {
     /**
      * Modifies pojo
      */
-    constructor(private plugin: Plugin, pojo: SerialJSO) {
+    constructor(private plugin: Plugin, pojo?: SerialJSO) {
+        if (pojo === undefined) {
+            return;
+        }
+        
         // TODO: check correct plugin kind
         if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.6"){
             throw "not a CoreModel";
