@@ -17,7 +17,7 @@ describe("test ideal v2", () => {
         const sandbox: any = { console: console, global: {} };
         const context = vm.createContext(sandbox);
         script.runInContext(context);
-        return [sandbox, context, serialGraph];
+        return [context as any, serialGraph];
     }
 
     it("computes divisibility", () => {
@@ -114,28 +114,138 @@ describe("test ideal v2", () => {
             ]
         });
 
-        const [sandbox, context, serialGraph] = setupTest(model);
-        new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        new vm.Script("results = global['plugin-stub'].run(graph, '11')").runInContext(context);
-        assert.equal(3, sandbox.results.states.length, "correct number of states");
-        assert.equal(true, sandbox.results.result, "correct value");
-        new vm.Script("results = global['plugin-stub'].run(graph, '')").runInContext(context);
-        assert.equal(1, sandbox.results.states.length, "correct number of states");
-        assert.equal(true, sandbox.results.result, "correct value");
-        new vm.Script("results = global['plugin-stub'].run(graph, '101')").runInContext(context);
-        assert.equal(4, sandbox.results.states.length, "correct number of states");
-        assert.equal(false, sandbox.results.result, "correct value");
-        new vm.Script("results = global['plugin-stub'].run(graph, '1000')").runInContext(context);
-        assert.equal(5, sandbox.results.states.length, "correct number of states");
-        assert.equal(false, sandbox.results.result, "correct value");
-        new vm.Script("results = global['plugin-stub'].run(graph, '1001')").runInContext(context);
-        assert.equal(5, sandbox.results.states.length, "correct number of states");
-        assert.equal(true, sandbox.results.result, "correct value");
-        new vm.Script("results = global['plugin-stub'].run(graph, '01')").runInContext(context);
-        assert.equal(3, sandbox.results.states.length, "correct number of states");
-        assert.equal(false, sandbox.results.result, "correct value");
-        new vm.Script("results = global['plugin-stub'].run(graph, '011')").runInContext(context);
-        assert.equal(4, sandbox.results.states.length, "correct number of states");
-        assert.equal(true, sandbox.results.result, "correct value");
+        const [context, serialGraph] = setupTest(model);
+        const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+
+        let results;
+        results = prog.run('11');
+        assert.equal(3, results.states.length, "correct number of states");
+        assert.equal(true, results.result, "correct value");
+        results = prog.run('');
+        assert.equal(1, results.states.length, "correct number of states");
+        assert.equal(true, results.result, "correct value");
+        results = prog.run('101');
+        assert.equal(4, results.states.length, "correct number of states");
+        assert.equal(false, results.result, "correct value");
+        results = prog.run('1000');
+        assert.equal(5, results.states.length, "correct number of states");
+        assert.equal(false, results.result, "correct value");
+        results = prog.run('1001');
+        assert.equal(5, results.states.length, "correct number of states");
+        assert.equal(true, results.result, "correct value");
+        results = prog.run('01');
+        assert.equal(3, results.states.length, "correct number of states");
+        assert.equal(false, results.result, "correct value");
+        results = prog.run('011');
+        assert.equal(4, results.states.length, "correct number of states");
+        assert.equal(true, results.result, "correct value");
+
+        for (let x = 0; x < 1000; x++) {
+            assert.equal(x % 3 == 0, prog.run(x.toString(2)).result);
+        }
+
+    });
+
+    it("computes divisibility (many prog instances)", () => {
+        const model = new CoreModel(plugin, {
+            format: "sinap-file-format",
+            kind: "TODO: implement this",
+            version: "0.0.6",
+            elements: [
+                {
+                    kind: "Graph",
+                    type: "DFAGraph",
+                    data: {
+                        startState: { kind: "sinap-pointer", index: 1 },
+                    }
+                },
+                {
+                    kind: "Node",
+                    type: "DFANode",
+                    data: {
+                        isAcceptState: true,
+                        label: "q0",
+                    },
+                },
+                {
+                    kind: "Node",
+                    type: "DFANode",
+                    data: {
+                        isAcceptState: false,
+                        label: "q1",
+                    },
+                },
+                {
+                    kind: "Node",
+                    type: "DFANode",
+                    data: {
+                        isAcceptState: false,
+                        label: "q2",
+                    },
+                },
+                {
+                    kind: "Edge",
+                    type: "DFAEdge",
+                    data: {
+                        label: "0",
+                        source: { kind: "sinap-pointer", index: 1 },
+                        destination: { kind: "sinap-pointer", index: 1 }
+                    },
+                },
+                {
+                    kind: "Edge",
+                    type: "DFAEdge",
+                    data: {
+                        label: "1",
+                        source: { kind: "sinap-pointer", index: 1 },
+                        destination: { kind: "sinap-pointer", index: 2 }
+                    },
+                },
+                {
+                    kind: "Edge",
+                    type: "DFAEdge",
+                    data: {
+                        label: "1",
+                        source: { kind: "sinap-pointer", index: 2 },
+                        destination: { kind: "sinap-pointer", index: 1 }
+                    },
+                },
+                {
+                    kind: "Edge",
+                    type: "DFAEdge",
+                    data: {
+                        label: "0",
+                        source: { kind: "sinap-pointer", index: 2 },
+                        destination: { kind: "sinap-pointer", index: 3 }
+                    },
+                },
+                {
+                    kind: "Edge",
+                    type: "DFAEdge",
+                    data: {
+                        label: "0",
+                        source: { kind: "sinap-pointer", index: 3 },
+                        destination: { kind: "sinap-pointer", index: 2 }
+                    },
+                },
+                {
+                    kind: "Edge",
+                    type: "DFAEdge",
+                    data: {
+                        label: "1",
+                        source: { kind: "sinap-pointer", index: 3 },
+                        destination: { kind: "sinap-pointer", index: 3 }
+                    },
+                },
+            ]
+        });
+
+        const [context, serialGraph] = setupTest(model);
+
+        for (let x = 0; x < 10000; x++) {
+            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            assert.equal(x % 3 == 0, prog.run(x.toString(2)).result);
+        }
+
     });
 });

@@ -88,15 +88,21 @@ export function deserialize(pojo: SerialJSO): Graph {
     return graph;
 }
 
-export function run(graph: Graph, n: any) {
-    let current = plugin.start(graph, n);
-    const states: plugin.State[] = [];
-    while (current instanceof plugin.State) {
-        states.push(current);
-        current = plugin.step(current);
+export class Program {
+    private graph: Graph;
+    constructor(graph: SerialJSO) {
+        this.graph = deserialize(graph);
     }
-    return {
-        states: states,
-        result: current,
-    };
+    run(input: any) {
+        let current = plugin.start(this.graph, input);
+        const states: plugin.State[] = [];
+        while (current instanceof plugin.State) {
+            states.push(current);
+            current = plugin.step(current);
+        }
+        return {
+            states: states,
+            result: current,
+        };
+    }
 }

@@ -17,15 +17,14 @@ describe("plugin stub", () => {
         assert.equal("Did it", sandbox.value);
     });
 
-    function setupTest(model: CoreModel) {
+    function setupTest(model: CoreModel, sandbox: any = {}) {
         const script = new vm.Script(plugin.results.js as string);
 
         const serialGraph = JSON.stringify(model.serialize());
 
-        const sandbox: any = { console: console, global: {} };
         const context = vm.createContext(sandbox);
         script.runInContext(context);
-        return [sandbox, context, serialGraph];
+        return [context as any, serialGraph];
     }
 
     it("gets cyclic structure", () => {
@@ -53,9 +52,9 @@ describe("plugin stub", () => {
             ]
         });
 
-        const [sandbox, context, serialGraph] = setupTest(model);
+        const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        assert.equal(123, sandbox.graph.nodes[0].b.b.b.b.a);
+        assert.equal(123, context.graph.nodes[0].b.b.b.b.a);
     });
 
     it("does source and destination", () => {
@@ -91,10 +90,10 @@ describe("plugin stub", () => {
             ]
         });
 
-        const [sandbox, context, serialGraph] = setupTest(model);
+        const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        assert.equal(123, sandbox.graph.edges[0].source.a);
-        assert.equal(456, sandbox.graph.edges[0].destination.a);
+        assert.equal(123, context.graph.edges[0].source.a);
+        assert.equal(456, context.graph.edges[0].destination.a);
     });
 
     it("does parents and children", () => {
@@ -130,10 +129,10 @@ describe("plugin stub", () => {
             ]
         });
 
-        const [sandbox, context, serialGraph] = setupTest(model);
+        const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        assert.equal(456, sandbox.graph.nodes[0].children[0].destination.a);
-        assert.equal(123, sandbox.graph.nodes[1].parents[0].source.a);
+        assert.equal(456, context.graph.nodes[0].children[0].destination.a);
+        assert.equal(123, context.graph.nodes[1].parents[0].source.a);
     });
 
 
@@ -170,10 +169,9 @@ describe("plugin stub", () => {
             ]
         });
 
-        const [sandbox, context, serialGraph] = setupTest(model);
-        new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        new vm.Script("results = global['plugin-stub'].run(graph, 456)").runInContext(context);
-        assert.equal(1, sandbox.results.states.length, "only one state");
-        assert.equal(123, sandbox.results.result, "correct value");
+        const [context, serialGraph] = setupTest(model, { global: { "plugin-stub": { "Program": null } } });
+        const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+        assert.equal(1, prog.run(456).states.length, "only one state");
+        assert.equal(123, prog.run(456).result, "correct value");
     });
 });
