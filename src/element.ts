@@ -42,7 +42,7 @@ export class CoreModel {
 
         // TODO: check correct plugin kind
         if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.6") {
-            throw "not a CoreModel";
+            throw Error("not a CoreModel");;
         }
 
         this.elements = pojo.elements.map((e) => this.plugin.makeElement(CoreElementKind[e.kind as any] as any, e.type));
@@ -82,7 +82,7 @@ export class CoreModel {
     removeElement(element: CoreElement) {
         const idx = this.elements.indexOf(element);
         if (idx === -1) {
-            throw "element doesn't exist";
+            throw Error("element doesn't exist");;
         }
         this.elements.splice(idx, 1);
     }

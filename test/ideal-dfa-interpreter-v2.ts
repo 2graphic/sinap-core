@@ -45,6 +45,6 @@ export function step(current: State): State | boolean {
     } else if (destinations.length == 0) {
         return false;
     } else {
-        throw "This is a DFA!";
+        throw Error("This is a DFA!");;
     }
 }

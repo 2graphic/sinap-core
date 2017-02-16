@@ -39,7 +39,7 @@ export class PluginTypeEnvironment extends TypeEnvironment {
     elementTypes(kind: CoreElementKind) {
         const type = this.pluginTypes.get(kindToKey(kind));
         if (type === undefined) {
-            throw "kind not found";
+            throw Error("kind not found");;
         }
         return type.keys();
     }
@@ -47,11 +47,11 @@ export class PluginTypeEnvironment extends TypeEnvironment {
     getElementType(kind: CoreElementKind, type: string): ObjectType {
         const t = this.pluginTypes.get(kindToKey(kind));
         if (t === undefined) {
-            throw "kind not found";
+            throw Error("kind not found");;
         }
         const ty = t.get(type);
         if (ty === undefined) {
-            throw "type not found";
+            throw Error("type not found");;
         }
         return ty;
     }

@@ -174,4 +174,17 @@ describe("plugin stub", () => {
         assert.equal(1, prog.run(456).states.length, "only one state");
         assert.equal(123, prog.run(456).result, "correct value");
     });
+
+    it("fails on bad graph", () => {
+        const script = new vm.Script(plugin.results.js as string);
+        const context = vm.createContext({ global: { "plugin-stub": { "Program": null } } });
+        script.runInContext(context);
+        const prog = new (context as any).global['plugin-stub'].Program({ elements: [] });
+        try {
+            prog.run(456);
+        } catch (err) {
+            return;
+        }
+        throw new Error("fail")
+    });
 });

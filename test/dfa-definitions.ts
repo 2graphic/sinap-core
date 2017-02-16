@@ -35,7 +35,7 @@ export function interpret(graph: DFAGraph, input: string) {
             current = possibleStates[0];
         } else {
             // more than one means that this is an NFA
-            throw "Not a DFA";
+            throw Error("Not a DFA");;
         }
     }
     // check if we ended up in an accept state

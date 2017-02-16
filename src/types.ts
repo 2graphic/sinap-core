@@ -76,7 +76,7 @@ export class ObjectType extends Type implements interfaces.ObjectType {
     constructor(env: TypeEnvironment, type: ts.ObjectType) {
         super(env, type);
         if (this.type.symbol === undefined || this.type.symbol.members === undefined) {
-            //throw "not an object type";
+            //throw Error("not an object type");;
             // TODO: address this
             return;
         }
@@ -146,7 +146,7 @@ export function getTypes(env: TypeEnvironment, file: ts.SourceFile, searchNames:
     return new Map([...results.entries()]
         .map(([k, v]) => {
             if (v.size !== 1) {
-                throw "Redunadant type specification";
+                throw Error("Redunadant type specification");;
             }
             return [k, v.values().next().value] as [string, Type];
         }));
@@ -202,12 +202,12 @@ export function validateEdge(edge: ObjectType, source?: ObjectType, destination?
                 } else {
                     // don't care if there is a parents/child field
                     // but if there is, it better be a list
-                    throw "parents/children must be a reference to an array type"
+                    throw Error("parents/children must be a reference to an array type");
                 }
             } else {
                 // don't care if there is a parents/child field
                 // but if there is, it better be a list
-                throw "parents/children must be a reference to an array type"
+                throw Error("parents/children must be a reference to an array type");
             }
         }
     }

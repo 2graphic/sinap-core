@@ -35,7 +35,7 @@ export function loadPlugin(pluginLocation: string) {
     }
     program.emit();
     if (script === undefined) {
-        throw "failed to emit";
+        throw Error("failed to emit");;
     }
     return new Plugin(program, { diagnostics: results, js: script });
 }
@@ -69,7 +69,7 @@ function createCompilerHost(files: Map<string, string>, options: ts.CompilerOpti
             if (!source) {
                 // if we didn't bundle the source file, maybe it's a lib? 
                 if (fileName.indexOf("/") !== -1) {
-                    throw "no relative/absolute paths here";
+                    throw Error("no relative/absolute paths here");;
                 }
                 source = fs.readFileSync("node_modules/typescript/lib/" + fileName, "utf-8");
             }
