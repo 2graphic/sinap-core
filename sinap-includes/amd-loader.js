@@ -1,3 +1,5 @@
+global = {};
+
 function getNS(a){
     if (global[a] === undefined){
         global[a] = {};

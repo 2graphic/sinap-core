@@ -79,6 +79,14 @@ export class CoreModel {
         return element;
     }
 
+    removeElement(element: CoreElement) {
+        const idx = this.elements.indexOf(element);
+        if (idx === -1) {
+            throw "element doesn't exist";
+        }
+        this.elements.splice(idx, 1);
+    }
+
     /**
      * Generate an acyclic JS object which can be used to reconstruct this 
      * model.
