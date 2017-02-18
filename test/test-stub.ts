@@ -180,12 +180,9 @@ describe("plugin stub", () => {
         const context = vm.createContext({ global: { "plugin-stub": { "Program": null } } });
         script.runInContext(context);
         const prog = new (context as any).global['plugin-stub'].Program({ elements: [] });
-        try {
-            prog.run(456);
-        } catch (err) {
-            return;
+        if (!prog.run(456).error) {
+            throw new Error("fail");
         }
-        throw new Error("fail")
     });
 
     it("has sinap types", () => {
