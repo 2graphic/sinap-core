@@ -1,10 +1,69 @@
 [![Build Status](https://travis-ci.org/2graphic/sinap-core.svg?branch=master)](https://travis-ci.org/2graphic/sinap-core)
 
-# The Type System
+# Sinap Plugins
 
 Sinap is an IDE and a framework for interpreters. A plugin fills in the blanks to make a complete IDE interpreter. At the bare minimum, a plugin my provide:
 
-1. Type information. This tells sinap what constitutes a valid graph so that sinap can allow users to generate valid graphs and feed them to the interpreter. 
-2. The interpreter. This allows sinap to actually run the graph
+ - Type information. This tells sinap what constitutes a valid graph so that sinap can allow users to generate valid graphs and feed them to the interpreter. 
+ - The interpreter. This allows sinap to actually run the graph
 
-The type system is what allows the first part. In general types are something that exist only at compile time. It can be more complicated than that (see Python) but this mostly true in TypeScript. We need plugins to be able to discuss types at their compile time, which is runtime for sinap. Because of this, we need to at least partially implement a type checker. Before going into how everything works, heres a rundown of the goal:
+This information is provided in a single typescript file. A plugin must export:
+
+ - Types of valid nodes and edges
+  - a `Graph` type
+   - may have a `nodes` field and/or an `edges` field
+   - if so it must be assignable from `Nodes[]` and `Edges[]` respectively
+  - a `Nodes` type
+   - may be a union of types
+   - each member of the union:
+    - may have a `children` field and/or a `parents` field
+    - if so those fields must be assignable to `Edges[]`
+  - an `Edges` type
+   - may be a union of types
+   - each member of the union:
+    - may have a `source` field and/or a `destination` field
+    - if so those fields must be assignable to `Node`
+
+An example of a valid types portion of a plugin follows:
+
+```ts
+export class Graph {
+    nodes: Nodes[];
+    favorite: NodeB;
+}
+
+export type Nodes = NodeA | NodeB;
+
+export class NodeA {
+    magnet: boolean;
+    children: EdgeA[]; // constrains that NodeA -- EdgeA --> any
+}
+
+export class NodeB {
+    likesFaries: boolean;
+    parents: EdgeA[]; // constrains that any -- EdgeA --> NodeB
+}
+
+export type Edges = EdgeA | EdgeB;
+
+export class EdgeA {
+}
+
+export class EdgeB {
+    source: NodeB; // constrains that NodeB -- EdgeB --> any
+}
+```
+
+For an edge to be valid, it must match all the applicable constraints. 
+
+For the interpreter section, the file must export:
+
+```ts
+export class State {
+    // anything here
+}
+export function start(g: Graph, ...): State | results
+export function step(state: State): State | results
+```
+
+Where the state class can have any values you choose, start can specify any arguments you want after the `Graph` and results can be your choice of type. 
