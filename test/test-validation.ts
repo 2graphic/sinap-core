@@ -2,20 +2,18 @@
 
 import * as assert from "assert";
 import * as ts from "typescript";
-import { getTypes, TypeEnvironment, UnionType, validateEdge, ObjectType } from "../src/"
+import { TypeEnvironment, UnionType, validateEdge, ObjectType, Type } from "../src/"
 
 describe("isValidEdge", () => {
     const program = ts.createProgram(["test/definitions.ts"], {
         target: ts.ScriptTarget.ES2016, module: ts.ModuleKind.CommonJS
     });
 
-    const typeMap = getTypes(new TypeEnvironment(program.getTypeChecker()),
-        program.getSourceFile("test/definitions.ts"),
-        new Set([
-            "Nodes",
-            "Edges",
-            "Graph",
-        ]));
+    const env = new TypeEnvironment(program.getTypeChecker());
+
+    const typeMap = new Map(["Nodes",
+        "Edges",
+        "Graph",].map(k => [k, env.getType(env.checker.lookupTypeAt(k, program.getSourceFile("test/definitions.ts")))] as [string, Type]));
 
     const nodes = typeMap.get("Nodes") as UnionType;
     const node1 = nodes.types[0] as ObjectType;

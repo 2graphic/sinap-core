@@ -106,3 +106,28 @@ export class Program {
         };
     }
 }
+
+
+export class File {
+    constructor(public name: string) { }
+}
+
+export class Color {
+    constructor(public color: string) {
+    }
+}
+
+export class DrawableNode {
+    label: string;
+    position: { x: number, y: number };
+    borderColor: Color;
+}
+
+export class DrawableEdge {
+    source: DrawableNode;
+    destination: DrawableNode;
+    label: string;
+}
+
+export class DrawableGraph {
+}

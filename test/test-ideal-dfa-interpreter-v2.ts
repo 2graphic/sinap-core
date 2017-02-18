@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPlugin, CoreModel } from "../src/";
+import { loadPlugin, CoreModel, CoreElementKind } from "../src/";
 import * as assert from "assert";
 import * as vm from "vm";
 
@@ -19,6 +19,12 @@ describe("test ideal v2", () => {
         script.runInContext(context);
         return [context as any, serialGraph];
     }
+
+    it("does nice names", () => {
+        assert.equal("Accept State", plugin.typeEnvironment.getElementType(CoreElementKind.Node, "DFANode").prettyNames.get("isAcceptState"));
+        assert.equal("Symbol", plugin.typeEnvironment.getElementType(CoreElementKind.Edge, "DFAEdge").prettyNames.get("label"));
+        assert.equal("Children", plugin.typeEnvironment.getElementType(CoreElementKind.Node, "DFANode").prettyNames.get("children"));
+    });
 
     it("computes divisibility", () => {
         const model = new CoreModel(plugin, {
@@ -140,7 +146,7 @@ describe("test ideal v2", () => {
         assert.equal(4, results.states.length, "correct number of states");
         assert.equal(true, results.result, "correct value");
 
-        for (let x = 0; x < 1000; x++) {
+        for (let x = 0; x < 10000; x++) {
             assert.equal(x % 3 == 0, prog.run(x.toString(2)).result);
         }
 
@@ -242,7 +248,7 @@ describe("test ideal v2", () => {
 
         const [context, serialGraph] = setupTest(model);
 
-        for (let x = 0; x < 10000; x++) {
+        for (let x = 0; x < 1000; x++) {
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
             assert.equal(x % 3 == 0, prog.run(x.toString(2)).result);
         }

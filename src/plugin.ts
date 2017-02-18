@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import { CoreElementKind, CoreElement } from "./element";
-import { TypeEnvironment, getTypes, Type, UnionType, ObjectType } from "./types";
+import { TypeEnvironment, Type, UnionType, ObjectType } from "./types";
 import { printDiagnostics } from "../src/plugin-loader";
 
 function unionToList(type: Type): [string, ObjectType][] {
@@ -27,12 +27,30 @@ function kindToKey(kind: CoreElementKind): string {
 
 export class PluginTypeEnvironment extends TypeEnvironment {
     private pluginTypes: Map<string, Map<string, ObjectType>>;
+    private pluginSourceFile: ts.SourceFile;
+    private sinapSourceFile: ts.SourceFile;
+
+    public drawableTypes: Map<CoreElementKind, ObjectType>;
+
+    lookupPluginType(n: string) {
+        return this.getType(this.checker.lookupTypeAt(n, this.pluginSourceFile));
+    }
+
+    lookupSinapType(n: string) {
+        return this.getType(this.checker.lookupTypeAt(n, this.sinapSourceFile));
+    }
+
     constructor(program: ts.Program) {
         super(program.getTypeChecker());
+        this.pluginSourceFile = program.getSourceFile("plugin.ts");
+        this.sinapSourceFile = program.getSourceFile("plugin-stub.ts");
+        this.drawableTypes = new Map();
+        this.drawableTypes.set(CoreElementKind.Node, this.lookupSinapType("DrawableNode") as ObjectType);
+        this.drawableTypes.set(CoreElementKind.Edge, this.lookupSinapType("DrawableEdge") as ObjectType);
+        this.drawableTypes.set(CoreElementKind.Graph, this.lookupSinapType("DrawableGraph") as ObjectType);
 
-        // TODO: magic "plugin.ts" string
-        const types = getTypes(this, program.getSourceFile("plugin.ts"), new Set(["Nodes", "Edges", "Graph"]));
-        this.pluginTypes = new Map([...types.entries()]
+        this.pluginTypes = new Map(["Nodes", "Edges", "Graph"]
+            .map(k => [k, this.lookupPluginType(k)] as [string, Type])
             .map(([n, v]) => [n, new Map(unionToList(v))] as [string, Map<string, ObjectType>]));
     }
 

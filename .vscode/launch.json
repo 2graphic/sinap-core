@@ -16,7 +16,7 @@
             "runtimeArgs": [
                 "-u", "tdd",
                 "--timeout", "999999",
-                "--grep", "plugin stub",
+                "--grep", "ideal",
                 "--colors",
                 "${workspaceRoot}/test/build/index.js"
             ],

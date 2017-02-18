@@ -72,6 +72,7 @@ export class IntersectionType extends Type implements interfaces.IntersectionTyp
 
 export class ObjectType extends Type implements interfaces.ObjectType {
     readonly members = new Map<string, Type>();
+    readonly prettyNames = new Map<string, string>();
 
     constructor(env: TypeEnvironment, type: ts.ObjectType) {
         super(env, type);
@@ -89,79 +90,16 @@ export class ObjectType extends Type implements interfaces.ObjectType {
                 wrappingType = this.env.getType(tsType);
             }
             this.members.set(key, wrappingType);
-        });
-    }
-}
 
-/**
- * For each name in `searchNames` look for the 
- * the type that that symbol is declared as in SourceFile
- * and return the wrapped declared type. 
- */
-export function getTypes(env: TypeEnvironment, file: ts.SourceFile, searchNames: Set<string>): Map<string, Type> {
-    const results = new Map([...searchNames].map((x) => [x, new Set()] as [string, Set<Type>]));
-    // TODO: I'm going to need this
-    // ts.forEachChild(file, (parent)=>{
-    //if (parent.kind === ts.SyntaxKind.ModuleDeclaration){
-    ts.forEachChild(file, (node) => {
-        // if it's not a class, and interface, or an
-        // alias, we don't care about it
-        if (!(node.kind === ts.SyntaxKind.ClassDeclaration
-            || node.kind === ts.SyntaxKind.InterfaceDeclaration
-            || node.kind === ts.SyntaxKind.TypeAliasDeclaration)) {
-            return;
-        }
-
-        // declaration is the literal characters matched by the 
-        // parser in the source file
-        const declaration = node as ts.InterfaceDeclaration | ts.ClassDeclaration | ts.TypeAliasDeclaration;
-
-        // symbol is 1 layer of abstraction on the declaration
-        // I'm not sure exactly what purpose it serves
-        if (declaration.name === undefined) {
-            return;
-        }
-        const symbol = env.checker.getSymbolAtLocation(declaration.name);
-
-        // if `symbol.name` is something we're looking for
-        // then r is a set
-        const r = results.get(symbol.name);
-
-        if (!r) {
-            return;
-        }
-        // add node to to matches for `symbol.name`
-        if (node.kind === ts.SyntaxKind.TypeAliasDeclaration) {
-            // need to follow aliases
-            visitAlias(node, r);
-        } else {
-            r.add(env.getType(env.checker.getTypeOfSymbol(symbol)));
-        }
-        // });
-        // }
-    });
-
-    // check the sets all contain 1 element and convert to a mapping
-    // that points straight to that element
-    return new Map([...results.entries()]
-        .map(([k, v]) => {
-            if (v.size !== 1) {
-                throw Error("Redunadant type specification");;
+            let prettyName: string;
+            const docComment = value.getDocumentationComment();
+            if (docComment !== undefined && docComment.length > 0) {
+                prettyName = docComment[0].text.trim();
+            } else {
+                prettyName = key[0].toUpperCase() + key.substr(1).replace(/([a-z])([A-Z])/g, "$1 $2");
             }
-            return [k, v.values().next().value] as [string, Type];
-        }));
 
-    // helper for aliases.
-    function visitAlias(parent: ts.Node, r: Set<Type>): void {
-        ts.forEachChild(parent, (node) => {
-            // aliases have two children,
-            // the first is the name that is being undefined
-            // it is of type: ts.SyntaxKind.Identifier
-            // and the second is what we're looking for
-            // it's probably a union in our use case. 
-            if (node.kind !== ts.SyntaxKind.Identifier && node.kind !== ts.SyntaxKind.ExportKeyword) {
-                r.add(env.getType(env.checker.getTypeAtLocation(node)));
-            }
+            this.prettyNames.set(key, prettyName);
         });
     }
 }
