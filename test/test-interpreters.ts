@@ -243,12 +243,7 @@ describe("various interpreters", () => {
             const [context, serialGraph] = setupTest(dfa, model);
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
 
-            try {
-                prog.run('11');
-            } catch (err) {
-                return;
-            }
-            throw Error("allows multiple start states");
+            assert(prog.run('11').error !== undefined, "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(dfa, {
@@ -349,12 +344,7 @@ describe("various interpreters", () => {
             const [context, serialGraph] = setupTest(dfa, model);
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
 
-            try {
-                prog.run('11');
-            } catch (err) {
-                return;
-            }
-            throw Error("allows zero start states");
+            assert(prog.run('11').error !== undefined, "allows zero start states");
         });
         it("checks for empty transitions", () => {
             const model = new CoreModel(dfa, {
@@ -455,12 +445,7 @@ describe("various interpreters", () => {
             const [context, serialGraph] = setupTest(dfa, model);
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
 
-            try {
-                prog.run('11');
-            } catch (err) {
-                return;
-            }
-            throw Error("allows empty transitions");
+            assert(prog.run('11').error !== undefined, "allows empty transitions");
         });
         it("checks for two character transitions", () => {
             const model = new CoreModel(dfa, {
@@ -561,12 +546,7 @@ describe("various interpreters", () => {
             const [context, serialGraph] = setupTest(dfa, model);
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
 
-            try {
-                prog.run('11');
-            } catch (err) {
-                return;
-            }
-            throw Error("allows two character transitions");
+            assert(prog.run('11').error !== undefined, "allows two character transitions");
         });
     });
     describe("nfa", () => {
@@ -797,12 +777,7 @@ describe("various interpreters", () => {
             const [context, serialGraph] = setupTest(nfa, model);
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
 
-            try {
-                prog.run('11');
-            } catch (err) {
-                return;
-            }
-            throw Error("allows multiple start states");
+            assert(prog.run('11').error !== undefined, "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(nfa, {
@@ -903,12 +878,7 @@ describe("various interpreters", () => {
             const [context, serialGraph] = setupTest(nfa, model);
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
 
-            try {
-                prog.run('11');
-            } catch (err) {
-                return;
-            }
-            throw Error("allows zero start states");
+            assert(prog.run('11').error !== undefined, "allows zero start states");
         });
         it("allows empty transitions", () => {
             const model = new CoreModel(nfa, {
@@ -1110,12 +1080,7 @@ describe("various interpreters", () => {
             const [context, serialGraph] = setupTest(nfa, model);
             const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
 
-            try {
-                prog.run('11');
-            } catch (err) {
-                return;
-            }
-            throw Error("allows two character transitions");
+            assert(prog.run('11').error !== undefined, "allows two character transitions");
         });
         it("supports non-determinism", () => {
             const model = new CoreModel(nfa, {
