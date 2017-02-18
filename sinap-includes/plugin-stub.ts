@@ -94,16 +94,22 @@ export class Program {
         this.graph = deserialize(graph);
     }
     run(input: any) {
-        let current = plugin.start(this.graph, input);
-        const states: plugin.State[] = [];
-        while (current instanceof plugin.State) {
-            states.push(current);
-            current = plugin.step(current);
+        try {
+            let current = plugin.start(this.graph, input);
+            const states: plugin.State[] = [];
+            while (current instanceof plugin.State) {
+                states.push(current);
+                current = plugin.step(current);
+            }
+            return {
+                states: states,
+                result: current,
+            };
+        } catch (e) {
+            return {
+                error: e
+            }
         }
-        return {
-            states: states,
-            result: current,
-        };
     }
 }
 
