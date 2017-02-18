@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/2graphic/sinap-core.svg?branch=master)](https://travis-ci.org/2graphic/sinap-core)
+
 # The Type System
 
 Sinap is an IDE and a framework for interpreters. A plugin fills in the blanks to make a complete IDE interpreter. At the bare minimum, a plugin my provide:
