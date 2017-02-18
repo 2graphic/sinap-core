@@ -1,6 +1,6 @@
 {
   "name": "sinap-core",
-  "version": "0.0.25",
+  "version": "0.0.0-development",
   "readme": "README.md",
   "description": "Core utilities for sinap",
   "license": "MIT",
@@ -18,7 +18,8 @@
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
-    "test": "mocha test/build/index.js"
+    "test": "mocha test/build/index.js",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "dependencies": {
     "typescript": "https://github.com/2graphic/sinap-core/blob/typescript-types/typescript-2.2.0.tgz?raw=true"
@@ -31,6 +32,7 @@
     "typescript-formatter": "latest",
     "webpack": "2.2.1",
     "webpack-merge": "2.6.1",
-    "webpack-node-externals": "1.5.4"
+    "webpack-node-externals": "1.5.4",
+    "semantic-release": "^6.3.2"
   }
 }
