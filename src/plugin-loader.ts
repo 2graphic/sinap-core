@@ -14,8 +14,17 @@ const options: ts.CompilerOptions = {
     outFile: "result.js",
 };
 
-function nullPromise<T>(obj: T, name: string): Promise<T> {
-    return obj? Promise.resolve(obj) : Promise.reject(`${name} may not be null.`);
+function nullMultiple(object: any, ...attrChain: string[]): boolean {
+    let current = object;
+    for(const attr of attrChain) {
+        if(!current || !current[attr]) {
+            return false;
+        } else {
+            current = current[attr];
+        }
+    }
+
+    return true;
 }
 
 class InterpreterInfo {
@@ -32,19 +41,25 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
         const fileArr: [string, File][] = pluginFiles.map((file): [string, File] => [file.name, file]);
         const fileMap = new Map(fileArr);
         // TODO run npm install.
-        return nullPromise(fileMap.get('package.json'), `package.json for plugin ${directory.fullName}`)
-        .then((npmFile: File): Promise<InterpreterInfo> => {
-            return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, 'sinap'))
-                .then((sinapJson) => {
-                    const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
-                    const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
-                    return Promise.all([filePromise, pluginKind]);
-                })
-                .then(([pluginName, pluginKind]) => {
-                    return nullPromise(fileMap.get(pluginName), pluginName)
-                        .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind));
-                });
-        });
+        const npmFile = fileMap.get('package.json');
+        if (npmFile) {
+            return readAsJson(npmFile).then((pluginJson) => {
+                if (nullMultiple(pluginJson, 'sinap', pluginFileKey) && pluginJson.sinap[pluginKindKey]) {
+                    const pluginName: string = pluginJson.sinap[pluginFileKey];
+                    const pluginKind: string[] = pluginJson.sinap[pluginKindKey];
+                    const pluginFile = fileMap.get(pluginName);
+                    if (pluginFile) {
+                        return new InterpreterInfo(pluginFile, pluginKind)
+                    } else {
+                        return Promise.reject(`Could not find plugin interpreter at ${pluginName}`);
+                    }
+                } else {
+                    return Promise.reject(`package.json for ${directory.name} does not conform to schema.`);
+                }
+            });
+        } else {
+            return Promise.reject(`Could not find a package.json for ${directory.name}`);
+        }
     });
 }
 
