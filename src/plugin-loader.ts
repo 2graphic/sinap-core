@@ -19,14 +19,15 @@ const options: ts.CompilerOptions = {
 export function loadPlugin(pluginLocation: File, fileService: FileService): Promise<Plugin> {
     let script: string | undefined = undefined;
     const pluginStub = require("!!raw-loader!../sinap-includes/plugin-stub.ts");
+    function emitter(_: string, content: string): void {
+        // TODO: actually use AMD for cicular dependencies
+        script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
+    }
     return pluginLocation.readData().then((pluginScript) => {
         const host = createCompilerHost(new Map([
             ["plugin.ts", pluginScript],
             ["plugin-stub.ts", pluginStub],
-        ]), options, (_, content) => {
-            // TODO: actually use AMD for cicular dependencies
-            script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
-        }, fileService);
+        ]), options, emitter, fileService);
 
         const program = ts.createProgram(["plugin-stub.ts"], options, host);
         // TODO: only compute if asked for.
@@ -34,13 +35,13 @@ export function loadPlugin(pluginLocation: File, fileService: FileService): Prom
             global: program.getGlobalDiagnostics(),
             syntactic: program.getSyntacticDiagnostics(),
             semantic: program.getSemanticDiagnostics(),
-        }
+        };
         program.emit();
         if (script === undefined) {
             throw Error("failed to emit");;
         }
         return new Plugin(program, { diagnostics: results, js: script });
-    }
+    });
 }
 
 export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
