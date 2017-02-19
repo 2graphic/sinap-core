@@ -29,6 +29,8 @@ export interface FileService {
     directoryByName(fullName: string): Promise<Directory>;
     requestSaveFile(): Promise<File>;
     requestFiles(): Promise<File[]>;
+    joinPath(...parts: string[]): string;
+    getModuleFile(nodePath: string): string; // This is the only synchronous function for the plugin-loader.
 }
 
 export interface AppLocations {

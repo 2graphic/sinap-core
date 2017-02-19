@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as fs from "fs";
+import { File, FileService } from "./files";
 
 import { Plugin } from "./plugin";
 
@@ -16,28 +16,31 @@ const options: ts.CompilerOptions = {
 /**
  * An abstract representation of a plugin 
  */
-export function loadPlugin(pluginLocation: string) {
+export function loadPlugin(pluginLocation: File, fileService: FileService): Promise<Plugin> {
     let script: string | undefined = undefined;
-    const host = createCompilerHost(new Map([
-        ["plugin.ts", fs.readFileSync(pluginLocation, "utf-8")],
-        ["plugin-stub.ts", require("!!raw-loader!../sinap-includes/plugin-stub.ts")],
-    ]), options, (_, content) => {
-        // TODO: actually use AMD for cicular dependencies
-        script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
-    });
+    const pluginStub = require("!!raw-loader!../sinap-includes/plugin-stub.ts");
+    return pluginLocation.readData().then((pluginScript) => {
+        const host = createCompilerHost(new Map([
+            ["plugin.ts", pluginScript],
+            ["plugin-stub.ts", pluginStub],
+        ]), options, (_, content) => {
+            // TODO: actually use AMD for cicular dependencies
+            script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
+        }, fileService);
 
-    const program = ts.createProgram(["plugin-stub.ts"], options, host);
-    // TODO: only compute if asked for.
-    const results = {
-        global: program.getGlobalDiagnostics(),
-        syntactic: program.getSyntacticDiagnostics(),
-        semantic: program.getSemanticDiagnostics(),
+        const program = ts.createProgram(["plugin-stub.ts"], options, host);
+        // TODO: only compute if asked for.
+        const results = {
+            global: program.getGlobalDiagnostics(),
+            syntactic: program.getSyntacticDiagnostics(),
+            semantic: program.getSemanticDiagnostics(),
+        }
+        program.emit();
+        if (script === undefined) {
+            throw Error("failed to emit");;
+        }
+        return new Plugin(program, { diagnostics: results, js: script });
     }
-    program.emit();
-    if (script === undefined) {
-        throw Error("failed to emit");;
-    }
-    return new Plugin(program, { diagnostics: results, js: script });
 }
 
 export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
@@ -62,7 +65,7 @@ export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
     }
 }
 
-function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void): ts.CompilerHost {
+function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void, fileService: FileService): ts.CompilerHost {
     return {
         getSourceFile: (fileName) => {
             let source = files.get(fileName);
@@ -71,7 +74,7 @@ function createCompilerHost(files: Map<string, string>, options: ts.CompilerOpti
                 if (fileName.indexOf("/") !== -1) {
                     throw Error("no relative/absolute paths here");;
                 }
-                source = fs.readFileSync("node_modules/typescript/lib/" + fileName, "utf-8");
+                source = fileService.getModuleFile(fileService.joinPath("typescript,", "lib", fileName));
             }
 
             // any to suppress strict error about undefined
