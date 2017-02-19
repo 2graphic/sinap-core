@@ -75,10 +75,21 @@ export class PluginTypeEnvironment extends TypeEnvironment {
     }
 }
 
+export interface CompilationDiagnostics {
+    global: ts.Diagnostic[];
+    semantic: ts.Diagnostic[];
+    syntactic: ts.Diagnostic[];
+}
+
+export class CompilationResult {
+    constructor(readonly js: string, readonly diagnostics: CompilationDiagnostics) {
+    }
+}
+
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, public results: { js: string, diagnostics: { global: ts.Diagnostic[], semantic: ts.Diagnostic[], syntactic: ts.Diagnostic[] } }) {
+    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[]) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 

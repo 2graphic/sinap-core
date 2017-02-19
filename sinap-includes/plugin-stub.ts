@@ -125,14 +125,23 @@ export class Color {
 
 export class DrawableNode {
     label: string;
+    color: Color;
     position: { x: number, y: number };
+    shape: "circle" | "square";
     borderColor: Color;
+    borderStyle: "solid" | "dotted" | "dashed";
+    borderWidth: number;
 }
 
 export class DrawableEdge {
+    label: string;
+    color: Color;
+    lineStyle: "solid" | "dotted" | "dashed";
+    lineWidth: number;
     source: DrawableNode;
     destination: DrawableNode;
-    label: string;
+    showSourceArrow: boolean;
+    showDestinationArrow: boolean;
 }
 
 export class DrawableGraph {
