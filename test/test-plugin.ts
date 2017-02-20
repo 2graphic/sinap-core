@@ -16,4 +16,11 @@ describe("plugin", () => {
         assert.equal("DFAGraph", ts[0][0].name);
         assert.equal("string", ts[0][1].name);
     });
+
+    it("handles overloads", () => {
+        const plugin = loadPlugin("test/start-functions.ts");
+        const ts = plugin.typeEnvironment.startTypes.map(m => m.map(n => n.name));
+
+        assert.deepEqual([['number', 'number'], ['string', 'string'],], ts);
+    });
 });
