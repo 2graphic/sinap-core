@@ -1,6 +1,5 @@
 import * as ts from "typescript";
-import { CoreElementKind, CoreElement, TypeEnvironment, Type, UnionType, ObjectType } from ".";
-import { printDiagnostics } from "../src/plugin-loader";
+import { CoreElementKind, CoreElement, TypeEnvironment, Type, UnionType, ObjectType, printDiagnostics } from ".";
 
 function unionToList(type: Type): [string, ObjectType][] {
     if (type instanceof UnionType) {

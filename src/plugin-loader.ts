@@ -55,6 +55,7 @@ function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Prom
     const pluginLocation = pluginInfo.interp;
     let script: string | undefined = undefined;
     const pluginStub = require("!!raw-loader!../sinap-includes/plugin-stub.ts");
+    const pluginProgram = require("!!raw-loader!../sinap-includes/plugin-program.ts");
     function emitter(_: string, content: string): void {
         // TODO: actually use AMD for cicular dependencies
         script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
@@ -63,6 +64,7 @@ function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Prom
         const host = createCompilerHost(new Map([
             ["plugin.ts", pluginScript],
             ["plugin-stub.ts", pluginStub],
+            ["plugin-program.ts", pluginProgram],
         ]), options, emitter, fileService);
 
         const program = ts.createProgram(["plugin-stub.ts"], options, host);
