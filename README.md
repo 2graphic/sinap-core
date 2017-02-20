@@ -1,5 +1,21 @@
 [![Build Status](https://travis-ci.org/2graphic/sinap-core.svg?branch=master)](https://travis-ci.org/2graphic/sinap-core)
 
+# Building
+
+Make sure you have npm installed. If you don't have typings, you can install it with 
+
+    npm install -g typings
+    
+Build with:
+
+    npm install
+    npm run build
+
+And test:
+
+    npm test
+
+
 # Sinap Plugins
 
 Sinap is an IDE and a framework for interpreters. A plugin fills in the blanks to make a complete IDE interpreter. At the bare minimum, a plugin my provide:
