@@ -1,6 +1,16 @@
 import * as ts from "typescript";
 import * as interfaces from "../sinap-includes/types-interfaces";
 
+export type IType = interfaces.Type;
+
+interface AssignableFrom {
+    isAssignableFrom(that: Type): boolean;
+}
+
+function hasAssignableFrom(t: Type | AssignableFrom): t is AssignableFrom {
+    return (t as any).isAssignableFrom !== undefined;
+}
+
 /**
  * Store a mapping of typescript types to our wrappers.
  * 
@@ -31,23 +41,43 @@ export class TypeEnvironment {
         this.types.set(type, wrapped);
         return wrapped;
     }
+
+    getAnyType() { return this.getType(this.checker.getAnyType()); }
+    getStringType() { return this.getType(this.checker.getStringType()); }
+    getNumberType() { return this.getType(this.checker.getNumberType()); }
+    getBooleanType() { return this.getType(this.checker.getBooleanType()); }
+    getVoidType() { return this.getType(this.checker.getVoidType()); }
+    getUndefinedType() { return this.getType(this.checker.getUndefinedType()); }
+    getNullType() { return this.getType(this.checker.getNullType()); }
+    getESSymbolType() { return this.getType(this.checker.getESSymbolType()); }
+    getNeverType() { return this.getType(this.checker.getNeverType()); }
+    getUnknownType() { return this.getType(this.checker.getUnknownType()); }
+    getStringLiteralType(text: string) { return this.getType(this.checker.getStringLiteralType(text)); };
+    getNumberLiteralType(text: string) { return this.getType(this.checker.getNumberLiteralType(text)); };
+    getFalseType() { return this.getType(this.checker.getFalseType()); }
+    getTrueType() { return this.getType(this.checker.getTrueType()); }
 }
 
 export class Type implements interfaces.Type {
-    readonly name: string;
+    get name() {
+        return this.env.checker.typeToString(this.type);
+    }
     // TODO: protect the arguments
     /**
      * Never call this manually, use getType on the appropriate 
      * TypeEnvironment
      */
     constructor(public env: TypeEnvironment, public type: ts.Type) {
-        this.name = env.checker.typeToString(type);
     }
 
     /**
      * Return if this type is assignable to that type
      */
     public isAssignableTo(that: Type) {
+        // TODO: this is so funky
+        if (hasAssignableFrom(that)) {
+            return that.isAssignableFrom(this);
+        }
         return this.env.checker.isAssignableTo(this.type, that.type);
     }
 }
@@ -58,6 +88,35 @@ export class UnionType extends Type implements interfaces.UnionType {
     constructor(env: TypeEnvironment, type: ts.UnionType) {
         super(env, type);
         this.types = type.types.map(t => this.env.getType(t));
+    }
+}
+
+/**
+ * Don't call `.type` on this, it is mocked
+ */
+export class FakeUnionType implements interfaces.Type {
+    constructor(public types: Type[]) {
+    }
+
+    /**
+     * Return if this type is assignable to that type
+     */
+    public isAssignableTo(that: Type, cond = (that: UnionType) => (acc: boolean, t: Type, i: number) => acc && t.isAssignableTo(that.types[i])) {
+        if ((that.type as any).intrinsicName === 'any') {
+            return true;
+        }
+        if (that instanceof UnionType) {
+            return this.types.reduce(cond(that), true);
+        }
+        return false;
+    }
+
+    public isAssignableFrom(that: Type) {
+        return this.isAssignableTo(that, (that) => (acc, t, i) => acc && that.types[i].isAssignableTo(t));
+    }
+
+    get name() {
+        return this.types.map(t => t.name).join(" | ");
     }
 }
 

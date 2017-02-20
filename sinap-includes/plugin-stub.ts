@@ -1,4 +1,5 @@
 import * as plugin from "./plugin";
+import { PluginProgram, isError } from "./plugin-program";
 
 interface INode {
     parents: IEdge[];
@@ -88,14 +89,24 @@ export function deserialize(pojo: SerialJSO): Graph {
     return graph;
 }
 
-export class Program {
+export class Program implements PluginProgram {
     private graph: Graph;
     constructor(graph: SerialJSO) {
         this.graph = deserialize(graph);
     }
-    run(input: any) {
+
+    validate() {
+        // TODO: improve if plugin defines a validate function
+        const res = this.run([]);
+        if (isError(res)) {
+            return [res.error];
+        }
+        return [];
+    }
+
+    run(input: any[]) {
         try {
-            let current = plugin.start(this.graph, input);
+            let current = (plugin as any).start(this.graph, ...input);
             const states: plugin.State[] = [];
             while (current instanceof plugin.State) {
                 states.push(current);

@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, Plugin } from "../src/";
+import { loadPluginDir, CoreModel, Plugin, CoreValue, Program } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -127,33 +127,35 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, dfa);
+            const stringType = dfa.typeEnvironment.getStringType();
 
             let results;
-            results = prog.run('11');
+            results = prog.run([new CoreValue(stringType, '11')]);
             assert.equal(3, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
-            results = prog.run('');
+            assert.equal(true, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '')]);
             assert.equal(1, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
-            results = prog.run('101');
+            assert.equal(true, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '101')]);
             assert.equal(4, results.states.length, "correct number of states");
-            assert.equal(false, results.result, "correct value");
-            results = prog.run('1000');
+            assert.equal(false, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '1000')]);
             assert.equal(5, results.states.length, "correct number of states");
-            assert.equal(false, results.result, "correct value");
-            results = prog.run('1001');
+            assert.equal(false, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '1001')]);
             assert.equal(5, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
-            results = prog.run('01');
+            assert.equal(true, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '01')]);
             assert.equal(3, results.states.length, "correct number of states");
-            assert.equal(false, results.result, "correct value");
-            results = prog.run('011');
+            assert.equal(false, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '011')]);
             assert.equal(4, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
+            assert.equal(true, results.result.data, "correct value");
 
             for (let x = 0; x < 10000; x++) {
-                assert.equal(x % 3 == 0, prog.run(x.toString(2)).result);
+                assert.equal(x % 3 == 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
             }
 
         });
@@ -254,9 +256,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, dfa);
+            const stringType = dfa.typeEnvironment.getStringType();
 
-            assert(prog.run('11').error !== undefined, "allows multiple start states");
+            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(dfa, {
@@ -355,9 +359,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, dfa);
+            const stringType = dfa.typeEnvironment.getStringType();
 
-            assert(prog.run('11').error !== undefined, "allows zero start states");
+            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
         });
         it("checks for empty transitions", () => {
             const model = new CoreModel(dfa, {
@@ -456,9 +462,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, dfa);
+            const stringType = dfa.typeEnvironment.getStringType();
 
-            assert(prog.run('11').error !== undefined, "allows empty transitions");
+            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows empty transitions");
         });
         it("checks for two character transitions", () => {
             const model = new CoreModel(dfa, {
@@ -557,9 +565,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, dfa);
+            const stringType = dfa.typeEnvironment.getStringType();
 
-            assert(prog.run('11').error !== undefined, "allows two character transitions");
+            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
         });
     });
     describe("nfa", () => {
@@ -667,33 +677,35 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, nfa);
+            const stringType = nfa.typeEnvironment.getStringType();
 
             let results;
-            results = prog.run('11');
+            results = prog.run([new CoreValue(stringType, '11')]);
             assert.equal(3, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
-            results = prog.run('');
+            assert.equal(true, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '')]);
             assert.equal(1, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
-            results = prog.run('101');
+            assert.equal(true, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '101')]);
             assert.equal(4, results.states.length, "correct number of states");
-            assert.equal(false, results.result, "correct value");
-            results = prog.run('1000');
+            assert.equal(false, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '1000')]);
             assert.equal(5, results.states.length, "correct number of states");
-            assert.equal(false, results.result, "correct value");
-            results = prog.run('1001');
+            assert.equal(false, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '1001')]);
             assert.equal(5, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
-            results = prog.run('01');
+            assert.equal(true, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '01')]);
             assert.equal(3, results.states.length, "correct number of states");
-            assert.equal(false, results.result, "correct value");
-            results = prog.run('011');
+            assert.equal(false, results.result.data, "correct value");
+            results = prog.run([new CoreValue(stringType, '011')]);
             assert.equal(4, results.states.length, "correct number of states");
-            assert.equal(true, results.result, "correct value");
+            assert.equal(true, results.result.data, "correct value");
 
             for (let x = 0; x < 10000; x++) {
-                assert.equal(x % 3 == 0, prog.run(x.toString(2)).result);
+                assert.equal(x % 3 == 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
             }
 
         });
@@ -794,9 +806,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, nfa);
+            const stringType = nfa.typeEnvironment.getStringType();
 
-            assert(prog.run('11').error !== undefined, "allows multiple start states");
+            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(nfa, {
@@ -895,9 +909,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, nfa);
+            const stringType = nfa.typeEnvironment.getStringType();
 
-            assert(prog.run('11').error !== undefined, "allows zero start states");
+            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
         });
         it("allows empty transitions", () => {
             const model = new CoreModel(nfa, {
@@ -996,9 +1012,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, nfa);
+            const stringType = nfa.typeEnvironment.getStringType();
 
-            prog.run('11');
+            prog.run([new CoreValue(stringType, '11')]);
         });
         it("checks for two character transitions", () => {
             const model = new CoreModel(nfa, {
@@ -1097,9 +1115,11 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, nfa);
+            const stringType = nfa.typeEnvironment.getStringType();
 
-            assert(prog.run('11').error !== undefined, "allows two character transitions");
+            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
         });
         it("supports non-determinism", () => {
             const model = new CoreModel(nfa, {
@@ -1162,12 +1182,14 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, nfa);
+            const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.equal(true, prog.run('11').result);
-            assert.equal(true, prog.run('10001').result);
-            assert.equal(true, prog.run('0001').result);
-            assert.equal(false, prog.run('1100').result);
+            assert.equal(true, prog.run([new CoreValue(stringType, '11')]).result.data);
+            assert.equal(true, prog.run([new CoreValue(stringType, '10001')]).result.data);
+            assert.equal(true, prog.run([new CoreValue(stringType, '0001')]).result.data);
+            assert.equal(false, prog.run([new CoreValue(stringType, '1100')]).result.data);
         });
     });
 });

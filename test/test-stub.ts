@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, ObjectType, Plugin } from "../src/";
+import { loadPluginDir, CoreModel, ObjectType, Plugin, Program, CoreValue } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -180,19 +180,24 @@ describe("plugin stub", () => {
         });
 
         const [context, serialGraph] = setupTest(model, { global: { "plugin-stub": { "Program": null } } });
-        const prog = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
-        assert.equal(1, prog.run(456).states.length, "only one state");
-        assert.equal(123, prog.run(456).result, "correct value");
+        
+        const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+        const prog = new Program(pluginProg, plugin);
+        const numberType = plugin.typeEnvironment.getNumberType();
+
+        assert.equal(1, prog.run([new CoreValue(numberType, 456)]).states.length, "only one state");
+        assert.equal(123, prog.run([new CoreValue(numberType, 456)]).result.data, "correct value");
     });
 
     it("fails on bad graph", () => {
         const script = new vm.Script(plugin.results.js as string);
         const context = vm.createContext({ global: { "plugin-stub": { "Program": null } } });
         script.runInContext(context);
-        const prog = new (context as any).global['plugin-stub'].Program({ elements: [] });
-        if (!prog.run(456).error) {
-            throw new Error("fail");
-        }
+        const pluginProg = new (context as any).global['plugin-stub'].Program({ elements: [] });
+        const prog = new Program(pluginProg, plugin);
+        const numberType = plugin.typeEnvironment.getStringType();
+
+        assert.throws(()=>prog.run([new CoreValue(numberType, 456)]));
     });
 
     it("has sinap types", () => {
