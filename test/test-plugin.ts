@@ -10,7 +10,7 @@ describe("plugin", () => {
     it("provides start type info", () => {
         const plugin = loadPlugin("interpreters/dfa.ts");
         const ts = plugin.typeEnvironment.startTypes;
-        
+
         assert.equal(1, ts.length);
         assert.equal(2, ts[0].length);
         assert.equal("DFAGraph", ts[0][0].name);

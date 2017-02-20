@@ -43,14 +43,14 @@ export class PluginTypeEnvironment extends TypeEnvironment {
     }
 
     private getFunctionSignatures(name: string, node: ts.Node) {
-        const functionSymbol =  this.checker.getSymbolsInScope(node, ts.SymbolFlags.Function)
-            .filter((a)=>a.name === name)[0];
+        const functionSymbol = this.checker.getSymbolsInScope(node, ts.SymbolFlags.Function)
+            .filter((a) => a.name === name)[0];
         if (functionSymbol === undefined) {
             throw new Error(`function "${name}" not found`);
         }
         const functionType = this.checker.getTypeOfSymbol(functionSymbol);
         const sig = functionType.getCallSignatures();
-        return sig.map(s=>s.parameters.map(p=>this.getType(this.checker.getTypeOfSymbol(p))));
+        return sig.map(s => s.parameters.map(p => this.getType(this.checker.getTypeOfSymbol(p))));
     }
 
     constructor(program: ts.Program) {

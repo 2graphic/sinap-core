@@ -32,5 +32,5 @@ type Edges = Edge1 | Edge2
 type Graph = Graph1
 
 export function start() {
-    
+
 }

@@ -78,9 +78,9 @@ export function start(input: NFAGraph, data: string): State | boolean {
 
 export function step(current: State): State | boolean {
     if (current.inputLeft.length === 0) {
-        return current.active.reduce((a, b)=>b.isAcceptState == true || a, false);
+        return current.active.reduce((a, b) => b.isAcceptState == true || a, false);
     }
-    const destinations = current.active.reduce((dests, a)=>dests.concat(a.children), [] as NFAEdge[])
+    const destinations = current.active.reduce((dests, a) => dests.concat(a.children), [] as NFAEdge[])
         .filter(edge => edge.label === current.inputLeft[0])
         .map(edge => edge.destination);
 
