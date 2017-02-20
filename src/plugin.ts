@@ -32,7 +32,7 @@ export class PluginTypeEnvironment extends TypeEnvironment {
 
     public drawableTypes: Map<CoreElementKind, ObjectType>;
 
-    public startTypes: Type[][];
+    public startTypes: [Type[], Type][];
 
     lookupPluginType(n: string) {
         return this.getType(this.checker.lookupTypeAt(n, this.pluginSourceFile));
@@ -50,7 +50,11 @@ export class PluginTypeEnvironment extends TypeEnvironment {
         }
         const functionType = this.checker.getTypeOfSymbol(functionSymbol);
         const sig = functionType.getCallSignatures();
-        return sig.map(s => s.parameters.map(p => this.getType(this.checker.getTypeOfSymbol(p))));
+        return sig.map(s => 
+            [
+                s.getParameters().map(p => this.getType(this.checker.getTypeOfSymbol(p))),
+                this.getType(s.getReturnType())
+            ] as [Type[], Type]);
     }
 
     constructor(program: ts.Program) {

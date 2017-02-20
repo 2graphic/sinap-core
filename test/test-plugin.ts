@@ -9,18 +9,15 @@ describe("plugin", () => {
 
     it("provides start type info", () => {
         const plugin = loadPlugin("interpreters/dfa.ts");
-        const ts = plugin.typeEnvironment.startTypes;
+        const ts = plugin.typeEnvironment.startTypes.map(m => [m[0].map(n => n.name), m[1].name]);
 
-        assert.equal(1, ts.length);
-        assert.equal(2, ts[0].length);
-        assert.equal("DFAGraph", ts[0][0].name);
-        assert.equal("string", ts[0][1].name);
+        assert.deepEqual([[['DFAGraph', 'string'], 'boolean | State']], ts);
     });
 
     it("handles overloads", () => {
         const plugin = loadPlugin("test/start-functions.ts");
-        const ts = plugin.typeEnvironment.startTypes.map(m => m.map(n => n.name));
+        const ts = plugin.typeEnvironment.startTypes.map(m => [m[0].map(n => n.name), m[1].name]);
 
-        assert.deepEqual([['number', 'number'], ['string', 'string'],], ts);
+        assert.deepEqual([[['number', 'number'], 'number'], [['string', 'string'], 'string'],], ts);
     });
 });
