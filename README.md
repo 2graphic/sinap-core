@@ -9,6 +9,7 @@ Make sure you have npm installed. If you don't have typings, you can install it 
 Build with:
 
     npm install
+    typings install
     npm run build
 
 And test:
