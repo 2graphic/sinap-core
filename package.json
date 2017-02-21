@@ -18,7 +18,7 @@
     "verifyRelease": {
       "path": "cracks",
       "paths": [
-        "test/build/",
+        "test/",
         "package.json"
       ],
       "silent": false
