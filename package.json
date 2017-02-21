@@ -31,9 +31,11 @@
     "test": "if [ ! -z \"$BUILD_ON_TEST\" ]; then npm run build ; fi ; mocha test/build/index.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
+  "dependencies": {
+    "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true"
+  },
   "devDependencies": {
     "@types/node": "latest",
-    "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true",
     "cracks": "^3.1.2",
     "glob": "^7.1.1",
     "mocha": "^3.2.0",
