@@ -28,6 +28,7 @@
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
+    "typings": "typings install",
     "test": "if [ ! -z \"$BUILD_ON_TEST\" ]; then npm run build ; fi ; mocha test/build/index.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
@@ -43,6 +44,7 @@
     "semantic-release": "^6.3.2",
     "ts-loader": "2.0.0",
     "typescript-formatter": "latest",
+    "typings": "^2.1.0",
     "webpack": "2.2.1",
     "webpack-merge": "2.6.1",
     "webpack-node-externals": "1.5.4"

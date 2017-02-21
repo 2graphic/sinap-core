@@ -12,8 +12,7 @@ node_js:
 before_script:
 - npm prune
 script:
-- npm install -g typings
-- typings install
+- npm run typings
 - npm run build
 - npm test
 after_success:
