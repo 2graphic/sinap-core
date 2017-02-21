@@ -14,6 +14,16 @@
     "lib/",
     "sinap-includes/"
   ],
+  "release": {
+    "verifyRelease": {
+      "path": "cracks",
+      "paths": [
+        "test/build/",
+        "package.json"
+      ],
+      "silent": false
+    }
+  },
   "scripts": {
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
@@ -21,11 +31,10 @@
     "test": "mocha test/build/index.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
-  "dependencies": {
-    "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true"
-  },
   "devDependencies": {
     "@types/node": "latest",
+    "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true",
+    "cracks": "^3.1.2",
     "glob": "^7.1.1",
     "mocha": "^3.2.0",
     "raw-loader": "0.5.1",
