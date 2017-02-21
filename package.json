@@ -28,7 +28,7 @@
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
-    "test": "mocha test/build/index.js",
+    "test": "if [ ! -z \"$BUILD_ON_TEST\" ]; then npm run build ; fi ; mocha test/build/index.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "devDependencies": {
