@@ -2,14 +2,11 @@
 
 # Building
 
-Make sure you have npm installed. If you don't have typings, you can install it with 
-
-    npm install -g typings
-    
-Build with:
+Make sure you have npm installed. 
+Build:
 
     npm install
-    typings install
+    npm run typings
     npm run build
 
 And test:
