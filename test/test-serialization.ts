@@ -1,5 +1,6 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPlugin, Plugin, CoreModel } from "../src/";
+import { loadPluginDir, Plugin, CoreModel } from "../src/";
+import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 
 function roundTripJSO(plugin: Plugin, jso: any) {
@@ -15,8 +16,26 @@ function roundTripJSO(plugin: Plugin, jso: any) {
 }
 
 describe("Serialization", () => {
+    let firstPlugin: Plugin;
+    let secondPlugin: Plugin;
+
+    const fs = new LocalFileService();
+    function loadSerPlugin(name: string): Promise<Plugin> {
+        return fs.directoryByName(fs.joinPath('test', 'interpreters', 'serial', name))
+            .then((directory) => loadPluginDir(directory, fs));
+    }
+
+    before((done) => {
+        Promise.all([loadSerPlugin('first'), loadSerPlugin('second')])
+        .then(([first, second]) => {
+            firstPlugin = first;
+            secondPlugin = second;
+            done();
+        });
+    });
+
     it("one", () => {
-        const test = roundTripJSO(loadPlugin("test/definitions.ts"), {
+        const test = roundTripJSO(firstPlugin, {
             format: "sinap-file-format",
             kind: "TODO: implement this",
             version: "0.0.6",
@@ -42,7 +61,7 @@ describe("Serialization", () => {
     });
 
     it("two", () => {
-        const test = roundTripJSO(loadPlugin("test/definitions-for-serial.ts"), {
+        const test = roundTripJSO(secondPlugin, {
             format: "sinap-file-format",
             kind: "TODO: implement this",
             version: "0.0.6",
