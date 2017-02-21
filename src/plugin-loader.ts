@@ -1,7 +1,10 @@
 import * as ts from "typescript";
-import { File, FileService } from "./files";
+import { File, FileService, readAsJson, Directory } from "./files";
 
-import { Plugin } from "./plugin";
+import { Plugin, CompilationResult } from "./plugin";
+
+const pluginFileKey = 'plugin-file';
+const pluginKindKey = 'kind'
 
 const options: ts.CompilerOptions = {
     noEmitOnError: false,
@@ -13,10 +16,60 @@ const options: ts.CompilerOptions = {
     outFile: "result.js",
 };
 
+function nullMultiple(object: any, ...attrChain: string[]): boolean {
+    let current = object;
+    for(const attr of attrChain) {
+        if(!current || !current[attr]) {
+            return false;
+        } else {
+            current = current[attr];
+        }
+    }
+
+    return true;
+}
+
+class InterpreterInfo {
+    constructor(readonly interp: File, readonly pluginKind: string[]) {
+    }
+}
+
+export function loadPluginDir(directory: Directory, fileService: FileService): Promise<Plugin> {
+    return getInterpreterInfo(directory).then((interpreterInfo) => loadPlugin(interpreterInfo, fileService));
+}
+
+function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
+    return directory.getFiles().then((pluginFiles: File[]): Promise<InterpreterInfo> => {
+        const fileArr: [string, File][] = pluginFiles.map((file): [string, File] => [file.name, file]);
+        const fileMap = new Map(fileArr);
+        // TODO run npm install.
+        const npmFile = fileMap.get('package.json');
+        if (npmFile) {
+            return readAsJson(npmFile).then((pluginJson) => {
+                if (nullMultiple(pluginJson, 'sinap', pluginFileKey) && pluginJson.sinap[pluginKindKey]) {
+                    const pluginName: string = pluginJson.sinap[pluginFileKey];
+                    const pluginKind: string[] = pluginJson.sinap[pluginKindKey];
+                    const pluginFile = fileMap.get(pluginName);
+                    if (pluginFile) {
+                        return new InterpreterInfo(pluginFile, pluginKind)
+                    } else {
+                        return Promise.reject(`Could not find plugin interpreter at ${pluginName}`);
+                    }
+                } else {
+                    return Promise.reject(`package.json for ${directory.name} does not conform to schema.`);
+                }
+            });
+        } else {
+            return Promise.reject(`Could not find a package.json for ${directory.name}`);
+        }
+    });
+}
+
 /**
  * An abstract representation of a plugin 
  */
-export function loadPlugin(pluginLocation: File, fileService: FileService): Promise<Plugin> {
+function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Promise<Plugin> {
+    const pluginLocation = pluginInfo.interp;
     let script: string | undefined = undefined;
     const pluginStub = require("!!raw-loader!../sinap-includes/plugin-stub.ts");
     function emitter(_: string, content: string): void {
@@ -40,7 +93,8 @@ export function loadPlugin(pluginLocation: File, fileService: FileService): Prom
         if (script === undefined) {
             throw Error("failed to emit");;
         }
-        return new Plugin(program, { diagnostics: results, js: script });
+        const compInfo = new CompilationResult(script, results);
+        return new Plugin(program, compInfo, pluginInfo.pluginKind);
     });
 }
 

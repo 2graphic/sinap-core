@@ -18,6 +18,16 @@ export interface File extends NamedEntity {
     writeData(data: string): Promise<{}>;
 }
 
+export function readAsJson(file: File): Promise<any> {
+    return file.readData().then((fileData) => {
+        try {
+            return Promise.resolve(JSON.stringify(fileData));
+        } catch(err) {
+            return Promise.reject(`Could not parse ${file.name} as JSON.`);
+        }
+    });
+}
+
 export interface Directory extends NamedEntity {
     getSubDirectories(): Promise<Directory[]>;
     getFiles(): Promise<File[]>;
