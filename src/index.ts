@@ -6,3 +6,4 @@ export * from "./plugin";
 export * from "./files";
 export * from "./program";
 export * from "../sinap-includes/types-interfaces";
+export * from "./typecheck-json";
