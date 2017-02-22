@@ -3,5 +3,4 @@ export * from "./plugin-loader";
 export * from "./element";
 export * from "./plugin";
 
-import * as files from "./files";
-export { files };
+export * from "./files";

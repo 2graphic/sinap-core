@@ -1,5 +1,6 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPlugin, CoreModel, Plugin } from "../src/";
+import { loadPluginDir, CoreModel, Plugin } from "../src/";
+import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
 
@@ -15,8 +16,20 @@ describe("various interpreters", () => {
         return [context as any, serialGraph];
     }
 
+    const fs = new LocalFileService();
+    function loadTestPlugin(name: string): Promise<Plugin> {
+        return fs.directoryByName(fs.joinPath('interpreters', name))
+            .then((directory) => loadPluginDir(directory, fs));
+    }
+
     describe("dfa", () => {
-        const dfa = loadPlugin("interpreters/dfa.ts");
+        let dfa: Plugin;
+        before((done) => {
+            loadTestPlugin('dfa').then((dfaPlugin) => {
+                dfa = dfaPlugin;
+                done();
+            });
+        });
         it("computes divisibility", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
@@ -550,7 +563,13 @@ describe("various interpreters", () => {
         });
     });
     describe("nfa", () => {
-        const nfa = loadPlugin("interpreters/nfa.ts");
+        let nfa: Plugin;
+        before((done) => {
+            loadTestPlugin('nfa').then((nfaPlugin) => {
+                nfa = nfaPlugin;
+                done();
+            });
+        });
         it("computes divisibility", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",

@@ -1,10 +1,20 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPlugin, CoreModel, ObjectType } from "../src/";
+import { loadPluginDir, CoreModel, ObjectType, Plugin } from "../src/";
+import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
 
 describe("plugin stub", () => {
-    const plugin = loadPlugin("test/stub-test-definitions.ts");
+    let plugin: Plugin;
+    before((done) => {
+        const fs = new LocalFileService();
+        fs.directoryByName(fs.joinPath('test', 'stub-test-definitions.ts'))
+            .then((directory) => loadPluginDir(directory, fs))
+            .then((newPlugin) => {
+                plugin = newPlugin;
+                done();
+            });
+    });
     it("no dianostic errors", () => {
         assert.deepEqual({ global: [], syntactic: [], semantic: [] }, plugin.results.diagnostics);
     });
