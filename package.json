@@ -14,11 +14,22 @@
     "lib/",
     "sinap-includes/"
   ],
+  "release": {
+    "verifyRelease": {
+      "path": "cracks",
+      "paths": [
+        "test/",
+        "package.json"
+      ],
+      "silent": false
+    }
+  },
   "scripts": {
     "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
-    "test": "mocha test/build/index.js",
+    "typings": "typings install",
+    "test": "if [ ! -z \"$BUILD_ON_TEST\" ]; then npm run build ; fi ; mocha test/build/index.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "dependencies": {
@@ -26,12 +37,14 @@
   },
   "devDependencies": {
     "@types/node": "latest",
+    "cracks": "^3.1.2",
     "glob": "^7.1.1",
     "mocha": "^3.2.0",
     "raw-loader": "0.5.1",
     "semantic-release": "^6.3.2",
     "ts-loader": "2.0.0",
     "typescript-formatter": "latest",
+    "typings": "^2.1.0",
     "webpack": "2.2.1",
     "webpack-merge": "2.6.1",
     "webpack-node-externals": "1.5.4"

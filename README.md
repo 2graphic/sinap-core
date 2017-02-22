@@ -1,5 +1,19 @@
 [![Build Status](https://travis-ci.org/2graphic/sinap-core.svg?branch=master)](https://travis-ci.org/2graphic/sinap-core)
 
+# Building
+
+Make sure you have npm installed. 
+Build:
+
+    npm install
+    npm run typings
+    npm run build
+
+And test:
+
+    npm test
+
+
 # Sinap Plugins
 
 ## Setting Up a Plugin Build
