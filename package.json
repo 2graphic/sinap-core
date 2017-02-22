@@ -29,8 +29,8 @@
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
     "typings": "typings install",
-    "test": "mocha test/build/index.js",
-    "build:test": "npm run build && npm run test",
+    "test": "npm run build && npm run test:nobuild",
+    "test:nobuild": "mocha test/build/index.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "dependencies": {
