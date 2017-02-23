@@ -1,7 +1,5 @@
 import * as ts from "typescript";
-import { File, FileService, readAsJson, Directory } from "./files";
-
-import { Plugin, CompilationResult } from "./plugin";
+import { File, FileService, readAsJson, Directory, Plugin, CompilationResult } from ".";
 
 const pluginFileKey = 'plugin-file';
 const pluginKindKey = 'kind'
