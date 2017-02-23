@@ -25,12 +25,11 @@ describe("Serialization", () => {
             .then((directory) => loadPluginDir(directory, fs));
     }
 
-    before((done) => {
-        Promise.all([loadSerPlugin('first'), loadSerPlugin('second')])
+    before(() => {
+        return Promise.all([loadSerPlugin('first'), loadSerPlugin('second')])
         .then(([first, second]) => {
             firstPlugin = first;
             secondPlugin = second;
-            done();
         });
     });
 
