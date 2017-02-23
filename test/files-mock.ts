@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { File, Directory, FileService, AppLocations } from "../src/files";
+import { File, Directory, FileService, AppLocations } from "../src";
 
 function surroundSync<T>(func: () => T): Promise<T> {
     return new Promise<T>((resolve, reject) => {
