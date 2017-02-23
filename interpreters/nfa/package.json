@@ -22,5 +22,9 @@
   "bugs": {
     "url": "https://github.com/2graphic/sinap-core/issues"
   },
-  "homepage": "https://github.com/2graphic/sinap-core#readme"
+  "homepage": "https://github.com/2graphic/sinap-core#readme",
+  "sinap": {
+    "kind": ["Formal Languages", "NFA"],
+    "plugin-file": "nfa.ts"
+  }
 }

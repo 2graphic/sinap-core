@@ -8,7 +8,7 @@ describe("test ideal v2", () => {
     let plugin: Plugin;
     before(function(done) {
     const fileService = new LocalFileService();
-        fileService.directoryByName('test/idea-dfa-interpreter-v2').then((directory) => {
+        fileService.directoryByName('test/ideal-dfa-interpreter-v2').then((directory) => {
             return loadPluginDir(directory, fileService);
         })
         .then((locPlug) => {

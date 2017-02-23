@@ -8,7 +8,7 @@ describe("plugin stub", () => {
     let plugin: Plugin;
     before((done) => {
         const fs = new LocalFileService();
-        fs.directoryByName(fs.joinPath('test', 'stub-test-definitions.ts'))
+        fs.directoryByName(fs.joinPath('test', 'interpreters', 'stub'))
             .then((directory) => loadPluginDir(directory, fs))
             .then((newPlugin) => {
                 plugin = newPlugin;

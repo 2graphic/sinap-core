@@ -22,7 +22,7 @@ class LocalFile implements File {
     readData(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             // data is a string but something weird is going on.
-            fs.readFile(this.fullName, (err: any, data: any) => {
+            fs.readFile(this.fullName, 'utf8', (err: any, data: any) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -141,6 +141,6 @@ export class LocalFileService implements FileService {
     }
 
     getModuleFile(file: string): string {
-        return fs.readFileSync(path.join('node_modules', file)) as any;
+        return fs.readFileSync(path.join('node_modules', file), 'utf8') as any;
     }
 }
