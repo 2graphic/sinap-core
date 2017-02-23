@@ -1,7 +1,8 @@
 import * as ts from "typescript";
-import * as fs from "fs";
+import { File, FileService, readAsJson, Directory, Plugin, CompilationResult } from ".";
 
-import { Plugin } from "./plugin";
+const pluginFileKey = 'plugin-file';
+const pluginKindKey = 'kind'
 
 const options: ts.CompilerOptions = {
     noEmitOnError: false,
@@ -13,31 +14,71 @@ const options: ts.CompilerOptions = {
     outFile: "result.js",
 };
 
+function nullPromise<T>(obj: T, name: string): Promise<T> {
+    return obj? Promise.resolve(obj) : Promise.reject(`${name} may not be null.`);
+}
+
+class InterpreterInfo {
+    constructor(readonly interp: File, readonly pluginKind: string[]) {
+    }
+}
+
+export function loadPluginDir(directory: Directory, fileService: FileService): Promise<Plugin> {
+    return getInterpreterInfo(directory).then((interpreterInfo) => loadPlugin(interpreterInfo, fileService));
+}
+
+function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
+    return directory.getFiles().then((pluginFiles: File[]): Promise<InterpreterInfo> => {
+        const fileArr: [string, File][] = pluginFiles.map((file): [string, File] => [file.name, file]);
+        const fileMap = new Map(fileArr);
+        // TODO run npm install.
+        return nullPromise(fileMap.get('package.json'), `package.json for plugin ${directory.fullName}`)
+        .then((npmFile: File): Promise<InterpreterInfo> => {
+            return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, 'sinap'))
+                .then((sinapJson) => {
+                    const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
+                    const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
+                    return Promise.all([filePromise, pluginKind]);
+                })
+                .then(([pluginName, pluginKind]) => {
+                    return nullPromise(fileMap.get(pluginName), pluginName)
+                        .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind));
+                });
+        });
+    });
+}
+
 /**
  * An abstract representation of a plugin 
  */
-export function loadPlugin(pluginLocation: string) {
+function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Promise<Plugin> {
+    const pluginLocation = pluginInfo.interp;
     let script: string | undefined = undefined;
-    const host = createCompilerHost(new Map([
-        ["plugin.ts", fs.readFileSync(pluginLocation, "utf-8")],
-        ["plugin-stub.ts", require("!!raw-loader!../sinap-includes/plugin-stub.ts")],
-    ]), options, (_, content) => {
+    const pluginStub = require("!!raw-loader!../sinap-includes/plugin-stub.ts");
+    function emitter(_: string, content: string): void {
         // TODO: actually use AMD for cicular dependencies
         script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
-    });
+    }
+    return pluginLocation.readData().then((pluginScript) => {
+        const host = createCompilerHost(new Map([
+            ["plugin.ts", pluginScript],
+            ["plugin-stub.ts", pluginStub],
+        ]), options, emitter, fileService);
 
-    const program = ts.createProgram(["plugin-stub.ts"], options, host);
-    // TODO: only compute if asked for.
-    const results = {
-        global: program.getGlobalDiagnostics(),
-        syntactic: program.getSyntacticDiagnostics(),
-        semantic: program.getSemanticDiagnostics(),
-    }
-    program.emit();
-    if (script === undefined) {
-        throw Error("failed to emit");;
-    }
-    return new Plugin(program, { diagnostics: results, js: script });
+        const program = ts.createProgram(["plugin-stub.ts"], options, host);
+        // TODO: only compute if asked for.
+        const results = {
+            global: program.getGlobalDiagnostics(),
+            syntactic: program.getSyntacticDiagnostics(),
+            semantic: program.getSemanticDiagnostics(),
+        };
+        program.emit();
+        if (script === undefined) {
+            throw Error("failed to emit");;
+        }
+        const compInfo = new CompilationResult(script, results);
+        return new Plugin(program, compInfo, pluginInfo.pluginKind);
+    });
 }
 
 export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
@@ -62,16 +103,16 @@ export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
     }
 }
 
-function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void): ts.CompilerHost {
+function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void, fileService: FileService): ts.CompilerHost {
     return {
-        getSourceFile: (fileName) => {
+        getSourceFile: (fileName): ts.SourceFile => {
             let source = files.get(fileName);
             if (!source) {
                 // if we didn't bundle the source file, maybe it's a lib? 
                 if (fileName.indexOf("/") !== -1) {
                     throw Error("no relative/absolute paths here");;
                 }
-                source = fs.readFileSync("node_modules/typescript/lib/" + fileName, "utf-8");
+                source = fileService.getModuleFile(fileService.joinPath("typescript", "lib", fileName));
             }
 
             // any to suppress strict error about undefined

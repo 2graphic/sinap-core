@@ -16,6 +16,27 @@ And test:
 
 # Sinap Plugins
 
+## Setting Up a Plugin Build
+
+Plugins in Sinap are directory based and utilize a package.json as seen with NPM. While dependency resolution is not currently supported, in the future, Sinap will install dependencies with --ignore-scripts.
+
+Currently, the only information that Sinap looks at in the package.json is in a sinap object, i.e.
+
+```json
+{
+    "sinap": {
+        "kind": ["Formal Languages", "DFA"],
+        "plugin-file": "plugin.ts"
+    }
+}
+```
+
+sinap.kind is a hierarchical description of the plugin that must be unique for each plugin. It is intended to allow for easy conceptual grouping of related plugins and should not be used for long, elaborate names such as Java namespaces.
+
+sinap.plugin-file is the typescript file within the directory of the package.json which is the entry point for the plugin. Plugins may import other files within this directory (including from node_modules) which Sinap will resolve at runtime.
+
+## Plugin Typescript DSL Description
+
 Sinap is an IDE and a framework for interpreters. A plugin fills in the blanks to make a complete IDE interpreter. At the bare minimum, a plugin my provide:
 
  - Type information. This tells sinap what constitutes a valid graph so that sinap can allow users to generate valid graphs and feed them to the interpreter. 

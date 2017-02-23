@@ -1,5 +1,4 @@
-import { ObjectType } from "./types";
-import { Plugin } from "./plugin";
+import { Plugin, ObjectType } from ".";
 
 export enum CoreElementKind { Node, Edge, Graph };
 
