@@ -7,14 +7,14 @@ import * as vm from "vm";
 describe("test ideal v2", () => {
     let plugin: Plugin;
     before(function(done) {
-    const fileService = new LocalFileService();
+        const fileService = new LocalFileService();
         fileService.directoryByName('test/interpreters/ideal-dfa-interpreter-v2').then((directory) => {
             return loadPluginDir(directory, fileService);
         })
-        .then((locPlug) => {
-            plugin = locPlug;
-            done();
-        });
+            .then((locPlug) => {
+                plugin = locPlug;
+                done();
+            });
     });
     it("no dianostic errors", () => {
         assert.deepEqual({ global: [], syntactic: [], semantic: [] }, plugin.results.diagnostics);

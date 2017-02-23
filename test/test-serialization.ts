@@ -27,10 +27,10 @@ describe("Serialization", () => {
 
     before(() => {
         return Promise.all([loadSerPlugin('first'), loadSerPlugin('second')])
-        .then(([first, second]) => {
-            firstPlugin = first;
-            secondPlugin = second;
-        });
+            .then(([first, second]) => {
+                firstPlugin = first;
+                secondPlugin = second;
+            });
     });
 
     it("one", () => {

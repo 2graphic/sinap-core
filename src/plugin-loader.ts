@@ -15,7 +15,7 @@ const options: ts.CompilerOptions = {
 };
 
 function nullPromise<T>(obj: T, name: string): Promise<T> {
-    return obj? Promise.resolve(obj) : Promise.reject(`${name} may not be null.`);
+    return obj ? Promise.resolve(obj) : Promise.reject(`${name} may not be null.`);
 }
 
 class InterpreterInfo {
@@ -33,18 +33,18 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
         const fileMap = new Map(fileArr);
         // TODO run npm install.
         return nullPromise(fileMap.get('package.json'), `package.json for plugin ${directory.fullName}`)
-        .then((npmFile: File): Promise<InterpreterInfo> => {
-            return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, 'sinap'))
-                .then((sinapJson) => {
-                    const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
-                    const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
-                    return Promise.all([filePromise, pluginKind]);
-                })
-                .then(([pluginName, pluginKind]) => {
-                    return nullPromise(fileMap.get(pluginName), pluginName)
-                        .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind));
-                });
-        });
+            .then((npmFile: File): Promise<InterpreterInfo> => {
+                return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, 'sinap'))
+                    .then((sinapJson) => {
+                        const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
+                        const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
+                        return Promise.all([filePromise, pluginKind]);
+                    })
+                    .then(([pluginName, pluginKind]) => {
+                        return nullPromise(fileMap.get(pluginName), pluginName)
+                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind));
+                    });
+            });
     });
 }
 

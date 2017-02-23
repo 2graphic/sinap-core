@@ -49,7 +49,7 @@ export class PluginTypeEnvironment extends TypeEnvironment {
         }
         const functionType = this.checker.getTypeOfSymbol(functionSymbol);
         const sig = functionType.getCallSignatures();
-        return sig.map(s => 
+        return sig.map(s =>
             [
                 s.getParameters().map(p => this.getType(this.checker.getTypeOfSymbol(p))),
                 this.getType(s.getReturnType())
