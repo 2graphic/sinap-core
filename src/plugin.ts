@@ -1,6 +1,5 @@
 import * as ts from "typescript";
-import { CoreElementKind, CoreElement } from "./element";
-import { TypeEnvironment, Type, UnionType, ObjectType } from "./types";
+import { CoreElementKind, CoreElement, TypeEnvironment, Type, UnionType, ObjectType } from ".";
 import { printDiagnostics } from "../src/plugin-loader";
 
 function unionToList(type: Type): [string, ObjectType][] {
@@ -75,10 +74,21 @@ export class PluginTypeEnvironment extends TypeEnvironment {
     }
 }
 
+export interface CompilationDiagnostics {
+    global: ts.Diagnostic[];
+    semantic: ts.Diagnostic[];
+    syntactic: ts.Diagnostic[];
+}
+
+export class CompilationResult {
+    constructor(readonly js: string, readonly diagnostics: CompilationDiagnostics) {
+    }
+}
+
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, public results: { js: string, diagnostics: { global: ts.Diagnostic[], semantic: ts.Diagnostic[], syntactic: ts.Diagnostic[] } }) {
+    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[]) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 
