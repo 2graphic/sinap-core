@@ -31,12 +31,29 @@ export class PluginTypeEnvironment extends TypeEnvironment {
 
     public drawableTypes: Map<CoreElementKind, ObjectType>;
 
+    public startTypes: [Type[], Type][];
+
     lookupPluginType(n: string) {
         return this.getType(this.checker.lookupTypeAt(n, this.pluginSourceFile));
     }
 
     lookupSinapType(n: string) {
         return this.getType(this.checker.lookupTypeAt(n, this.sinapSourceFile));
+    }
+
+    private getFunctionSignatures(name: string, node: ts.Node) {
+        const functionSymbol = this.checker.getSymbolsInScope(node, ts.SymbolFlags.Function)
+            .filter((a) => a.name === name)[0];
+        if (functionSymbol === undefined) {
+            throw new Error(`function "${name}" not found`);
+        }
+        const functionType = this.checker.getTypeOfSymbol(functionSymbol);
+        const sig = functionType.getCallSignatures();
+        return sig.map(s => 
+            [
+                s.getParameters().map(p => this.getType(this.checker.getTypeOfSymbol(p))),
+                this.getType(s.getReturnType())
+            ] as [Type[], Type]);
     }
 
     constructor(program: ts.Program) {
@@ -47,6 +64,8 @@ export class PluginTypeEnvironment extends TypeEnvironment {
         this.drawableTypes.set(CoreElementKind.Node, this.lookupSinapType("DrawableNode") as ObjectType);
         this.drawableTypes.set(CoreElementKind.Edge, this.lookupSinapType("DrawableEdge") as ObjectType);
         this.drawableTypes.set(CoreElementKind.Graph, this.lookupSinapType("DrawableGraph") as ObjectType);
+
+        this.startTypes = this.getFunctionSignatures("start", program.getSourceFile("plugin.ts"));
 
         this.pluginTypes = new Map(["Nodes", "Edges", "Graph"]
             .map(k => [k, this.lookupPluginType(k)] as [string, Type])

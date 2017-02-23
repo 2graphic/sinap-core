@@ -30,3 +30,7 @@ class Graph1 {
 type Nodes = Node1 | Node2 | Node3
 type Edges = Edge1 | Edge2
 type Graph = Graph1
+
+export function start() {
+
+}
