@@ -9,7 +9,7 @@
     "url": "https://github.com/2graphic/sinap-core"
   },
   "main": "lib/index.js",
-  "typings": "lib/index",
+  "typings": "lib/src/index",
   "files": [
     "lib/",
     "sinap-includes/"
