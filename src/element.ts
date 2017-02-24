@@ -1,9 +1,9 @@
-import { Plugin, ObjectType, IType } from ".";
+import { Plugin, ObjectType, Type } from ".";
 
 export enum CoreElementKind { Node, Edge, Graph };
 
 export class CoreValue {
-    constructor(readonly type: IType, public data: any) {
+    constructor(readonly type: Type, public data: any) {
 
     }
 }

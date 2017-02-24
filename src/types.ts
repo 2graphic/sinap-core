@@ -1,15 +1,5 @@
 import * as ts from "typescript";
-import * as interfaces from "../sinap-includes/types-interfaces";
-
-export type IType = interfaces.Type;
-
-interface AssignableFrom {
-    isAssignableFrom(that: Type): boolean;
-}
-
-function hasAssignableFrom(t: Type | AssignableFrom): t is AssignableFrom {
-    return (t as any).isAssignableFrom !== undefined;
-}
+import { Type, UnionType, IntersectionType, ObjectType, TypeComparisons, isObjectType, isUnionType } from ".";
 
 /**
  * Store a mapping of typescript types to our wrappers.
@@ -18,7 +8,7 @@ function hasAssignableFrom(t: Type | AssignableFrom): t is AssignableFrom {
  * that we find. 
  */
 export class TypeEnvironment {
-    private types = new Map<ts.Type, Type>();
+    private types = new Map<ts.Type, WrappedScriptType>();
 
     constructor(public checker: ts.TypeChecker) {
     }
@@ -28,15 +18,15 @@ export class TypeEnvironment {
         if (t) {
             return t;
         }
-        let wrapped: Type;
+        let wrapped: WrappedScriptType;
         if (type.flags & ts.TypeFlags.Union) {
-            wrapped = new UnionType(this, type as ts.UnionType);
+            wrapped = new WrappedScriptUnionType(this, type as ts.UnionType);
         } else if (type.flags & ts.TypeFlags.Intersection) {
-            wrapped = new IntersectionType(this, type as ts.IntersectionType);
+            wrapped = new WrappedScriptIntersectionType(this, type as ts.IntersectionType);
         } else if (type.flags & ts.TypeFlags.Object) {
-            wrapped = new ObjectType(this, type as ts.ObjectType);
+            wrapped = new WrappedScriptObjectType(this, type as ts.ObjectType);
         } else {
-            wrapped = new Type(this, type);
+            wrapped = new WrappedScriptType(this, type);
         }
         this.types.set(type, wrapped);
         return wrapped;
@@ -58,7 +48,7 @@ export class TypeEnvironment {
     getTrueType() { return this.getType(this.checker.getTrueType()); }
 }
 
-export class Type implements interfaces.Type {
+export class WrappedScriptType implements Type {
     get name() {
         return this.env.checker.typeToString(this.type);
     }
@@ -73,55 +63,45 @@ export class Type implements interfaces.Type {
     /**
      * Return if this type is assignable to that type
      */
-    public isAssignableTo(that: Type) {
-        // TODO: this is so funky
-        if (hasAssignableFrom(that)) {
-            return that.isAssignableFrom(this);
+    public isAssignableTo(that: Type): boolean {
+        if (!(that instanceof WrappedScriptType)) {
+            return that.isAssignableFrom(this, true);
         }
         return this.env.checker.isAssignableTo(this.type, that.type);
     }
-}
-
-export class UnionType extends Type implements interfaces.UnionType {
-    types: Type[];
-
-    constructor(env: TypeEnvironment, type: ts.UnionType) {
-        super(env, type);
-        this.types = type.types.map(t => this.env.getType(t));
-    }
-}
-
-/**
- * Don't call `.type` on this, it is mocked
- */
-export class FakeUnionType implements interfaces.Type {
-    constructor(public types: Type[]) {
-    }
-
     /**
      * Return if this type is assignable to that type
      */
-    public isAssignableTo(that: Type, cond = (that: UnionType) => (acc: boolean, t: Type, i: number) => acc && t.isAssignableTo(that.types[i])) {
-        if ((that.type as any).intrinsicName === 'any') {
-            return true;
+    public isAssignableFrom(that: Type): boolean {
+        if (!(that instanceof WrappedScriptType)) {
+            return that.isAssignableTo(this, true);
         }
-        if (that instanceof UnionType) {
-            return this.types.reduce(cond(that), true);
+        return this.env.checker.isAssignableTo(that.type, this.type);
+    }
+    /**
+     * Return if this type is identical to that type
+     */
+    public isIdenticalTo(that: Type): boolean {
+        if (!(that instanceof WrappedScriptType)) {
+            return that.isIdenticalTo(this);
         }
-        return false;
-    }
-
-    public isAssignableFrom(that: Type) {
-        return this.isAssignableTo(that, (that) => (acc, t, i) => acc && that.types[i].isAssignableTo(t));
-    }
-
-    get name() {
-        return this.types.map(t => t.name).join(" | ");
+        return this.env.checker.isIdenticalTo(this.type, that.type);
     }
 }
 
-export class IntersectionType extends Type implements interfaces.IntersectionType {
-    types: Type[];
+export class WrappedScriptUnionType extends WrappedScriptType implements UnionType {
+    kind: "SinapUnionType" = "SinapUnionType";
+    types: Set<WrappedScriptType>;
+
+    constructor(env: TypeEnvironment, type: ts.UnionType) {
+        super(env, type);
+        this.types = new Set(type.types.map(t => this.env.getType(t)));
+    }
+}
+
+export class WrappedScriptIntersectionType extends WrappedScriptType implements IntersectionType {
+    kind: "SinapIntersectionType" = "SinapIntersectionType";
+    types: WrappedScriptType[];
 
     constructor(env: TypeEnvironment, type: ts.IntersectionType) {
         super(env, type);
@@ -129,8 +109,9 @@ export class IntersectionType extends Type implements interfaces.IntersectionTyp
     }
 }
 
-export class ObjectType extends Type implements interfaces.ObjectType {
-    readonly members = new Map<string, Type>();
+export class WrappedScriptObjectType extends WrappedScriptType implements ObjectType {
+    kind: "SinapObjectType" = "SinapObjectType";
+    readonly members = new Map<string, WrappedScriptType>();
     readonly prettyNames = new Map<string, string>();
 
     constructor(env: TypeEnvironment, type: ts.ObjectType) {
@@ -142,7 +123,7 @@ export class ObjectType extends Type implements interfaces.ObjectType {
         }
         this.type.symbol.members.forEach((value, key) => {
             const tsType = this.env.checker.getTypeOfSymbol(value);
-            let wrappingType: Type;
+            let wrappingType: WrappedScriptType;
             if (tsType === type) {
                 wrappingType = this;
             } else {
@@ -163,12 +144,12 @@ export class ObjectType extends Type implements interfaces.ObjectType {
     }
 }
 
-export function validateEdge(edge: ObjectType, source?: ObjectType, destination?: ObjectType): boolean {
+export function validateEdge(edge: WrappedScriptObjectType, source?: WrappedScriptObjectType, destination?: WrappedScriptObjectType): boolean {
     const destinationExpected = edge !== undefined ? edge.members.get("destination") : null;
     const sourceExpected = edge !== undefined ? edge.members.get("source") : null;
 
     // constrain that 0th is assignable to 1st
-    const constraints: [Type, Type][] = [];
+    const constraints: [WrappedScriptType, WrappedScriptType][] = [];
 
     if (destinationExpected && destination) {
         constraints.push([destination, destinationExpected]);
@@ -188,7 +169,7 @@ export function validateEdge(edge: ObjectType, source?: ObjectType, destination?
         addParentChildConstraint(source.members.get("children"));
     }
 
-    function addParentChildConstraint(listType?: Type) {
+    function addParentChildConstraint(listType?: WrappedScriptType) {
         // if there is actually the field declared
         if (listType) {
             if (listType.type.flags & ts.TypeFlags.Object) {
@@ -210,4 +191,92 @@ export function validateEdge(edge: ObjectType, source?: ObjectType, destination?
     }
 
     return constraints.reduce((prev, [t1, t2]) => prev ? t1.isAssignableTo(t2) : false, true);
+}
+
+export abstract class FakeType implements Type {
+    /**
+     * Return if this type is assignable to that type
+     */
+    public abstract isXTo(that: Type, X: keyof TypeComparisons): boolean;
+
+    public isAssignableTo(that: Type) {
+        return this.isXTo(that, "isAssignableTo");
+    }
+    public isAssignableFrom(that: Type) {
+        return this.isXTo(that, "isAssignableFrom");
+    }
+    public isIdenticalTo(that: Type) {
+        return this.isXTo(that, "isIdenticalTo");
+    }
+
+    abstract name: string;
+}
+
+export class FakeUnionType extends FakeType implements UnionType {
+    kind: "SinapUnionType" = "SinapUnionType";
+
+    constructor(readonly types: Set<Type>) {
+        super();
+    }
+
+    public isXTo(that: Type, X: keyof TypeComparisons): boolean {
+        if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === 'any') {
+            return true;
+        }
+        if (isUnionType(that)) {
+            if (this.types.size !== that.types.size) {
+                return false;
+            }
+
+            outerLoop: for (const type of this.types.values()) {
+                if (that.types.has(type)) {
+                    continue;
+                }
+                for (const thatType of that.types.values()) {
+                    if (type[X](thatType)) {
+                        continue outerLoop;
+                    }
+                }
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    get name() {
+        return [...this.types.values()].map(t => t.name).join(" | ");
+    }
+}
+
+export class FakeObjectType extends FakeType implements ObjectType {
+    kind: "SinapObjectType" = "SinapObjectType";
+
+    constructor(readonly members: Map<string, Type>) {
+        super();
+    }
+
+    public isXTo(that: Type, X: keyof TypeComparisons): boolean {
+        if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === 'any') {
+            return true;
+        }
+        if (isObjectType(that)) {
+            if (this.members.size !== that.members.size) {
+                return false;
+            }
+            for (const [key, type] of this.members.entries()) {
+                const thatType = that.members.get(key);
+                if (thatType === undefined) {
+                    return false;
+                }
+                if (!type[X](thatType)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    name = "SinapObjectType(Change this)";
 }

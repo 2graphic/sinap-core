@@ -1,12 +1,11 @@
 import { PluginProgram, isError } from "../sinap-includes/plugin-program";
-import { CoreValue, Plugin, IType, Type, UnionType, FakeUnionType } from ".";
+import { CoreValue, Plugin, Type, WrappedScriptUnionType, FakeUnionType, TypeEnvironment } from ".";
 
-function signatureAssignable(t1: IType[], t2: IType[]) {
+function signatureAssignable(t1: Type[], t2: Type[]) {
     return t1.reduce((a, v, i) => a && v.isAssignableTo(t2[i]), true)
 }
 
-function pickReturnType(argTypes: IType[], signatures: [Type[], Type][], stateType: Type): IType {
-    const checker = signatures[0][1].env.checker;
+function pickReturnType(argTypes: Type[], signatures: [Type[], Type][], stateType: Type, env: TypeEnvironment): Type {
     // find all the signatures that argTypes is assignable to
     const viableSignatures = signatures.filter(sig =>
         signatureAssignable(argTypes, sig[0].slice(1))
@@ -16,7 +15,7 @@ function pickReturnType(argTypes: IType[], signatures: [Type[], Type][], stateTy
         throw new Error("no matching function signatures found");
     }
 
-    const nonAnySigs = viableSignatures.filter(t => !checker.isIdenticalTo(t.type, checker.getAnyType()));
+    const nonAnySigs = viableSignatures.filter(t => !t.isIdenticalTo(env.getAnyType()));
 
     let bestSignature = nonAnySigs.pop();
     if (bestSignature === undefined) {
@@ -30,8 +29,8 @@ function pickReturnType(argTypes: IType[], signatures: [Type[], Type][], stateTy
         }
     }
 
-    if (bestSignature instanceof UnionType) {
-        return new FakeUnionType(bestSignature.types.filter(t => !checker.isIdenticalTo(t.type, stateType.type)));
+    if (bestSignature instanceof WrappedScriptUnionType) {
+        return new FakeUnionType(new Set([...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType))));
     }
 
     return bestSignature;
@@ -45,7 +44,7 @@ export class Program {
         return this.program.validate();
     }
 
-    runArguments: IType[][];
+    runArguments: Type[][];
     run(a: CoreValue[]): { states: CoreValue[], result: CoreValue } {
         const output = this.program.run(a.map(v => v.data));
         if (isError(output)) {
@@ -55,7 +54,7 @@ export class Program {
         return {
             states: output.states.map(s => new CoreValue(stateType, s)),
             result: new CoreValue(
-                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType),
+                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType, this.plugin.typeEnvironment),
                 output.result),
         };
     }

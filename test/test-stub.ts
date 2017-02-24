@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, ObjectType, Plugin, Program, CoreValue } from "../src/";
+import { loadPluginDir, CoreModel, Plugin, Program, CoreValue, isObjectType } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -202,7 +202,10 @@ describe("plugin stub", () => {
 
     it("has sinap types", () => {
         const color = plugin.typeEnvironment.lookupSinapType("Color")!;
-        const drawableNode = plugin.typeEnvironment.lookupSinapType("DrawableNode") as ObjectType;
+        const drawableNode = plugin.typeEnvironment.lookupSinapType("DrawableNode");
+        if (!isObjectType(drawableNode)) {
+            throw new Error("drawable node isn't object type");
+        }
         const borderColor = drawableNode.members.get("borderColor")!;
 
         assert.equal(true, borderColor.isAssignableTo(color));
