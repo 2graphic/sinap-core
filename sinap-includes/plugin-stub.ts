@@ -134,13 +134,15 @@ export class Color {
     }
 }
 
+export type Point = { x: number, y: number };
+
 export class DrawableNode {
     label: string;
     color: Color;
-    position: { x: number, y: number };
+    position: Point;
     shape: "circle" | "square" | "image";
     image: string;
-    anchorPoints: { x: number, y: number }[];
+    anchorPoints: Point[];
     borderColor: Color;
     borderStyle: "solid" | "dotted" | "dashed";
     borderWidth: number;
