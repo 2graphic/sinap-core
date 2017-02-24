@@ -260,7 +260,7 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(dfa, {
@@ -363,7 +363,7 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
         });
         it("checks for empty transitions", () => {
             const model = new CoreModel(dfa, {
@@ -466,7 +466,7 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows empty transitions");
+            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows empty transitions");
         });
         it("checks for two character transitions", () => {
             const model = new CoreModel(dfa, {
@@ -569,7 +569,7 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
+            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
         });
     });
     describe("nfa", () => {
@@ -810,7 +810,7 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(nfa, {
@@ -913,7 +913,7 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
         });
         it("allows empty transitions", () => {
             const model = new CoreModel(nfa, {
@@ -1119,7 +1119,7 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.throws(()=>prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
+            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
         });
         it("supports non-determinism", () => {
             const model = new CoreModel(nfa, {
