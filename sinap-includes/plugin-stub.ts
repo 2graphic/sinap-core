@@ -138,7 +138,9 @@ export class DrawableNode {
     label: string;
     color: Color;
     position: { x: number, y: number };
-    shape: "circle" | "square";
+    shape: "circle" | "square" | "image";
+    image: string;
+    anchorPoints: { x: number, y: number }[];
     borderColor: Color;
     borderStyle: "solid" | "dotted" | "dashed";
     borderWidth: number;
