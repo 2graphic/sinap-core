@@ -180,7 +180,7 @@ describe("plugin stub", () => {
         });
 
         const [context, serialGraph] = setupTest(model, { global: { "plugin-stub": { "Program": null } } });
-        
+
         const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
         const prog = new Program(pluginProg, plugin);
         const numberType = plugin.typeEnvironment.getNumberType();
@@ -197,7 +197,7 @@ describe("plugin stub", () => {
         const prog = new Program(pluginProg, plugin);
         const numberType = plugin.typeEnvironment.getStringType();
 
-        assert.throws(()=>prog.run([new CoreValue(numberType, 456)]));
+        assert.throws(() => prog.run([new CoreValue(numberType, 456)]));
     });
 
     it("has sinap types", () => {
