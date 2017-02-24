@@ -13,7 +13,9 @@ before_script:
 - npm prune
 script:
 - npm run typings
+- npm run format
 - npm test
+- git diff --exit-code HEAD
 after_success:
 - npm run semantic-release
 branches:
