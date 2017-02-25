@@ -1,4 +1,4 @@
-import { Type, ObjectType, UnionType, TypeEnvironment, isObjectType, isUnionType } from ".";
+import { Type, ObjectType, UnionType, TypeEnvironment, isObjectType, isUnionType, isTypeEnvironment } from ".";
 
 export class CoreValue {
     constructor(readonly type: Type, public data?: any) {
@@ -17,7 +17,7 @@ export class CoreObjectValue extends CoreValue {
         return makeValue(this.data[k], type);
     }
 
-    constructor(readonly type: ObjectType, data: {[a: string]: any}) {
+    constructor(readonly type: ObjectType, data: { [a: string]: any }) {
         // TODO: allow data to be undefined, so we can initilize it
         super(type, data);
     }
@@ -25,6 +25,7 @@ export class CoreObjectValue extends CoreValue {
 
 export class CoreUnionValue extends CoreValue {
     narrow() {
+        // TODO: actually narrow
         const iter = this.type.types.values();
         iter.next();
         return makeValue(this.data, iter.next().value);
@@ -40,12 +41,12 @@ export function makeValue(a: any, type: Type | TypeEnvironment) {
     if (a instanceof CoreValue) {
         a = a.data;
     }
-    if (type instanceof TypeEnvironment) {
+    if (isTypeEnvironment(type)) {
         // TODO: make this do cleverer inference
         type = type.getAnyType();
     }
 
-    let cons = CoreValue;    
+    let cons = CoreValue;
     if (isUnionType(type)) {
         cons = CoreUnionValue;
     }

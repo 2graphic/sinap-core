@@ -30,7 +30,7 @@ function pickReturnType(argTypes: Type[], signatures: [Type[], Type][], stateTyp
     }
 
     if (bestSignature instanceof WrappedScriptUnionType) {
-        return new FakeUnionType(new Set([...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType))));
+        return new FakeUnionType(env, new Set([...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType))));
     }
 
     return bestSignature;

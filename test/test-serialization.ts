@@ -105,7 +105,7 @@ describe("Serialization", () => {
         if (!(node2anon instanceof CoreObjectValue)) {
             throw new Error("node2anon is not an CoreObjectValue");
         }
-        
+
         const node1 = node2anon.value('n');
         if (!(node1 instanceof CoreObjectValue)) {
             throw new Error("node1 is not an element");

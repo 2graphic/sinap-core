@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { CoreElementKind, CoreElement, TypeEnvironment, WrappedScriptType, WrappedScriptUnionType, WrappedScriptObjectType, printDiagnostics } from ".";
+import { CoreElementKind, CoreElement, ScriptTypeEnvironment, WrappedScriptType, WrappedScriptUnionType, WrappedScriptObjectType, printDiagnostics } from ".";
 
 function unionToList(type: WrappedScriptType): [string, WrappedScriptObjectType][] {
     if (type instanceof WrappedScriptUnionType) {
@@ -23,7 +23,7 @@ function kindToKey(kind: CoreElementKind): string {
 }
 
 
-export class PluginTypeEnvironment extends TypeEnvironment {
+export class PluginTypeEnvironment extends ScriptTypeEnvironment {
     private pluginTypes: Map<string, Map<string, WrappedScriptObjectType>>;
     private pluginSourceFile: ts.SourceFile;
     private sinapSourceFile: ts.SourceFile;

@@ -1,15 +1,14 @@
-import { Type } from ".";
-import * as ts from "typescript";
+import { Type, isUnionType, isIntersectionType, isObjectType } from ".";
 
-function flattenUnions(type: ts.Type, acumulator?: ts.Type[]) {
+function flattenUnions(type: Type, acumulator?: Type[]) {
     if (!acumulator) {
         acumulator = [];
     }
-    if (!(type.flags & ts.TypeFlags.UnionOrIntersection)) {
+    if (!(isUnionType(type) || isIntersectionType(type))) {
         acumulator.push(type);
         return acumulator;
     }
-    for (const t of (type as ts.UnionOrIntersectionType).types) {
+    for (const t of type.types) {
         flattenUnions(t, acumulator);
     }
     return acumulator;
@@ -20,42 +19,34 @@ function flattenUnions(type: ts.Type, acumulator?: ts.Type[]) {
 /**
  * Check whether `value` conforms to the type `typeWrapped`
  */
-export function checkJSON(typeWrapped: Type, value: any, key?: string) {
-    const checker = typeWrapped.env.checker;
-    const type = typeWrapped.type;
-    const env = typeWrapped.env;
-    if (value === undefined && !(checker.isAssignableTo(checker.getUndefinedType(), type))) {
+export function checkJSON(type: Type, value: any, key?: string) {
+    const env = type.env;
+    if (value === undefined && !env.getUndefinedType().isAssignableTo(type)) {
         throw new Error(`missing field "${key}"`);
     }
-    if (ts.TypeFlags.Object & type.flags) {
+    if (isObjectType(type)) {
         // for object types we recurse except for arrays which we handle seperately
         // since typescript unifies symbols, if something is an array it's type's symbol
         // will be the same as the global Array type's symbol. 
 
         // in general this is where parameterized types should be handled, so we can deal
         // with type arguments, but that seems exceedingly difficult right now
-        if (type.symbol === checker.lookupGlobalType("Array").symbol) {
+        if (type.isArray()) {
             if (!Array.isArray(value)) {
                 throw new Error(`"${key}" should be an array type`);
             }
             value.forEach((v) => {
-                // not sure what type this actually is, 
-                // I found `typeArguments` in the debugger,
-                // this isn't super safe, but Idk where to get it
-                // grepping in typescript would probably turn up nice
-                // results. For now, `any` works
-                checkJSON(env.getType((type as any).typeArguments[0]), v)
+                checkJSON(type.typeArguments[0], v);
             });
         } else {
-            for (const k of type.getApparentProperties()) {
-                const type = checker.getTypeOfSymbol(k);
-                checkJSON(env.getType(type), value[k.getName()], (key !== undefined ? key + "." : "") + k.getName());
+            for (const [k, t] of type.members) {
+                checkJSON(t, value[k], (key !== undefined ? key + "." : "") + k);
             }
         }
     } else {
         const tofv = value === null ? "null" : typeof value;
-        if (flattenUnions(type).filter(t => checker.typeToString(t) === tofv).length === 0) {
-            throw new Error(`typeof "${key}" should be "${checker.typeToString(type)}" but is "${typeof value}"`);
+        if (flattenUnions(type).filter(t => t.name === tofv).length === 0) {
+            throw new Error(`typeof "${key}" should be "${type.name}" but is "${typeof value}"`);
         }
     }
 }

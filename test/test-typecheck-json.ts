@@ -2,7 +2,7 @@
 
 import * as assert from "assert";
 import * as ts from "typescript";
-import { checkJSON, TypeEnvironment } from "../src/"
+import { checkJSON, ScriptTypeEnvironment } from "../src/"
 
 describe("check-json", () => {
     const program = ts.createProgram(["test/check-json-simple-ts-file.ts"], {
@@ -10,7 +10,7 @@ describe("check-json", () => {
     });
 
     const checker = program.getTypeChecker();
-    const env = new TypeEnvironment(checker);
+    const env = new ScriptTypeEnvironment(checker);
     const classA = env.getType(checker.lookupTypeAt("A", program.getSourceFile("test/check-json-simple-ts-file.ts")));
     const classB = env.getType(checker.lookupTypeAt("B", program.getSourceFile("test/check-json-simple-ts-file.ts")));
     const classC = env.getType(checker.lookupTypeAt("C", program.getSourceFile("test/check-json-simple-ts-file.ts")));
