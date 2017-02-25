@@ -22,7 +22,7 @@ class LocalFile implements File {
     readData(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             // data is a string but something weird is going on.
-            fs.readFile(this.fullName, 'utf8', (err: any, data: any) => {
+            fs.readFile(this.fullName, "utf8", (err: any, data: any) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -111,9 +111,9 @@ class LocalDirectory implements Directory {
 
 export class LocalFileService implements FileService {
     getAppLocations(): Promise<AppLocations> {
-        const pluginPath = path.join('.', 'plugins');
+        const pluginPath = path.join(".", "plugins");
         const result: AppLocations = {
-            currentDirectory: new LocalDirectory('.'),
+            currentDirectory: new LocalDirectory("."),
             pluginDirectory: new LocalDirectory(pluginPath)
         };
 
@@ -141,6 +141,6 @@ export class LocalFileService implements FileService {
     }
 
     getModuleFile(file: string): string {
-        return fs.readFileSync(path.join('node_modules', file), 'utf8') as any;
+        return fs.readFileSync(path.join("node_modules", file), "utf8") as any;
     }
 }

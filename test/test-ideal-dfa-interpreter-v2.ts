@@ -9,7 +9,7 @@ describe("test ideal v2", () => {
 
     before(function(done) {
         const fileService = new LocalFileService();
-        fileService.directoryByName('test/interpreters/ideal-dfa-interpreter-v2').then((directory) => {
+        fileService.directoryByName("test/interpreters/ideal-dfa-interpreter-v2").then((directory) => {
             return loadPluginDir(directory, fileService);
         })
             .then((locPlug) => {
@@ -133,35 +133,35 @@ describe("test ideal v2", () => {
         });
 
         const [context, serialGraph] = setupTest(model);
-        const plugProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+        const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
         const prog = new Program(plugProg, plugin);
         const stringType = plugin.typeEnvironment.getStringType();
 
         let results;
-        results = prog.run([new CoreValue(stringType, '11')]);
+        results = prog.run([new CoreValue(stringType, "11")]);
         assert.equal(3, results.states.length, "correct number of states");
         assert.equal(true, results.result.data, "correct value");
-        results = prog.run([new CoreValue(stringType, '')]);
+        results = prog.run([new CoreValue(stringType, "")]);
         assert.equal(1, results.states.length, "correct number of states");
         assert.equal(true, results.result.data, "correct value");
-        results = prog.run([new CoreValue(stringType, '101')])
+        results = prog.run([new CoreValue(stringType, "101")]);
         assert.equal(4, results.states.length, "correct number of states");
         assert.equal(false, results.result.data, "correct value");
-        results = prog.run([new CoreValue(stringType, '1000')])
+        results = prog.run([new CoreValue(stringType, "1000")]);
         assert.equal(5, results.states.length, "correct number of states");
         assert.equal(false, results.result.data, "correct value");
-        results = prog.run([new CoreValue(stringType, '1001')])
+        results = prog.run([new CoreValue(stringType, "1001")]);
         assert.equal(5, results.states.length, "correct number of states");
         assert.equal(true, results.result.data, "correct value");
-        results = prog.run([new CoreValue(stringType, '01')])
+        results = prog.run([new CoreValue(stringType, "01")]);
         assert.equal(3, results.states.length, "correct number of states");
         assert.equal(false, results.result.data, "correct value");
-        results = prog.run([new CoreValue(stringType, '011')])
+        results = prog.run([new CoreValue(stringType, "011")]);
         assert.equal(4, results.states.length, "correct number of states");
         assert.equal(true, results.result.data, "correct value");
 
         for (let x = 0; x < 10000; x++) {
-            assert.equal(x % 3 == 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
+            assert.equal(x % 3 === 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
         }
 
     });
@@ -263,9 +263,9 @@ describe("test ideal v2", () => {
         const [context, serialGraph] = setupTest(model);
 
         for (let x = 0; x < 1000; x++) {
-            const plugProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(plugProg, plugin);
-            assert.equal(x % 3 == 0, prog.run([new CoreValue(plugin.typeEnvironment.getStringType(), x.toString(2))]).result.data);
+            assert.equal(x % 3 === 0, prog.run([new CoreValue(plugin.typeEnvironment.getStringType(), x.toString(2))]).result.data);
         }
 
     });

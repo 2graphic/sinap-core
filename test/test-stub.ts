@@ -8,7 +8,7 @@ describe("plugin stub", () => {
     let plugin: Plugin;
     before((done) => {
         const fs = new LocalFileService();
-        fs.directoryByName(fs.joinPath('test', 'interpreters', 'stub'))
+        fs.directoryByName(fs.joinPath("test", "interpreters", "stub"))
             .then((directory) => loadPluginDir(directory, fs))
             .then((newPlugin) => {
                 plugin = newPlugin;
@@ -181,7 +181,7 @@ describe("plugin stub", () => {
 
         const [context, serialGraph] = setupTest(model, { global: { "plugin-stub": { "Program": null } } });
 
-        const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+        const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
         const prog = new Program(pluginProg, plugin);
         const numberType = plugin.typeEnvironment.getNumberType();
 
@@ -193,7 +193,7 @@ describe("plugin stub", () => {
         const script = new vm.Script(plugin.results.js as string);
         const context = vm.createContext({ global: { "plugin-stub": { "Program": null } } });
         script.runInContext(context);
-        const pluginProg = new (context as any).global['plugin-stub'].Program({ elements: [] });
+        const pluginProg = new (context as any).global["plugin-stub"].Program({ elements: [] });
         const prog = new Program(pluginProg, plugin);
         const numberType = plugin.typeEnvironment.getStringType();
 
@@ -209,5 +209,5 @@ describe("plugin stub", () => {
         const borderColor = drawableNode.members.get("borderColor")!;
 
         assert.equal(true, borderColor.isAssignableTo(color));
-    })
+    });
 });

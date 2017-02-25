@@ -2,7 +2,7 @@
 
 import * as assert from "assert";
 import * as ts from "typescript";
-import { checkJSON, ScriptTypeEnvironment } from "../src/"
+import { checkJSON, ScriptTypeEnvironment } from "../src/";
 
 describe("check-json", () => {
     const program = ts.createProgram(["test/check-json-simple-ts-file.ts"], {

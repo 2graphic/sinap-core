@@ -17,7 +17,7 @@ describe("run the ideal interpreter v1", () => {
                 ],
                 isAcceptState: false,
             }
-        }
+        };
         it("1", () => {
             assert.equal(true, interpret(g, "1"));
         });
@@ -48,7 +48,7 @@ describe("run the ideal interpreter v1", () => {
                 ],
                 isAcceptState: false,
             }
-        }
+        };
         g.startState.children[0].destination.children.push({
             label: "0",
             destination: g.startState,

@@ -7,7 +7,7 @@ function unionToList(type: WrappedScriptType): [string, WrappedScriptObjectType]
     } else if (type instanceof WrappedScriptObjectType) {
         return [[type.name, type]];
     }
-    throw `type must be a union type or an object type.`
+    throw `type must be a union type or an object type.`;
 
 }
 
@@ -74,7 +74,7 @@ export class PluginTypeEnvironment extends ScriptTypeEnvironment {
     elementTypes(kind: CoreElementKind) {
         const type = this.pluginTypes.get(kindToKey(kind));
         if (type === undefined) {
-            throw Error("kind not found");;
+            throw Error("kind not found");
         }
         return type.keys();
     }
@@ -82,11 +82,11 @@ export class PluginTypeEnvironment extends ScriptTypeEnvironment {
     getElementType(kind: CoreElementKind, type: string): WrappedScriptObjectType {
         const t = this.pluginTypes.get(kindToKey(kind));
         if (t === undefined) {
-            throw Error("kind not found");;
+            throw Error("kind not found");
         }
         const ty = t.get(type);
         if (ty === undefined) {
-            throw Error("type not found");;
+            throw Error("type not found");
         }
         return ty;
     }

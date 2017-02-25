@@ -26,10 +26,10 @@ export class CoreModel {
 
     /**
      * Create a new CoreModel. If `pojo` is provided, build the model from the
-     * serial represnetation. 
-     * 
+     * serial represnetation.
+     *
      * Note that this modifies the pojo object given and once it is passed to this
-     * constructor, it should not be reused. 
+     * constructor, it should not be reused.
      */
     constructor(private plugin: Plugin, pojo?: SerialJSO) {
         if (pojo === undefined) {
@@ -39,12 +39,12 @@ export class CoreModel {
 
         // TODO: check correct plugin kind
         if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.6") {
-            throw Error("not a CoreModel");;
+            throw Error("not a CoreModel");
         }
 
         this.elements = pojo.elements.map((e) => this.plugin.makeElement(CoreElementKind[e.kind as any] as any, e.type));
 
-        // TODO: typecheck all values against plugin-declared. 
+        // TODO: typecheck all values against plugin-declared.
         const traverse = (a: any) => {
             if (typeof (a) !== "object") {
                 return;
@@ -57,7 +57,7 @@ export class CoreModel {
                     traverse(el);
                 }
             }
-        }
+        };
 
         traverse(pojo.elements);
 
@@ -79,13 +79,13 @@ export class CoreModel {
     removeElement(element: CoreElement) {
         const idx = this.elements.indexOf(element);
         if (idx === -1) {
-            throw Error("element doesn't exist");;
+            throw Error("element doesn't exist");
         }
         this.elements.splice(idx, 1);
     }
 
     /**
-     * Generate an acyclic JS object which can be used to reconstruct this 
+     * Generate an acyclic JS object which can be used to reconstruct this
      * model.
      */
     serialize(): SerialJSO {

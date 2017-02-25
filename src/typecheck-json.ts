@@ -27,7 +27,7 @@ export function checkJSON(type: Type, value: any, key?: string) {
     if (isObjectType(type)) {
         // for object types we recurse except for arrays which we handle seperately
         // since typescript unifies symbols, if something is an array it's type's symbol
-        // will be the same as the global Array type's symbol. 
+        // will be the same as the global Array type's symbol.
 
         // in general this is where parameterized types should be handled, so we can deal
         // with type arguments, but that seems exceedingly difficult right now

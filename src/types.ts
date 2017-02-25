@@ -3,9 +3,9 @@ import { Type, UnionType, IntersectionType, ObjectType, TypeComparisons, isObjec
 
 /**
  * Store a mapping of typescript types to our wrappers.
- * 
+ *
  * In order to avoid infinite loops, we need to cache the ones
- * that we find. 
+ * that we find.
  */
 export class ScriptTypeEnvironment implements TypeEnvironment {
     kind: "SinapTypeEnvironment" = "SinapTypeEnvironment";
@@ -58,7 +58,7 @@ export class WrappedScriptType implements Type {
     }
     // TODO: protect the arguments
     /**
-     * Never call this manually, use getType on the appropriate 
+     * Never call this manually, use getType on the appropriate
      * TypeEnvironment
      */
     constructor(public env: ScriptTypeEnvironment, public type: ts.Type) {
@@ -121,7 +121,7 @@ export class WrappedScriptObjectType extends WrappedScriptType implements Object
     constructor(env: ScriptTypeEnvironment, type: ts.ObjectType) {
         super(env, type);
         if (this.type.symbol === undefined || this.type.symbol.members === undefined) {
-            //throw Error("not an object type");;
+            // throw Error("not an object type");;
             // TODO: address this
             return;
         }
@@ -152,7 +152,7 @@ export class WrappedScriptObjectType extends WrappedScriptType implements Object
     }
 
     get typeArguments(): WrappedScriptType[] {
-        // not sure what type this actually is, 
+        // not sure what type this actually is,
         // I found `typeArguments` in the debugger,
         // this isn't super safe, but Idk where to get it
         // grepping in typescript would probably turn up nice
@@ -241,7 +241,7 @@ export class FakeUnionType extends FakeType implements UnionType {
     }
 
     public isXTo(that: Type, X: keyof TypeComparisons): boolean {
-        if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === 'any') {
+        if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === "any") {
             return true;
         }
         if (isUnionType(that)) {
@@ -278,7 +278,7 @@ export class FakeObjectType extends FakeType implements ObjectType {
     }
 
     public isXTo(that: Type, X: keyof TypeComparisons): boolean {
-        if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === 'any') {
+        if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === "any") {
             return true;
         }
         if (isObjectType(that)) {

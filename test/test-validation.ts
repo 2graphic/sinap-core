@@ -1,12 +1,12 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 
 import * as assert from "assert";
-import { validateEdge, WrappedScriptObjectType, loadPluginDir, Plugin } from "../src/"
+import { validateEdge, WrappedScriptObjectType, loadPluginDir, Plugin } from "../src/";
 import { LocalFileService } from "./files-mock";
 
 describe("isValidEdge", () => {
     const fs = new LocalFileService();
-    function loadTestPlugin(name: string, dirs = ['test', 'interpreters']): Promise<Plugin> {
+    function loadTestPlugin(name: string, dirs = ["test", "interpreters"]): Promise<Plugin> {
         return fs.directoryByName(fs.joinPath(...dirs.concat([name])))
             .then((directory) => loadPluginDir(directory, fs));
     }

@@ -2,7 +2,7 @@ import { PluginProgram, isError } from "../sinap-includes/plugin-program";
 import { CoreValue, Plugin, Type, WrappedScriptUnionType, FakeUnionType, TypeEnvironment } from ".";
 
 function signatureAssignable(t1: Type[], t2: Type[]) {
-    return t1.reduce((a, v, i) => a && v.isAssignableTo(t2[i]), true)
+    return t1.reduce((a, v, i) => a && v.isAssignableTo(t2[i]), true);
 }
 
 function pickReturnType(argTypes: Type[], signatures: [Type[], Type][], stateType: Type, env: TypeEnvironment): Type {

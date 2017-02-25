@@ -21,12 +21,12 @@ describe("Serialization", () => {
 
     const fs = new LocalFileService();
     function loadSerPlugin(name: string): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath('test', 'interpreters', 'serial', name))
+        return fs.directoryByName(fs.joinPath("test", "interpreters", "serial", name))
             .then((directory) => loadPluginDir(directory, fs));
     }
 
     before(() => {
-        return Promise.all([loadSerPlugin('first'), loadSerPlugin('second')])
+        return Promise.all([loadSerPlugin("first"), loadSerPlugin("second")])
             .then(([first, second]) => {
                 firstPlugin = first;
                 secondPlugin = second;
@@ -56,7 +56,7 @@ describe("Serialization", () => {
             ]
         });
 
-        assert.equal(true, test.elements[0].data['startState'].data.a);
+        assert.equal(true, test.elements[0].data["startState"].data.a);
     });
 
     it("two", () => {
@@ -91,7 +91,7 @@ describe("Serialization", () => {
             ]
         });
 
-        const startStateUnion = test.elements[0].value('startState');
+        const startStateUnion = test.elements[0].value("startState");
         if (!(startStateUnion instanceof CoreUnionValue)) {
             throw new Error("not a union of nodes");
         }
@@ -101,17 +101,17 @@ describe("Serialization", () => {
             throw new Error("start state is not an element");
         }
 
-        const node2anon = startState.value('b');
+        const node2anon = startState.value("b");
         if (!(node2anon instanceof CoreObjectValue)) {
             throw new Error("node2anon is not an CoreObjectValue");
         }
 
-        const node1 = node2anon.value('n');
+        const node1 = node2anon.value("n");
         if (!(node1 instanceof CoreObjectValue)) {
             throw new Error("node1 is not an element");
         }
 
-        assert.equal(true, node1.value('a').data);
+        assert.equal(true, node1.value("a").data);
         // TODO: uncomment
         // assert.equal(true, node1.value('a').type);
     });

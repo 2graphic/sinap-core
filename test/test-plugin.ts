@@ -6,7 +6,7 @@ import * as vm from "vm";
 
 describe("plugin", () => {
     const fs = new LocalFileService();
-    function loadTestPlugin(name: string, dirs = ['interpreters']): Promise<Plugin> {
+    function loadTestPlugin(name: string, dirs = ["interpreters"]): Promise<Plugin> {
         return fs.directoryByName(fs.joinPath(...dirs.concat([name])))
             .then((directory) => loadPluginDir(directory, fs));
     }
@@ -18,19 +18,19 @@ describe("plugin", () => {
     it("provides start type info", () => {
         return loadTestPlugin("dfa").then(plugin => {
             const ts = plugin.typeEnvironment.startTypes.map(m => [m[0].map(n => n.name), m[1].name]);
-            assert.deepEqual([[['DFAGraph', 'string'], 'boolean | State']], ts);
+            assert.deepEqual([[["DFAGraph", "string"], "boolean | State"]], ts);
         });
     });
 
     it("handles overloads", () => {
-        return loadTestPlugin("start-functions", ['test', 'interpreters']).then(plugin => {
+        return loadTestPlugin("start-functions", ["test", "interpreters"]).then(plugin => {
             const ts = plugin.typeEnvironment.startTypes.map(m => [m[0].map(n => n.name), m[1].name]);
             assert.deepEqual([
-                [['Graph', 'any', 'any'], 'any'],
-                [['Graph', 'number', 'number'], 'number'],
-                [['Graph', 'number', 'string'], 'number'],
-                [['Graph', 'string', 'string'], 'string'],
-                [['Graph', 'string', 'string'], 'string | number'],
+                [["Graph", "any", "any"], "any"],
+                [["Graph", "number", "number"], "number"],
+                [["Graph", "number", "string"], "number"],
+                [["Graph", "string", "string"], "string"],
+                [["Graph", "string", "string"], "string | number"],
             ], ts);
         });
     });
@@ -40,14 +40,14 @@ describe("plugin", () => {
         let stringType: Type;
         let numberType: Type;
         before(() => {
-            return loadTestPlugin("start-functions", ['test', 'interpreters']).then(plugin => {
+            return loadTestPlugin("start-functions", ["test", "interpreters"]).then(plugin => {
                 const script = new vm.Script(plugin.results.js as string);
 
                 const sandbox: any = { console: console, global: {} };
                 const context: any = vm.createContext(sandbox);
                 script.runInContext(context);
 
-                const pluginProgram = new context.global['plugin-stub'].Program({ elements: [] });
+                const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
 
                 program = new Program(pluginProgram, plugin);
                 // const anyType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getAnyType());
@@ -55,7 +55,7 @@ describe("plugin", () => {
                 numberType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getNumberType());
             });
         });
-        // TODO: make the commented out cases pass (non-urgent, this only applies if several types are given for the 
+        // TODO: make the commented out cases pass (non-urgent, this only applies if several types are given for the
         // start function)
 
         // it("handles any case", () => {
@@ -80,14 +80,14 @@ describe("plugin", () => {
         let stringType: Type;
         let numberType: Type;
         before(() => {
-            return loadTestPlugin("start-functions-2", ['test', 'interpreters']).then(plugin => {
+            return loadTestPlugin("start-functions-2", ["test", "interpreters"]).then(plugin => {
                 const script = new vm.Script(plugin.results.js as string);
 
                 const sandbox: any = { console: console, global: {} };
                 const context: any = vm.createContext(sandbox);
                 script.runInContext(context);
 
-                const pluginProgram = new context.global['plugin-stub'].Program({ elements: [] });
+                const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
 
                 program = new Program(pluginProgram, plugin);
                 // const anyType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getAnyType());

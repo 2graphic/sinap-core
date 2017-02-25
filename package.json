@@ -24,8 +24,10 @@
     }
   },
   "scripts": {
-    "format": "tsfmt -r ./src/*.ts && tsfmt -r ./test/*.ts && tsfmt -r ./sinap-includes/*.ts",
-    "format:verify": "tsfmt --verify ./src/*.ts && tsfmt --verify ./test/*.ts && tsfmt --verify ./sinap-includes/*.ts",
+    "formater": "tsfmt -r ./src/*.ts && tsfmt -r ./test/*.ts && tsfmt -r ./sinap-includes/*.ts",
+    "formater:verify": "tsfmt --verify ./src/*.ts && tsfmt --verify ./test/*.ts && tsfmt --verify ./sinap-includes/*.ts",
+    "format": "npm run formater && tslint --project . --fix",
+    "lint": "npm run formater:verify && tslint --project .",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
     "typings": "typings install",
@@ -44,7 +46,8 @@
     "raw-loader": "0.5.1",
     "semantic-release": "^6.3.2",
     "ts-loader": "2.0.0",
-    "typescript-formatter": "latest",
+    "tslint": "^4.4.2",
+    "typescript-formatter": "^4.1.2",
     "typings": "^2.1.0",
     "webpack": "2.2.1",
     "webpack-merge": "2.6.1",
