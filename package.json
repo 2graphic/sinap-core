@@ -11,8 +11,7 @@
   "main": "lib/index.js",
   "typings": "lib/src/index",
   "files": [
-    "lib/",
-    "sinap-includes/"
+    "lib/"
   ],
   "release": {
     "verifyRelease": {
