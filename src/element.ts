@@ -1,17 +1,11 @@
-import { Plugin, ObjectType, Type } from ".";
+import { Plugin, ObjectType, CoreObjectValue } from ".";
 
 export enum CoreElementKind { Node, Edge, Graph };
-
-export class CoreValue {
-    constructor(readonly type: Type, public data: any) {
-
-    }
-}
 
 /**
  * Represents nodes, edges, and graphs.
  */
-export class CoreElement extends CoreValue {
+export class CoreElement extends CoreObjectValue {
     constructor(readonly type: ObjectType, readonly kind: CoreElementKind) {
         super(type, {});
     }
