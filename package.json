@@ -24,7 +24,8 @@
     }
   },
   "scripts": {
-    "format": "tsfmt -r --baseDir ./src/ && tsfmt -r --baseDir ./tests/",
+    "format": "tsfmt -r ./src/*.ts && tsfmt -r ./test/*.ts && tsfmt -r ./sinap-includes/*.ts",
+    "format:verify": "tsfmt --verify ./src/*.ts && tsfmt --verify ./test/*.ts && tsfmt --verify ./sinap-includes/*.ts",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
     "build": "webpack",
     "typings": "typings install",
