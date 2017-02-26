@@ -1,6 +1,6 @@
 {
     "sinap": {
-        "kind": ["Formal Langauges", "DFA"],
+        "kind": ["Formal Languages", "DFA"],
         "plugin-file": "plugin.ts"
     }
 }

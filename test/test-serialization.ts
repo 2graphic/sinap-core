@@ -36,8 +36,8 @@ describe("Serialization", () => {
     it("one", () => {
         const test = roundTripJSO(firstPlugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ['test'],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Graph",
@@ -62,8 +62,8 @@ describe("Serialization", () => {
     it("two", () => {
         const test = roundTripJSO(secondPlugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ['test'],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Graph",
