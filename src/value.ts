@@ -1,23 +1,13 @@
-import { Type, ObjectType, UnionType, TypeEnvironment, isObjectType, isUnionType, isTypeEnvironment } from ".";
+import { Type, ObjectType, UnionType, TypeEnvironment, isObjectType, isUnionType, isTypeEnvironment, checkJSON } from ".";
 
 export class CoreValue {
-    constructor(readonly type: Type, public data?: any) {
-        if (data === undefined) {
-            // TODO: initilize it based on `Type`
-        }
+    constructor(readonly type: Type, public data: any | { [a: string]: CoreValue }) {
+        // TODO: initilize it based on `Type`
     }
 }
 
 export class CoreObjectValue extends CoreValue {
-    value(k: string) {
-        const type = this.type.members.get(k);
-        if (type === undefined) {
-            throw `key "${k}" not found`;
-        }
-        return makeValue(this.data[k], type);
-    }
-
-    constructor(readonly type: ObjectType, data: { [a: string]: any }) {
+    constructor(readonly type: ObjectType, data: { [a: string]: CoreValue }) {
         // TODO: allow data to be undefined, so we can initilize it
         super(type, data);
     }
@@ -25,10 +15,19 @@ export class CoreObjectValue extends CoreValue {
 
 export class CoreUnionValue extends CoreValue {
     narrow() {
-        // TODO: actually narrow
-        const iter = this.type.types.values();
-        iter.next();
-        return makeValue(this.data, iter.next().value);
+        const possibleTypes = [...this.type.types].filter((type) => {
+            try {
+                checkJSON(type, this.data);
+            } catch (err) {
+                return false;
+            }
+            return true;
+        });
+
+        if (possibleTypes.length !== 1) {
+            throw new Error("cannot narrow");
+        }
+        return makeValue(this.data, possibleTypes[0]);
     }
 
     constructor(readonly type: UnionType, data: any) {
