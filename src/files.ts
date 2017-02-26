@@ -44,6 +44,6 @@ export interface FileService {
 }
 
 export interface AppLocations {
-    currentDirectory: Directory,
-    pluginDirectory: Directory
+    currentDirectory: Directory;
+    pluginDirectory: Directory;
 }

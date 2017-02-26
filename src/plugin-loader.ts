@@ -1,8 +1,8 @@
 import * as ts from "typescript";
 import { File, FileService, readAsJson, Directory, Plugin, CompilationResult } from ".";
 
-const pluginFileKey = 'plugin-file';
-const pluginKindKey = 'kind'
+const pluginFileKey = "plugin-file";
+const pluginKindKey = "kind";
 
 const options: ts.CompilerOptions = {
     noEmitOnError: false,
@@ -32,9 +32,9 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
         const fileArr: [string, File][] = pluginFiles.map((file): [string, File] => [file.name, file]);
         const fileMap = new Map(fileArr);
         // TODO run npm install.
-        return nullPromise(fileMap.get('package.json'), `package.json for plugin ${directory.fullName}`)
+        return nullPromise(fileMap.get("package.json"), `package.json for plugin ${directory.fullName}`)
             .then((npmFile: File): Promise<InterpreterInfo> => {
-                return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, 'sinap'))
+                return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, "sinap"))
                     .then((sinapJson) => {
                         const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
                         const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
@@ -49,7 +49,7 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
 }
 
 /**
- * An abstract representation of a plugin 
+ * An abstract representation of a plugin
  */
 function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Promise<Plugin> {
     const pluginLocation = pluginInfo.interp;
@@ -76,7 +76,7 @@ function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Prom
         };
         program.emit();
         if (script === undefined) {
-            throw Error("failed to emit");;
+            throw Error("failed to emit");
         }
         const compInfo = new CompilationResult(script, results);
         return new Plugin(program, compInfo, pluginInfo.pluginKind);
@@ -85,7 +85,7 @@ function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Prom
 
 export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
     for (const result of diagnostics) {
-        console.log()
+        console.log();
         if (result.file) {
             const { line, character } = result.file.getLineAndCharacterOfPosition(result.start);
             const starts = result.file.getLineStarts();
@@ -110,9 +110,9 @@ function createCompilerHost(files: Map<string, string>, options: ts.CompilerOpti
         getSourceFile: (fileName): ts.SourceFile => {
             let source = files.get(fileName);
             if (!source) {
-                // if we didn't bundle the source file, maybe it's a lib? 
+                // if we didn't bundle the source file, maybe it's a lib?
                 if (fileName.indexOf("/") !== -1) {
-                    throw Error("no relative/absolute paths here");;
+                    throw Error("no relative/absolute paths here");
                 }
                 source = fileService.getModuleFile(fileService.joinPath("typescript", "lib", fileName));
             }
@@ -133,7 +133,7 @@ function createCompilerHost(files: Map<string, string>, options: ts.CompilerOpti
         getCurrentDirectory: () => "",
         getNewLine: () => "\n",
         fileExists: (fileName): boolean => {
-            return files.has(fileName)
+            return files.has(fileName);
         },
         readFile: () => "",
         directoryExists: () => true,

@@ -13,9 +13,9 @@ function hasAssignableFrom(t: Type | AssignableFrom): t is AssignableFrom {
 
 /**
  * Store a mapping of typescript types to our wrappers.
- * 
+ *
  * In order to avoid infinite loops, we need to cache the ones
- * that we find. 
+ * that we find.
  */
 export class TypeEnvironment {
     private types = new Map<ts.Type, Type>();
@@ -64,7 +64,7 @@ export class Type implements interfaces.Type {
     }
     // TODO: protect the arguments
     /**
-     * Never call this manually, use getType on the appropriate 
+     * Never call this manually, use getType on the appropriate
      * TypeEnvironment
      */
     constructor(public env: TypeEnvironment, public type: ts.Type) {
@@ -102,7 +102,7 @@ export class FakeUnionType implements interfaces.Type {
      * Return if this type is assignable to that type
      */
     public isAssignableTo(that: Type, cond = (that: UnionType) => (acc: boolean, t: Type, i: number) => acc && t.isAssignableTo(that.types[i])) {
-        if ((that.type as any).intrinsicName === 'any') {
+        if ((that.type as any).intrinsicName === "any") {
             return true;
         }
         if (that instanceof UnionType) {
@@ -136,7 +136,7 @@ export class ObjectType extends Type implements interfaces.ObjectType {
     constructor(env: TypeEnvironment, type: ts.ObjectType) {
         super(env, type);
         if (this.type.symbol === undefined || this.type.symbol.members === undefined) {
-            //throw Error("not an object type");;
+            // throw Error("not an object type");
             // TODO: address this
             return;
         }

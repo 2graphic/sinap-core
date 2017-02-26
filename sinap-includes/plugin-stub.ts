@@ -56,7 +56,7 @@ export function deserialize(pojo: SerialJSO): Graph {
                 traverse(el);
             }
         }
-    }
+    };
 
     traverse(elements);
 
@@ -119,7 +119,7 @@ export class Program implements PluginProgram {
         } catch (e) {
             return {
                 error: e
-            }
+            };
         }
     }
 }

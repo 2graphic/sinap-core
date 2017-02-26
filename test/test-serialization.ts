@@ -21,12 +21,12 @@ describe("Serialization", () => {
 
     const fs = new LocalFileService();
     function loadSerPlugin(name: string): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath('test', 'interpreters', 'serial', name))
+        return fs.directoryByName(fs.joinPath("test", "interpreters", "serial", name))
             .then((directory) => loadPluginDir(directory, fs));
     }
 
     before(() => {
-        return Promise.all([loadSerPlugin('first'), loadSerPlugin('second')])
+        return Promise.all([loadSerPlugin("first"), loadSerPlugin("second")])
             .then(([first, second]) => {
                 firstPlugin = first;
                 secondPlugin = second;
@@ -36,7 +36,7 @@ describe("Serialization", () => {
     it("one", () => {
         const test = roundTripJSO(firstPlugin, {
             format: "sinap-file-format",
-            kind: ['test'],
+            kind: ["test"],
             version: "0.0.7",
             elements: [
                 {
@@ -56,13 +56,13 @@ describe("Serialization", () => {
             ]
         });
 
-        assert.equal(true, test.elements[0].data['startState'].data.a);
+        assert.equal(true, test.elements[0].data["startState"].data.a);
     });
 
     it("two", () => {
         const test = roundTripJSO(secondPlugin, {
             format: "sinap-file-format",
-            kind: ['test'],
+            kind: ["test"],
             version: "0.0.7",
             elements: [
                 {
@@ -91,6 +91,6 @@ describe("Serialization", () => {
             ]
         });
 
-        assert.equal(true, test.elements[0].data['startState'].data.b.n.data.a);
+        assert.equal(true, test.elements[0].data["startState"].data.b.n.data.a);
     });
 });

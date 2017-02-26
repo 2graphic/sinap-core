@@ -18,14 +18,14 @@ describe("various interpreters", () => {
 
     const fs = new LocalFileService();
     function loadTestPlugin(name: string): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath('interpreters', name))
+        return fs.directoryByName(fs.joinPath("interpreters", name))
             .then((directory) => loadPluginDir(directory, fs));
     }
 
     describe("dfa", () => {
         let dfa: Plugin;
         before((done) => {
-            loadTestPlugin('dfa').then((dfaPlugin) => {
+            loadTestPlugin("dfa").then((dfaPlugin) => {
                 dfa = dfaPlugin;
                 done();
             });
@@ -33,8 +33,8 @@ describe("various interpreters", () => {
         it("computes divisibility", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "DFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -127,43 +127,43 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
             let results;
-            results = prog.run([new CoreValue(stringType, '11')]);
+            results = prog.run([new CoreValue(stringType, "11")]);
             assert.equal(3, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '')]);
+            results = prog.run([new CoreValue(stringType, "")]);
             assert.equal(1, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '101')]);
+            results = prog.run([new CoreValue(stringType, "101")]);
             assert.equal(4, results.states.length, "correct number of states");
             assert.equal(false, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '1000')]);
+            results = prog.run([new CoreValue(stringType, "1000")]);
             assert.equal(5, results.states.length, "correct number of states");
             assert.equal(false, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '1001')]);
+            results = prog.run([new CoreValue(stringType, "1001")]);
             assert.equal(5, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '01')]);
+            results = prog.run([new CoreValue(stringType, "01")]);
             assert.equal(3, results.states.length, "correct number of states");
             assert.equal(false, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '011')]);
+            results = prog.run([new CoreValue(stringType, "011")]);
             assert.equal(4, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
 
             for (let x = 0; x < 10000; x++) {
-                assert.equal(x % 3 == 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
+                assert.equal(x % 3 === 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
             }
 
         });
         it("checks for 1 start states", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "DFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -256,17 +256,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "DFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -359,17 +359,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows zero start states");
         });
         it("checks for empty transitions", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "DFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -462,17 +462,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows empty transitions");
+            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows empty transitions");
         });
         it("checks for two character transitions", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "DFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -565,17 +565,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
+            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows two character transitions");
         });
     });
     describe("nfa", () => {
         let nfa: Plugin;
         before((done) => {
-            loadTestPlugin('nfa').then((nfaPlugin) => {
+            loadTestPlugin("nfa").then((nfaPlugin) => {
                 nfa = nfaPlugin;
                 done();
             });
@@ -583,8 +583,8 @@ describe("various interpreters", () => {
         it("computes divisibility", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "NFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -677,43 +677,43 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
             let results;
-            results = prog.run([new CoreValue(stringType, '11')]);
+            results = prog.run([new CoreValue(stringType, "11")]);
             assert.equal(3, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '')]);
+            results = prog.run([new CoreValue(stringType, "")]);
             assert.equal(1, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '101')]);
+            results = prog.run([new CoreValue(stringType, "101")]);
             assert.equal(4, results.states.length, "correct number of states");
             assert.equal(false, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '1000')]);
+            results = prog.run([new CoreValue(stringType, "1000")]);
             assert.equal(5, results.states.length, "correct number of states");
             assert.equal(false, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '1001')]);
+            results = prog.run([new CoreValue(stringType, "1001")]);
             assert.equal(5, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '01')]);
+            results = prog.run([new CoreValue(stringType, "01")]);
             assert.equal(3, results.states.length, "correct number of states");
             assert.equal(false, results.result.data, "correct value");
-            results = prog.run([new CoreValue(stringType, '011')]);
+            results = prog.run([new CoreValue(stringType, "011")]);
             assert.equal(4, results.states.length, "correct number of states");
             assert.equal(true, results.result.data, "correct value");
 
             for (let x = 0; x < 10000; x++) {
-                assert.equal(x % 3 == 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
+                assert.equal(x % 3 === 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
             }
 
         });
         it("checks for 1 start states", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "NFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -806,17 +806,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows multiple start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "NFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -909,17 +909,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows zero start states");
+            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows zero start states");
         });
         it("allows empty transitions", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "NFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -1012,17 +1012,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            prog.run([new CoreValue(stringType, '11')]);
+            prog.run([new CoreValue(stringType, "11")]);
         });
         it("checks for two character transitions", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "NFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -1115,17 +1115,17 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, '11')]), "allows two character transitions");
+            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows two character transitions");
         });
         it("supports non-determinism", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-            kind: ["Formal Languages", "NFA"],
-            version: "0.0.7",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -1182,14 +1182,14 @@ describe("various interpreters", () => {
             });
 
             const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global['plugin-stub'].Program(JSON.parse(serialGraph));
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
-            assert.equal(true, prog.run([new CoreValue(stringType, '11')]).result.data);
-            assert.equal(true, prog.run([new CoreValue(stringType, '10001')]).result.data);
-            assert.equal(true, prog.run([new CoreValue(stringType, '0001')]).result.data);
-            assert.equal(false, prog.run([new CoreValue(stringType, '1100')]).result.data);
+            assert.equal(true, prog.run([new CoreValue(stringType, "11")]).result.data);
+            assert.equal(true, prog.run([new CoreValue(stringType, "10001")]).result.data);
+            assert.equal(true, prog.run([new CoreValue(stringType, "0001")]).result.data);
+            assert.equal(false, prog.run([new CoreValue(stringType, "1100")]).result.data);
         });
     });
 });

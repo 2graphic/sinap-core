@@ -2,7 +2,7 @@
 
 import * as assert from "assert";
 import * as ts from "typescript";
-import { TypeEnvironment, UnionType, validateEdge, ObjectType, Type } from "../src/"
+import { TypeEnvironment, UnionType, validateEdge, ObjectType, Type } from "../src/";
 
 describe("isValidEdge", () => {
     const program = ts.createProgram(["test/definitions.ts"], {
@@ -13,7 +13,8 @@ describe("isValidEdge", () => {
 
     const typeMap = new Map(["Nodes",
         "Edges",
-        "Graph",].map(k => [k, env.getType(env.checker.lookupTypeAt(k, program.getSourceFile("test/definitions.ts")))] as [string, Type]));
+        "Graph",
+    ].map(k => [k, env.getType(env.checker.lookupTypeAt(k, program.getSourceFile("test/definitions.ts")))] as [string, Type]));
 
     const nodes = typeMap.get("Nodes") as UnionType;
     const node1 = nodes.types[0] as ObjectType;

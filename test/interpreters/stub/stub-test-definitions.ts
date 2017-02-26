@@ -11,9 +11,9 @@ export class GraphC {
     nodes: Node[];
 }
 
-export type Nodes = Node
-export type Edges = Edge
-export type Graph = GraphC
+export type Nodes = Node;
+export type Edges = Edge;
+export type Graph = GraphC;
 
 export function doIt() {
     return "Did it";
