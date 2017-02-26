@@ -1,4 +1,5 @@
 import { Plugin, ObjectType, CoreObjectValue, CoreValue, makeValue } from ".";
+import * as assert from "assert";
 
 export enum CoreElementKind { Node, Edge, Graph };
 
@@ -63,7 +64,7 @@ export class CoreElement extends CoreObjectValue {
  */
 export type SerialJSO = {
     format: string,
-    kind: string,
+    kind: string[],
     version: string,
     elements: { kind: string, type: string, data: any }[],
 };
@@ -84,8 +85,9 @@ export class CoreModel {
             return;
         }
 
-        // TODO: check correct plugin kind
-        if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.6") {
+        assert.deepEqual(plugin.pluginKind, pojo.kind);
+
+        if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.7") {
             throw Error("not a CoreModel");
         }
 
@@ -138,8 +140,8 @@ export class CoreModel {
     serialize(): SerialJSO {
         return {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: this.plugin.pluginKind,
+            version: "0.0.7",
             elements: this.elements.map((element) => {
                 return {
                     kind: CoreElementKind[element.kind],

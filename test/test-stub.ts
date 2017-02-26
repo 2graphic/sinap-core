@@ -40,8 +40,8 @@ describe("plugin stub", () => {
     it("gets cyclic structure", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ["test"],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Node",
@@ -70,8 +70,8 @@ describe("plugin stub", () => {
     it("does source and destination", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ["test"],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Node",
@@ -109,8 +109,8 @@ describe("plugin stub", () => {
     it("does parents and children", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ["test"],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Node",
@@ -149,8 +149,8 @@ describe("plugin stub", () => {
     it("does states", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ["test"],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Node",

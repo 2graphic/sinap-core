@@ -121,7 +121,7 @@ export class WrappedScriptObjectType extends WrappedScriptType implements Object
     constructor(env: ScriptTypeEnvironment, type: ts.ObjectType) {
         super(env, type);
         if (this.type.symbol === undefined || this.type.symbol.members === undefined) {
-            // throw Error("not an object type");;
+            // throw Error("not an object type");
             // TODO: address this
             return;
         }

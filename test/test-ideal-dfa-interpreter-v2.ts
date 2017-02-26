@@ -41,8 +41,8 @@ describe("test ideal v2", () => {
     it("computes divisibility", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ["Formal Languages", "DFA"],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Graph",
@@ -169,8 +169,8 @@ describe("test ideal v2", () => {
     it("computes divisibility (many prog instances)", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ["Formal Languages", "DFA"],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Graph",

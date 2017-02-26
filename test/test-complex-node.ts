@@ -31,8 +31,8 @@ describe("complex node", () => {
     it("handles nesting", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
-            kind: "TODO: implement this",
-            version: "0.0.6",
+            kind: ["Test", "Complex Node"],
+            version: "0.0.7",
             elements: [
                 {
                     kind: "Graph",

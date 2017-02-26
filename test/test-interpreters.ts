@@ -33,8 +33,8 @@ describe("various interpreters", () => {
         it("computes divisibility", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -162,8 +162,8 @@ describe("various interpreters", () => {
         it("checks for 1 start states", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -265,8 +265,8 @@ describe("various interpreters", () => {
         it("checks for 0 start states", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -368,8 +368,8 @@ describe("various interpreters", () => {
         it("checks for empty transitions", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -471,8 +471,8 @@ describe("various interpreters", () => {
         it("checks for two character transitions", () => {
             const model = new CoreModel(dfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "DFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -583,8 +583,8 @@ describe("various interpreters", () => {
         it("computes divisibility", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -712,8 +712,8 @@ describe("various interpreters", () => {
         it("checks for 1 start states", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -815,8 +815,8 @@ describe("various interpreters", () => {
         it("checks for 0 start states", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -918,8 +918,8 @@ describe("various interpreters", () => {
         it("allows empty transitions", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -1021,8 +1021,8 @@ describe("various interpreters", () => {
         it("checks for two character transitions", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
@@ -1124,8 +1124,8 @@ describe("various interpreters", () => {
         it("supports non-determinism", () => {
             const model = new CoreModel(nfa, {
                 format: "sinap-file-format",
-                kind: "TODO: implement this",
-                version: "0.0.6",
+                kind: ["Formal Languages", "NFA"],
+                version: "0.0.7",
                 elements: [
                     {
                         kind: "Graph",
