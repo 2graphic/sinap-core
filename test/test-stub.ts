@@ -186,7 +186,7 @@ describe("plugin stub", () => {
         const numberType = plugin.typeEnvironment.getNumberType();
 
         assert.equal(1, prog.run([new CoreValue(numberType, 456)]).states.length, "only one state");
-        assert.equal(123, prog.run([new CoreValue(numberType, 456)]).result.data, "correct value");
+        assert.equal(123, prog.run([new CoreValue(numberType, 456)]).result.value, "correct value");
     });
 
     it("fails on bad graph", () => {

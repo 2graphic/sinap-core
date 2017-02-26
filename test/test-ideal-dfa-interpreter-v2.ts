@@ -140,28 +140,28 @@ describe("test ideal v2", () => {
         let results;
         results = prog.run([new CoreValue(stringType, "11")]);
         assert.equal(3, results.states.length, "correct number of states");
-        assert.equal(true, results.result.data, "correct value");
+        assert.equal(true, results.result.value, "correct value");
         results = prog.run([new CoreValue(stringType, "")]);
         assert.equal(1, results.states.length, "correct number of states");
-        assert.equal(true, results.result.data, "correct value");
+        assert.equal(true, results.result.value, "correct value");
         results = prog.run([new CoreValue(stringType, "101")]);
         assert.equal(4, results.states.length, "correct number of states");
-        assert.equal(false, results.result.data, "correct value");
+        assert.equal(false, results.result.value, "correct value");
         results = prog.run([new CoreValue(stringType, "1000")]);
         assert.equal(5, results.states.length, "correct number of states");
-        assert.equal(false, results.result.data, "correct value");
+        assert.equal(false, results.result.value, "correct value");
         results = prog.run([new CoreValue(stringType, "1001")]);
         assert.equal(5, results.states.length, "correct number of states");
-        assert.equal(true, results.result.data, "correct value");
+        assert.equal(true, results.result.value, "correct value");
         results = prog.run([new CoreValue(stringType, "01")]);
         assert.equal(3, results.states.length, "correct number of states");
-        assert.equal(false, results.result.data, "correct value");
+        assert.equal(false, results.result.value, "correct value");
         results = prog.run([new CoreValue(stringType, "011")]);
         assert.equal(4, results.states.length, "correct number of states");
-        assert.equal(true, results.result.data, "correct value");
+        assert.equal(true, results.result.value, "correct value");
 
         for (let x = 0; x < 10000; x++) {
-            assert.equal(x % 3 === 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.data);
+            assert.equal(x % 3 === 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.value);
         }
 
     });
@@ -265,7 +265,7 @@ describe("test ideal v2", () => {
         for (let x = 0; x < 1000; x++) {
             const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(plugProg, plugin);
-            assert.equal(x % 3 === 0, prog.run([new CoreValue(plugin.typeEnvironment.getStringType(), x.toString(2))]).result.data);
+            assert.equal(x % 3 === 0, prog.run([new CoreValue(plugin.typeEnvironment.getStringType(), x.toString(2))]).result.value);
         }
 
     });

@@ -56,7 +56,7 @@ describe("Serialization", () => {
             ]
         });
 
-        assert.equal(true, test.elements[0].data["startState"].data.a);
+        assert.equal(true, test.elements[0].value["startState"].value.a.value);
     });
 
     it("two", () => {
@@ -91,24 +91,24 @@ describe("Serialization", () => {
             ]
         });
 
-        const startState = test.elements[0].data.startState;
+        const startState = test.elements[0].value.startState;
 
         if (!(startState instanceof CoreObjectValue)) {
             throw new Error("start state is not an element");
         }
 
-        const node2anon = startState.data.b;
+        const node2anon = startState.value.b;
         if (!(node2anon instanceof CoreObjectValue)) {
             throw new Error("node2anon is not an CoreObjectValue");
         }
 
-        const node1 = node2anon.data.n;
+        const node1 = node2anon.value.n;
         if (!(node1 instanceof CoreObjectValue)) {
             throw new Error("node1 is not an element");
         }
 
-        assert.equal(true, node1.data.a.data);
-        // TODO: uncomment
-        // assert.equal(true, node1.value('a').type);
+        assert.equal(true, node1.value.a.value);
+        assert.equal(secondPlugin.typeEnvironment.getBooleanType(), node1.value.a.type);
+        assert.equal(true, test.elements[0].value.startState.value.b.value.n.value.a.value);
     });
 });

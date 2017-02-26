@@ -46,7 +46,7 @@ export class Program {
 
     runArguments: Type[][];
     run(a: CoreValue[]): { states: CoreValue[], result: CoreValue } {
-        const output = this.program.run(a.map(v => v.data));
+        const output = this.program.run(a.map(v => v.value));
         if (isError(output)) {
             throw output.error;
         }
