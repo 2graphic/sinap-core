@@ -1,0 +1,6 @@
+{
+    "sinap": {
+        "kind": [ "Test", "Complex Node" ],
+        "plugin-file": "plugin.ts"
+    }
+}

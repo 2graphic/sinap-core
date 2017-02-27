@@ -1,33 +1,30 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 
 import * as assert from "assert";
-import * as ts from "typescript";
-import { TypeEnvironment, UnionType, validateEdge, ObjectType, Type } from "../src/";
+import { validateEdge, WrappedScriptObjectType, loadPluginDir, Plugin } from "../src/";
+import { LocalFileService } from "./files-mock";
 
 describe("isValidEdge", () => {
-    const program = ts.createProgram(["test/definitions.ts"], {
-        target: ts.ScriptTarget.ES2016, module: ts.ModuleKind.CommonJS
-    });
+    const fs = new LocalFileService();
+    function loadTestPlugin(name: string, dirs = ["test", "interpreters"]): Promise<Plugin> {
+        return fs.directoryByName(fs.joinPath(...dirs.concat([name])))
+            .then((directory) => loadPluginDir(directory, fs));
+    }
 
-    const env = new TypeEnvironment(program.getTypeChecker());
-
-    const typeMap = new Map(["Nodes",
-        "Edges",
-        "Graph",
-    ].map(k => [k, env.getType(env.checker.lookupTypeAt(k, program.getSourceFile("test/definitions.ts")))] as [string, Type]));
-
-    const nodes = typeMap.get("Nodes") as UnionType;
-    const node1 = nodes.types[0] as ObjectType;
-    const node3 = nodes.types[2] as ObjectType;
-    const node2 = nodes.types[1] as ObjectType;
-    const edges = typeMap.get("Edges") as UnionType;
-    const edge1 = edges.types[0] as ObjectType;
-    const edge2 = edges.types[1] as ObjectType;
+    const plugin = loadTestPlugin("validation");
 
     it("map edges", () => {
-        assert.equal(true, validateEdge(edge1, node1, node2));
-        assert.equal(false, validateEdge(edge1, node1, node3));
-        assert.equal(true, validateEdge(edge1, node1, node2));
-        assert.equal(false, validateEdge(edge2, node1, node2));
+        return plugin.then(plugin => {
+            const node1 = plugin.typeEnvironment.lookupPluginType("Node1") as WrappedScriptObjectType;
+            const node2 = plugin.typeEnvironment.lookupPluginType("Node2") as WrappedScriptObjectType;
+            const node3 = plugin.typeEnvironment.lookupPluginType("Node3") as WrappedScriptObjectType;
+            const edge1 = plugin.typeEnvironment.lookupPluginType("Edge1") as WrappedScriptObjectType;
+            const edge2 = plugin.typeEnvironment.lookupPluginType("Edge2") as WrappedScriptObjectType;
+
+            assert.equal(true, validateEdge(edge1, node1, node2));
+            assert.equal(false, validateEdge(edge1, node1, node3));
+            assert.equal(true, validateEdge(edge1, node1, node2));
+            assert.equal(false, validateEdge(edge2, node1, node2));
+        });
     });
 });

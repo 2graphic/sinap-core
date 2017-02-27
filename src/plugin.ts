@@ -1,10 +1,10 @@
 import * as ts from "typescript";
-import { CoreElementKind, CoreElement, TypeEnvironment, Type, UnionType, ObjectType, printDiagnostics } from ".";
+import { CoreElementKind, CoreElement, ScriptTypeEnvironment, WrappedScriptType, WrappedScriptUnionType, WrappedScriptObjectType, printDiagnostics } from ".";
 
-function unionToList(type: Type): [string, ObjectType][] {
-    if (type instanceof UnionType) {
-        return type.types.map(unionToList).reduce((p, c) => p.concat(c));
-    } else if (type instanceof ObjectType) {
+function unionToList(type: WrappedScriptType): [string, WrappedScriptObjectType][] {
+    if (type instanceof WrappedScriptUnionType) {
+        return [...type.types.values()].map(unionToList).reduce((p, c) => p.concat(c));
+    } else if (type instanceof WrappedScriptObjectType) {
         return [[type.name, type]];
     }
     throw `type must be a union type or an object type.`;
@@ -23,14 +23,14 @@ function kindToKey(kind: CoreElementKind): string {
 }
 
 
-export class PluginTypeEnvironment extends TypeEnvironment {
-    private pluginTypes: Map<string, Map<string, ObjectType>>;
+export class PluginTypeEnvironment extends ScriptTypeEnvironment {
+    private pluginTypes: Map<string, Map<string, WrappedScriptObjectType>>;
     private pluginSourceFile: ts.SourceFile;
     private sinapSourceFile: ts.SourceFile;
 
-    public drawableTypes: Map<CoreElementKind, ObjectType>;
+    public drawableTypes: Map<CoreElementKind, WrappedScriptObjectType>;
 
-    public startTypes: [Type[], Type][];
+    public startTypes: [WrappedScriptType[], WrappedScriptType][];
 
     lookupPluginType(n: string) {
         return this.getType(this.checker.lookupTypeAt(n, this.pluginSourceFile));
@@ -52,7 +52,7 @@ export class PluginTypeEnvironment extends TypeEnvironment {
             [
                 s.getParameters().map(p => this.getType(this.checker.getTypeOfSymbol(p))),
                 this.getType(s.getReturnType())
-            ] as [Type[], Type]);
+            ] as [WrappedScriptType[], WrappedScriptType]);
     }
 
     constructor(program: ts.Program) {
@@ -60,15 +60,15 @@ export class PluginTypeEnvironment extends TypeEnvironment {
         this.pluginSourceFile = program.getSourceFile("plugin.ts");
         this.sinapSourceFile = program.getSourceFile("plugin-stub.ts");
         this.drawableTypes = new Map();
-        this.drawableTypes.set(CoreElementKind.Node, this.lookupSinapType("DrawableNode") as ObjectType);
-        this.drawableTypes.set(CoreElementKind.Edge, this.lookupSinapType("DrawableEdge") as ObjectType);
-        this.drawableTypes.set(CoreElementKind.Graph, this.lookupSinapType("DrawableGraph") as ObjectType);
+        this.drawableTypes.set(CoreElementKind.Node, this.lookupSinapType("DrawableNode") as WrappedScriptObjectType);
+        this.drawableTypes.set(CoreElementKind.Edge, this.lookupSinapType("DrawableEdge") as WrappedScriptObjectType);
+        this.drawableTypes.set(CoreElementKind.Graph, this.lookupSinapType("DrawableGraph") as WrappedScriptObjectType);
 
         this.startTypes = this.getFunctionSignatures("start", program.getSourceFile("plugin.ts"));
 
         this.pluginTypes = new Map(["Nodes", "Edges", "Graph"]
-            .map(k => [k, this.lookupPluginType(k)] as [string, Type])
-            .map(([n, v]) => [n, new Map(unionToList(v))] as [string, Map<string, ObjectType>]));
+            .map(k => [k, this.lookupPluginType(k)] as [string, WrappedScriptType])
+            .map(([n, v]) => [n, new Map(unionToList(v))] as [string, Map<string, WrappedScriptObjectType>]));
     }
 
     elementTypes(kind: CoreElementKind) {
@@ -79,7 +79,7 @@ export class PluginTypeEnvironment extends TypeEnvironment {
         return type.keys();
     }
 
-    getElementType(kind: CoreElementKind, type: string): ObjectType {
+    getElementType(kind: CoreElementKind, type: string): WrappedScriptObjectType {
         const t = this.pluginTypes.get(kindToKey(kind));
         if (t === undefined) {
             throw Error("kind not found");

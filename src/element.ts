@@ -1,20 +1,61 @@
-import { Plugin, ObjectType, IType } from ".";
+import { Plugin, ObjectType, CoreObjectValue, CoreValue, makeValue } from ".";
 import * as assert from "assert";
 
 export enum CoreElementKind { Node, Edge, Graph };
 
-export class CoreValue {
-    constructor(readonly type: IType, public data: any) {
-
-    }
+function makeDataProxy(data: { [a: string]: any }, type: ObjectType) {
+    return new Proxy(data, {
+        get: (b, k: string) => {
+            const bv = b[k];
+            if (bv instanceof CoreElement) {
+                return bv;
+            }
+            return makeValue(bv, type.members.get(k) || type.env);
+        },
+        set: () => {
+            throw new Error("setting values is unimplemented");
+        }
+    });
 }
 
 /**
  * Represents nodes, edges, and graphs.
  */
-export class CoreElement extends CoreValue {
+export class CoreElement extends CoreObjectValue {
+    private _data: { [a: string]: any };
+    private _value: { [a: string]: CoreValue };
+
+    /**
+     * Distinction between data and value:
+     * data = {
+     *  [a: string]: CoreElement (if this.members.get(a) == CoreElement
+     *  [b: string]: raw_data (Unwrapped CoreValue if this.members.get(b) != CoreElement)
+     * }
+     */
+    get data() {
+        return this._data;
+    }
+
+    set data(d) {
+        this._value = makeDataProxy(d, this.type);
+        this._data = d;
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    set value(obj) {
+        // TODO: this needs test cases
+        for (const key of Object.getOwnPropertyNames(obj)) {
+            this._value[key] = obj[key];
+        }
+    }
+
     constructor(readonly type: ObjectType, readonly kind: CoreElementKind) {
         super(type, {});
+
+        this.data = {};
     }
 }
 

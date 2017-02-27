@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, Plugin, Program, CoreValue, Type } from "../src/";
+import { loadPluginDir, Plugin, Program, CoreValue, Type, isUnionType } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -50,6 +50,15 @@ describe("plugin", () => {
                 const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
 
                 program = new Program(pluginProgram, plugin);
+
+                assert.deepEqual([
+                    ["any", "any"],
+                    ["number", "number"],
+                    ["number", "string"],
+                    ["string", "string"],
+                    ["string", "string"],
+                ], program.runArguments.map(t => t.map(t2 => t2.name)));
+
                 // const anyType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getAnyType());
                 stringType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getStringType());
                 numberType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getNumberType());
@@ -90,6 +99,8 @@ describe("plugin", () => {
                 const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
 
                 program = new Program(pluginProgram, plugin);
+                assert.deepEqual([["any", "any"]], program.runArguments.map(t => t.map(t2 => t2.name)));
+
                 // const anyType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getAnyType());
                 stringType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getStringType());
                 numberType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getNumberType());
@@ -98,9 +109,11 @@ describe("plugin", () => {
 
         it("cancels state", () => {
             const rtype = program.run([new CoreValue(numberType, 2), new CoreValue(numberType, 4)]).result.type;
-            assert.equal("number", rtype.name);
-            assert.equal(1, (rtype as any).types.length);
-            assert.equal(numberType, (rtype as any).types[0]);
+            if (!isUnionType(rtype)) {
+                throw new Error("didn't return union type");
+            }
+            assert.equal(1, rtype.types.size);
+            assert.equal(numberType, rtype.types.values().next().value);
         });
     });
 });

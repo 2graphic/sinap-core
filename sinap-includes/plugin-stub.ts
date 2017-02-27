@@ -99,15 +99,15 @@ export class Program implements PluginProgram {
         // TODO: improve if plugin defines a validate function
         const res = this.run([]);
         if (isError(res)) {
-            return [res.error];
+            return [res.message];
         }
         return [];
     }
 
     run(input: any[]) {
+        const states: plugin.State[] = [];
         try {
             let current = (plugin as any).start(this.graph, ...input);
-            const states: plugin.State[] = [];
             while (current instanceof plugin.State) {
                 states.push(current);
                 current = plugin.step(current);
@@ -117,13 +117,15 @@ export class Program implements PluginProgram {
                 result: current,
             };
         } catch (e) {
+            const message = e instanceof Error ? e.message : e;
+            const stack = e instanceof Error ? e.stack : undefined;
             return {
-                error: e
+                result: { message: e.message, stack: stack, kind: "sinap-error" },
+                states: states,
             };
         }
     }
 }
-
 
 export class File {
     constructor(public name: string) { }

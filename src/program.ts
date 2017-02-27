@@ -1,12 +1,11 @@
 import { PluginProgram, isError } from "../sinap-includes/plugin-program";
-import { CoreValue, Plugin, IType, Type, UnionType, FakeUnionType } from ".";
+import { CoreValue, Plugin, Type, WrappedScriptUnionType, FakeUnionType, TypeEnvironment } from ".";
 
-function signatureAssignable(t1: IType[], t2: IType[]) {
+function signatureAssignable(t1: Type[], t2: Type[]) {
     return t1.reduce((a, v, i) => a && v.isAssignableTo(t2[i]), true);
 }
 
-function pickReturnType(argTypes: IType[], signatures: [Type[], Type][], stateType: Type): IType {
-    const checker = signatures[0][1].env.checker;
+function pickReturnType(argTypes: Type[], signatures: [Type[], Type][], stateType: Type, env: TypeEnvironment): Type {
     // find all the signatures that argTypes is assignable to
     const viableSignatures = signatures.filter(sig =>
         signatureAssignable(argTypes, sig[0].slice(1))
@@ -16,7 +15,7 @@ function pickReturnType(argTypes: IType[], signatures: [Type[], Type][], stateTy
         throw new Error("no matching function signatures found");
     }
 
-    const nonAnySigs = viableSignatures.filter(t => !checker.isIdenticalTo(t.type, checker.getAnyType()));
+    const nonAnySigs = viableSignatures.filter(t => !t.isIdenticalTo(env.getAnyType()));
 
     let bestSignature = nonAnySigs.pop();
     if (bestSignature === undefined) {
@@ -30,8 +29,8 @@ function pickReturnType(argTypes: IType[], signatures: [Type[], Type][], stateTy
         }
     }
 
-    if (bestSignature instanceof UnionType) {
-        return new FakeUnionType(bestSignature.types.filter(t => !checker.isIdenticalTo(t.type, stateType.type)));
+    if (bestSignature instanceof WrappedScriptUnionType) {
+        return new FakeUnionType(env, new Set([...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType))));
     }
 
     return bestSignature;
@@ -39,24 +38,40 @@ function pickReturnType(argTypes: IType[], signatures: [Type[], Type][], stateTy
 
 export class Program {
     constructor(private program: PluginProgram, private plugin: Plugin) {
+        this.runArguments = this.plugin.typeEnvironment.startTypes.map(
+            t => t[0].slice(1)
+        );
     };
 
     validate(): string[] {
         return this.program.validate();
     }
 
-    runArguments: IType[][];
+    runArguments: Type[][];
     run(a: CoreValue[]): { states: CoreValue[], result: CoreValue } {
-        const output = this.program.run(a.map(v => v.data));
-        if (isError(output)) {
-            throw output.error;
-        }
+        const output = this.program.run(a.map(v => v.value));
         const stateType = this.plugin.typeEnvironment.lookupPluginType("State");
+        const errorType = this.plugin.typeEnvironment.lookupGlobalType("Error");
+
+        let result: CoreValue;
+
+        if (isError(output.result)) {
+            const err = new Error(output.result.message);
+            err.stack = output.result.stack;
+            result = new CoreValue(
+                errorType,
+                err,
+            );
+        } else {
+            result = new CoreValue(
+                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType, this.plugin.typeEnvironment),
+                output.result
+            );
+        }
+
         return {
             states: output.states.map(s => new CoreValue(stateType, s)),
-            result: new CoreValue(
-                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType),
-                output.result),
+            result: result,
         };
     }
 }
