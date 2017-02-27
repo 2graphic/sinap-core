@@ -50,6 +50,15 @@ describe("plugin", () => {
                 const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
 
                 program = new Program(pluginProgram, plugin);
+
+                assert.deepEqual([
+                    ["any", "any"],
+                    ["number", "number"],
+                    ["number", "string"],
+                    ["string", "string"],
+                    ["string", "string"],
+                ], program.runArguments.map(t => t.map(t2 => t2.name)));
+
                 // const anyType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getAnyType());
                 stringType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getStringType());
                 numberType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getNumberType());
@@ -90,6 +99,8 @@ describe("plugin", () => {
                 const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
 
                 program = new Program(pluginProgram, plugin);
+                assert.deepEqual([["any", "any"]], program.runArguments.map(t => t.map(t2 => t2.name)));
+
                 // const anyType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getAnyType());
                 stringType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getStringType());
                 numberType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getNumberType());

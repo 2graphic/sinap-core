@@ -692,6 +692,8 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
 
+            assert.deepEqual([["string"]], prog.runArguments.map(t => t.map(t2 => t2.name)));
+
             let results;
             results = prog.run([new CoreValue(stringType, "11")]);
             assert.equal(3, results.states.length, "correct number of states");

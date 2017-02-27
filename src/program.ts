@@ -38,6 +38,9 @@ function pickReturnType(argTypes: Type[], signatures: [Type[], Type][], stateTyp
 
 export class Program {
     constructor(private program: PluginProgram, private plugin: Plugin) {
+        this.runArguments = this.plugin.typeEnvironment.startTypes.map(
+            t => t[0].slice(1)
+        );
     };
 
     validate(): string[] {
