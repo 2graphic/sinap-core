@@ -1,15 +1,33 @@
 import { Type, ObjectType, UnionType, TypeEnvironment, isObjectType, isUnionType, isTypeEnvironment, checkJSON } from ".";
 
 export class CoreValue {
-    constructor(readonly type: Type, public value: any | { [a: string]: CoreValue }) {
+    listeners = new Set<(this: CoreValue, newValue: any) => void>();
+
+    constructor(readonly type: Type, protected _value: any | { [a: string]: CoreValue }, public mutable: boolean) {
         // TODO: initilize it based on `Type`
+    }
+
+    get value() {
+        return this._value;
+    }
+    set value(v: any) {
+        if (!this.mutable) {
+            throw new Error("trying to modify an immutable CoreValue");
+        }
+
+        checkJSON(this.type, v);
+
+        for (const listener of this.listeners.values()) {
+            listener.apply(this, [v]);
+        }
+        this._value = v;
     }
 }
 
 export class CoreObjectValue extends CoreValue {
-    constructor(readonly type: ObjectType, value: { [a: string]: CoreValue }) {
+    constructor(readonly type: ObjectType, value: { [a: string]: CoreValue }, public mutable: boolean) {
         // TODO: allow data to be undefined, so we can initilize it
-        super(type, value);
+        super(type, value, mutable);
     }
 }
 
@@ -30,13 +48,13 @@ export class CoreUnionValue extends CoreValue {
         return makeValue(this.value, possibleTypes[0]);
     }
 
-    constructor(readonly type: UnionType, data: any) {
+    constructor(readonly type: UnionType, data: any, mutable: boolean) {
         // TODO: allow data to be undefined, so we can initilize it
-        super(type, data);
+        super(type, data, mutable);
     }
 }
 
-export function makeValue(a: any, type: Type | TypeEnvironment) {
+export function makeValue(a: any, type: Type | TypeEnvironment, mutable = false) {
     if (a instanceof CoreValue) {
         return a;
     }
@@ -48,9 +66,17 @@ export function makeValue(a: any, type: Type | TypeEnvironment) {
         } else if (a === null) {
             type = type.getNullType();
         } else if (typeof a === "string") {
-            type = type.getStringLiteralType(a);
+            if (mutable) {
+                type = type.getStringType();
+            } else {
+                type = type.getStringLiteralType(a);
+            }
         } else if (typeof a === "number") {
-            type = type.getNumberLiteralType(a.toString());
+            if (mutable) {
+                type = type.getNumberType();
+            } else {
+                type = type.getNumberLiteralType(a.toString());
+            }
         } else {
             type = type.getAnyType();
         }
@@ -63,7 +89,14 @@ export function makeValue(a: any, type: Type | TypeEnvironment) {
 
     if (isObjectType(type)) {
         cons = CoreObjectValue;
+
+        const valueObject: { [a: string]: CoreValue } = {};
+        for (const [key, t] of type.members.entries()) {
+            valueObject[key] = makeValue(a[key], t, mutable);
+        }
+
+        a = valueObject;
     }
 
-    return new cons(type, a);
+    return new cons(type, a, mutable);
 }

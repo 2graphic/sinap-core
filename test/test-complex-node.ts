@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, Plugin, CoreValue, Program } from "../src/";
+import { loadPluginDir, CoreModel, Plugin, makeValue, Program } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -57,10 +57,9 @@ describe("complex node", () => {
         const [context, serialGraph] = setupTest(plugin, model);
         const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
         const prog = new Program(pluginProg, plugin);
-        const stringType = plugin.typeEnvironment.getStringType();
 
         let results;
-        results = prog.run([new CoreValue(stringType, "11")]);
+        results = prog.run([makeValue("11", plugin.typeEnvironment)]);
         assert.equal(0, results.states.length, "correct number of states");
         assert.equal(1777243, results.result.value, "correct value");
         assert.equal(plugin.typeEnvironment.getNumberType(), results.result.type, "correct type");

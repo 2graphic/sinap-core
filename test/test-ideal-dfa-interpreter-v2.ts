@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, CoreElementKind, Plugin, Program, CoreValue } from "../src/";
+import { loadPluginDir, CoreModel, CoreElementKind, Plugin, Program, makeValue } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -135,33 +135,32 @@ describe("test ideal v2", () => {
         const [context, serialGraph] = setupTest(model);
         const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
         const prog = new Program(plugProg, plugin);
-        const stringType = plugin.typeEnvironment.getStringType();
 
         let results;
-        results = prog.run([new CoreValue(stringType, "11")]);
+        results = prog.run([makeValue("11", plugin.typeEnvironment)]);
         assert.equal(3, results.states.length, "correct number of states");
         assert.equal(true, results.result.value, "correct value");
-        results = prog.run([new CoreValue(stringType, "")]);
+        results = prog.run([makeValue("", plugin.typeEnvironment)]);
         assert.equal(1, results.states.length, "correct number of states");
         assert.equal(true, results.result.value, "correct value");
-        results = prog.run([new CoreValue(stringType, "101")]);
+        results = prog.run([makeValue("101", plugin.typeEnvironment)]);
         assert.equal(4, results.states.length, "correct number of states");
         assert.equal(false, results.result.value, "correct value");
-        results = prog.run([new CoreValue(stringType, "1000")]);
+        results = prog.run([makeValue("1000", plugin.typeEnvironment)]);
         assert.equal(5, results.states.length, "correct number of states");
         assert.equal(false, results.result.value, "correct value");
-        results = prog.run([new CoreValue(stringType, "1001")]);
+        results = prog.run([makeValue("1001", plugin.typeEnvironment)]);
         assert.equal(5, results.states.length, "correct number of states");
         assert.equal(true, results.result.value, "correct value");
-        results = prog.run([new CoreValue(stringType, "01")]);
+        results = prog.run([makeValue("01", plugin.typeEnvironment)]);
         assert.equal(3, results.states.length, "correct number of states");
         assert.equal(false, results.result.value, "correct value");
-        results = prog.run([new CoreValue(stringType, "011")]);
+        results = prog.run([makeValue("011", plugin.typeEnvironment)]);
         assert.equal(4, results.states.length, "correct number of states");
         assert.equal(true, results.result.value, "correct value");
 
         for (let x = 0; x < 10000; x++) {
-            assert.equal(x % 3 === 0, prog.run([new CoreValue(stringType, x.toString(2))]).result.value);
+            assert.equal(x % 3 === 0, prog.run([makeValue(x.toString(2), plugin.typeEnvironment)]).result.value);
         }
 
     });
@@ -265,7 +264,7 @@ describe("test ideal v2", () => {
         for (let x = 0; x < 1000; x++) {
             const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(plugProg, plugin);
-            assert.equal(x % 3 === 0, prog.run([new CoreValue(plugin.typeEnvironment.getStringType(), x.toString(2))]).result.value);
+            assert.equal(x % 3 === 0, prog.run([makeValue(x.toString(2), plugin.typeEnvironment)]).result.value);
         }
 
     });

@@ -1,5 +1,5 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, Plugin, Program, CoreValue, isObjectType } from "../src/";
+import { loadPluginDir, CoreModel, Plugin, Program, makeValue, isObjectType } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -185,8 +185,8 @@ describe("plugin stub", () => {
         const prog = new Program(pluginProg, plugin);
         const numberType = plugin.typeEnvironment.getNumberType();
 
-        assert.equal(1, prog.run([new CoreValue(numberType, 456)]).states.length, "only one state");
-        assert.equal(123, prog.run([new CoreValue(numberType, 456)]).result.value, "correct value");
+        assert.equal(1, prog.run([makeValue(456, numberType)]).states.length, "only one state");
+        assert.equal(123, prog.run([makeValue(456, numberType.env)]).result.value, "correct value");
     });
 
     it("fails on bad graph", () => {
@@ -198,8 +198,8 @@ describe("plugin stub", () => {
         const numberType = plugin.typeEnvironment.getStringType();
         const errorType = plugin.typeEnvironment.lookupGlobalType("Error");
 
-        assert.equal(errorType, prog.run([new CoreValue(numberType, 456)]).result.type);
-        assert.equal("Cannot read property 'parents' of undefined", prog.run([new CoreValue(numberType, 456)]).result.value.message);
+        assert.equal(errorType, prog.run([makeValue(456, numberType.env)]).result.type);
+        assert.equal("Cannot read property 'parents' of undefined", prog.run([makeValue(456, numberType.env)]).result.value.message);
     });
 
     it("has sinap types", () => {

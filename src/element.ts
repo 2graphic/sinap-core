@@ -1,4 +1,4 @@
-import { Plugin, ObjectType, CoreObjectValue, CoreValue, makeValue } from ".";
+import { Plugin, ObjectType, CoreObjectValue, makeValue } from ".";
 import * as assert from "assert";
 
 export enum CoreElementKind { Node, Edge, Graph };
@@ -23,7 +23,6 @@ function makeDataProxy(data: { [a: string]: any }, type: ObjectType) {
  */
 export class CoreElement extends CoreObjectValue {
     private _data: { [a: string]: any };
-    private _value: { [a: string]: CoreValue };
 
     /**
      * Distinction between data and value:
@@ -41,19 +40,8 @@ export class CoreElement extends CoreObjectValue {
         this._data = d;
     }
 
-    get value() {
-        return this._value;
-    }
-
-    set value(obj) {
-        // TODO: this needs test cases
-        for (const key of Object.getOwnPropertyNames(obj)) {
-            this._value[key] = obj[key];
-        }
-    }
-
     constructor(readonly type: ObjectType, readonly kind: CoreElementKind) {
-        super(type, {});
+        super(type, {}, true);
 
         this.data = {};
     }

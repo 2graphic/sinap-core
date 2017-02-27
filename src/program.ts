@@ -1,5 +1,5 @@
 import { PluginProgram, isError } from "../sinap-includes/plugin-program";
-import { CoreValue, Plugin, Type, WrappedScriptUnionType, FakeUnionType, TypeEnvironment } from ".";
+import { CoreValue, Plugin, Type, WrappedScriptUnionType, FakeUnionType, TypeEnvironment, makeValue } from ".";
 
 function signatureAssignable(t1: Type[], t2: Type[]) {
     return t1.reduce((a, v, i) => a && v.isAssignableTo(t2[i]), true);
@@ -58,19 +58,16 @@ export class Program {
         if (isError(output.result)) {
             const err = new Error(output.result.message);
             err.stack = output.result.stack;
-            result = new CoreValue(
-                errorType,
-                err,
-            );
+            result = makeValue(err, errorType);
         } else {
-            result = new CoreValue(
-                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType, this.plugin.typeEnvironment),
-                output.result
+            result = makeValue(
+                output.result,
+                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType, this.plugin.typeEnvironment)
             );
         }
 
         return {
-            states: output.states.map(s => new CoreValue(stateType, s)),
+            states: output.states.map(s => makeValue(s, stateType)),
             result: result,
         };
     }
