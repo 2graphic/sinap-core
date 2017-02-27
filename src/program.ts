@@ -47,15 +47,28 @@ export class Program {
     runArguments: Type[][];
     run(a: CoreValue[]): { states: CoreValue[], result: CoreValue } {
         const output = this.program.run(a.map(v => v.value));
-        if (isError(output)) {
-            throw output.error;
-        }
         const stateType = this.plugin.typeEnvironment.lookupPluginType("State");
+        const errorType = this.plugin.typeEnvironment.lookupGlobalType("Error");
+
+        let result: CoreValue;
+
+        if (isError(output.result)) {
+            const err = new Error(output.result.message);
+            err.stack = output.result.stack;
+            result = new CoreValue(
+                errorType,
+                err,
+            );
+        } else {
+            result = new CoreValue(
+                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType, this.plugin.typeEnvironment),
+                output.result
+            );
+        }
+
         return {
             states: output.states.map(s => new CoreValue(stateType, s)),
-            result: new CoreValue(
-                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType, this.plugin.typeEnvironment),
-                output.result),
+            result: result,
         };
     }
 }

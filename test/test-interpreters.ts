@@ -259,8 +259,10 @@ describe("various interpreters", () => {
             const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
+            const errorType = dfa.typeEnvironment.lookupGlobalType("Error");
 
-            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows multiple start states");
+            assert.equal(errorType, prog.run([new CoreValue(stringType, "11")]).result.type);
+            assert.equal("Only one start state allowed", prog.run([new CoreValue(stringType, "11")]).result.value.message);
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(dfa, {
@@ -363,7 +365,10 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows zero start states");
+            const errorType = dfa.typeEnvironment.lookupGlobalType("Error");
+
+            assert.equal(errorType, prog.run([new CoreValue(stringType, "11")]).result.type);
+            assert.equal("Must have one start state", prog.run([new CoreValue(stringType, "11")]).result.value.message);
         });
         it("checks for empty transitions", () => {
             const model = new CoreModel(dfa, {
@@ -466,7 +471,10 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows empty transitions");
+            const errorType = dfa.typeEnvironment.lookupGlobalType("Error");
+
+            assert.equal(errorType, prog.run([new CoreValue(stringType, "11")]).result.type);
+            assert.equal("Lambda transition from q0 to q0 is not allowed", prog.run([new CoreValue(stringType, "11")]).result.value.message);
         });
         it("checks for two character transitions", () => {
             const model = new CoreModel(dfa, {
@@ -569,7 +577,10 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
             const stringType = dfa.typeEnvironment.getStringType();
 
-            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows two character transitions");
+            const errorType = dfa.typeEnvironment.lookupGlobalType("Error");
+
+            assert.equal(errorType, prog.run([new CoreValue(stringType, "11")]).result.type);
+            assert.equal("Edge 23 must be one symbol", prog.run([new CoreValue(stringType, "11")]).result.value.message);
         });
     });
     describe("nfa", () => {
@@ -809,8 +820,10 @@ describe("various interpreters", () => {
             const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
+            const errorType = nfa.typeEnvironment.lookupGlobalType("Error");
 
-            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows multiple start states");
+            assert.equal(errorType, prog.run([new CoreValue(stringType, "11")]).result.type, "allows multiple start states");
+            assert.equal("Only one start state allowed", prog.run([new CoreValue(stringType, "11")]).result.value.message, "allows multiple start states");
         });
         it("checks for 0 start states", () => {
             const model = new CoreModel(nfa, {
@@ -912,8 +925,10 @@ describe("various interpreters", () => {
             const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
+            const errorType = nfa.typeEnvironment.lookupGlobalType("Error");
 
-            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows zero start states");
+            assert.equal(errorType, prog.run([new CoreValue(stringType, "11")]).result.type, "allows zero start states");
+            assert.equal("Must have one start state", prog.run([new CoreValue(stringType, "11")]).result.value.message, "allows zero start states");
         });
         it("allows empty transitions", () => {
             const model = new CoreModel(nfa, {
@@ -1118,8 +1133,10 @@ describe("various interpreters", () => {
             const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(pluginProg, nfa);
             const stringType = nfa.typeEnvironment.getStringType();
+            const errorType = nfa.typeEnvironment.lookupGlobalType("Error");
 
-            assert.throws(() => prog.run([new CoreValue(stringType, "11")]), "allows two character transitions");
+            assert.equal(errorType, prog.run([new CoreValue(stringType, "11")]).result.type);
+            assert.equal("Edge 23 must be one symbol", prog.run([new CoreValue(stringType, "11")]).result.value.message);
         });
         it("supports non-determinism", () => {
             const model = new CoreModel(nfa, {

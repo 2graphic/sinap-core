@@ -1,11 +1,15 @@
-export type Error = { error: string };
+export type Error = {
+    kind: "sinap-error",
+    message: string,
+    stack?: string,
+};
 export type Result = { states: any[], result: any };
 
 export interface PluginProgram {
-    run(a: any): Result | Error;
+    run(a: any): Result;
     validate(): string[];
 }
 
-export function isError(e: { states: any[], result: any } | { error: any } | null): e is Error {
-    return e != null && (e as any).error !== undefined;
+export function isError(e: any): e is Error {
+    return e != null && typeof (e.message) === "string" && (e.stack === undefined || typeof (e.stack) === "string") && e.kind === "sinap-error";
 }

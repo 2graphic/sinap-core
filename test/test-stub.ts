@@ -196,8 +196,10 @@ describe("plugin stub", () => {
         const pluginProg = new (context as any).global["plugin-stub"].Program({ elements: [] });
         const prog = new Program(pluginProg, plugin);
         const numberType = plugin.typeEnvironment.getStringType();
+        const errorType = plugin.typeEnvironment.lookupGlobalType("Error");
 
-        assert.throws(() => prog.run([new CoreValue(numberType, 456)]));
+        assert.equal(errorType, prog.run([new CoreValue(numberType, 456)]).result.type);
+        assert.equal("Cannot read property 'parents' of undefined", prog.run([new CoreValue(numberType, 456)]).result.value.message);
     });
 
     it("has sinap types", () => {
