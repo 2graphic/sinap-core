@@ -126,6 +126,9 @@ export class WrappedScriptObjectType extends WrappedScriptType implements Object
             return;
         }
         this.type.symbol.members.forEach((value, key) => {
+            if (value.name === "__constructor") {
+                return;
+            }
             const tsType = this.env.checker.getTypeOfSymbol(value);
             let wrappingType: WrappedScriptType;
             if (tsType === type) {
