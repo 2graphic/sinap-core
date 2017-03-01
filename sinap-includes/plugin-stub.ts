@@ -17,32 +17,30 @@ interface IGraph {
     [a: string]: any;
 }
 
-function isNode(a: any, b: string): a is INode {
+function isNode(a: any, b: string): a is NodeT {
     return b === "Node";
 }
-function isEdge(a: any, b: string): a is IEdge {
+function isEdge(a: any, b: string): a is EdgeT {
     return b === "Edge";
 }
-function isGraph(a: any, b: string): a is IGraph {
+function isGraph(a: any, b: string): a is GraphT {
     return b === "Graph";
 }
 
-type Graph = IGraph & plugin.Graph;
-type Node = INode & plugin.Nodes;
-type Edge = IEdge & plugin.Edges;
+type GraphT = IGraph & plugin.Graph;
+type NodeT = INode & plugin.Nodes;
+type EdgeT = IEdge & plugin.Edges;
 
-export type SerialJSO = { elements: { kind: string, type: string, data: any }[] };
+export type SerialJSO = { elements: { kind: string, type: string, uuid: string, data: any }[] };
 
-export function deserialize(pojo: SerialJSO): Graph {
-    const elements = pojo.elements.map(e => {
+export function deserialize(pojo: SerialJSO): GraphT {
+    const elements = new Map(pojo.elements.map(e => {
         const type = (plugin as any)[e.type];
-
-        const result = (type ? new type() : {}) as Graph | Node | Edge;
-        for (const k of Object.getOwnPropertyNames(e.data)) {
-            result[k] = e.data[k];
-        }
-        return result;
-    });
+        const result = (type ? new type() : {}) as GraphT | NodeT | EdgeT;
+        Object.assign(result, e.data);
+        (result as any).sinapUniqueIdentifier = e.uuid;
+        return [e.uuid, result] as [string, GraphT | NodeT | EdgeT];
+    }));
 
     const traverse = (a: any) => {
         if (typeof (a) !== "object") {
@@ -51,22 +49,24 @@ export function deserialize(pojo: SerialJSO): Graph {
         for (const k of Object.getOwnPropertyNames(a)) {
             const el = a[k];
             if (el.kind === "sinap-pointer") {
-                a[k] = elements[el.index];
+                a[k] = elements.get(el.uuid)!;
             } else {
                 traverse(el);
             }
         }
     };
 
-    traverse(elements);
+    for (const element of elements.values()) {
+        traverse(element);
+    }
 
-    let graph: Graph = {} as any;
-    let edges: Edge[] = [];
-    let nodes: Node[] = [];
+    let graph: GraphT = {} as any;
+    let edges: EdgeT[] = [];
+    let nodes: NodeT[] = [];
 
     for (let i = 0; i < pojo.elements.length; i++) {
         const kind = pojo.elements[i].kind;
-        const element = elements[i];
+        const element = elements.get(pojo.elements[i].uuid)!;
         if (isGraph(element, kind)) {
             graph = element;
         } else if (isNode(element, kind)) {
@@ -90,7 +90,7 @@ export function deserialize(pojo: SerialJSO): Graph {
 }
 
 export class Program implements PluginProgram {
-    private graph: Graph;
+    private graph: GraphT;
     constructor(graph: SerialJSO) {
         this.graph = deserialize(graph);
     }
@@ -127,13 +127,21 @@ export class Program implements PluginProgram {
     }
 }
 
-export class File {
-    constructor(public name: string) { }
+export type SinapError = { message: string, stack: string, kind: "sinap-error" };
+export type PluginElement = plugin.Nodes | plugin.Edges | plugin.Graph;
+export type Nodes = plugin.Nodes & DrawableNode;
+export type Edges = plugin.Edges & DrawableEdge;
+export type Graph = plugin.Graph & DrawableGraph;
+
+export class WrappedString {
+    kind: "sinap-wrapped-string";
+    constructor(public str: string) { }
 }
 
-export class Color {
-    constructor(public color: string) {
-    }
+export class File extends WrappedString {
+}
+
+export class Color extends WrappedString {
 }
 
 export type Point = { x: number, y: number };
@@ -143,7 +151,7 @@ export class DrawableNode {
     color: Color;
     position: Point;
     shape: "circle" | "square" | "image";
-    image: string;
+    image: File;
     anchorPoints: Point[];
     borderColor: Color;
     borderStyle: "solid" | "dotted" | "dashed";

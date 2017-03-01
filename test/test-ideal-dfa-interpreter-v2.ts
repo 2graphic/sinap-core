@@ -1,8 +1,12 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, CoreElementKind, Plugin, Program, makeValue } from "../src/";
+/// <reference path="../typings/modules/chai/index.d.ts" />
+
+import { loadPluginDir, CoreModel, CoreElementKind, Plugin, Program } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
+import { runProg } from "./test-interpreters";
+
 
 describe("test ideal v2", () => {
     let plugin: Plugin;
@@ -42,18 +46,20 @@ describe("test ideal v2", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
             kind: ["Formal Languages", "DFA"],
-            version: "0.0.7",
+            version: "0.0.8",
             elements: [
                 {
                     kind: "Graph",
                     type: "DFAGraph",
+                    uuid: "0",
                     data: {
-                        startState: { kind: "sinap-pointer", index: 1 },
+                        startState: { kind: "sinap-pointer", uuid: "1" },
                     }
                 },
                 {
                     kind: "Node",
                     type: "DFANode",
+                    uuid: "1",
                     data: {
                         isAcceptState: true,
                         label: "q0",
@@ -62,6 +68,7 @@ describe("test ideal v2", () => {
                 {
                     kind: "Node",
                     type: "DFANode",
+                    uuid: "2",
                     data: {
                         isAcceptState: false,
                         label: "q1",
@@ -70,6 +77,7 @@ describe("test ideal v2", () => {
                 {
                     kind: "Node",
                     type: "DFANode",
+                    uuid: "3",
                     data: {
                         isAcceptState: false,
                         label: "q2",
@@ -78,55 +86,61 @@ describe("test ideal v2", () => {
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "4",
                     data: {
                         label: "0",
-                        source: { kind: "sinap-pointer", index: 1 },
-                        destination: { kind: "sinap-pointer", index: 1 }
+                        source: { kind: "sinap-pointer", uuid: "1" },
+                        destination: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "5",
                     data: {
                         label: "1",
-                        source: { kind: "sinap-pointer", index: 1 },
-                        destination: { kind: "sinap-pointer", index: 2 }
+                        source: { kind: "sinap-pointer", uuid: "1" },
+                        destination: { kind: "sinap-pointer", uuid: "2" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "6",
                     data: {
                         label: "1",
-                        source: { kind: "sinap-pointer", index: 2 },
-                        destination: { kind: "sinap-pointer", index: 1 }
+                        source: { kind: "sinap-pointer", uuid: "2" },
+                        destination: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "7",
                     data: {
                         label: "0",
-                        source: { kind: "sinap-pointer", index: 2 },
-                        destination: { kind: "sinap-pointer", index: 3 }
+                        source: { kind: "sinap-pointer", uuid: "2" },
+                        destination: { kind: "sinap-pointer", uuid: "3" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "8",
                     data: {
                         label: "0",
-                        source: { kind: "sinap-pointer", index: 3 },
-                        destination: { kind: "sinap-pointer", index: 2 }
+                        source: { kind: "sinap-pointer", uuid: "3" },
+                        destination: { kind: "sinap-pointer", uuid: "2" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "9",
                     data: {
                         label: "1",
-                        source: { kind: "sinap-pointer", index: 3 },
-                        destination: { kind: "sinap-pointer", index: 3 }
+                        source: { kind: "sinap-pointer", uuid: "3" },
+                        destination: { kind: "sinap-pointer", uuid: "3" }
                     },
                 },
             ]
@@ -136,31 +150,9 @@ describe("test ideal v2", () => {
         const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
         const prog = new Program(plugProg, plugin);
 
-        let results;
-        results = prog.run([makeValue("11", plugin.typeEnvironment)]);
-        assert.equal(3, results.states.length, "correct number of states");
-        assert.equal(true, results.result.value, "correct value");
-        results = prog.run([makeValue("", plugin.typeEnvironment)]);
-        assert.equal(1, results.states.length, "correct number of states");
-        assert.equal(true, results.result.value, "correct value");
-        results = prog.run([makeValue("101", plugin.typeEnvironment)]);
-        assert.equal(4, results.states.length, "correct number of states");
-        assert.equal(false, results.result.value, "correct value");
-        results = prog.run([makeValue("1000", plugin.typeEnvironment)]);
-        assert.equal(5, results.states.length, "correct number of states");
-        assert.equal(false, results.result.value, "correct value");
-        results = prog.run([makeValue("1001", plugin.typeEnvironment)]);
-        assert.equal(5, results.states.length, "correct number of states");
-        assert.equal(true, results.result.value, "correct value");
-        results = prog.run([makeValue("01", plugin.typeEnvironment)]);
-        assert.equal(3, results.states.length, "correct number of states");
-        assert.equal(false, results.result.value, "correct value");
-        results = prog.run([makeValue("011", plugin.typeEnvironment)]);
-        assert.equal(4, results.states.length, "correct number of states");
-        assert.equal(true, results.result.value, "correct value");
-
-        for (let x = 0; x < 10000; x++) {
-            assert.equal(x % 3 === 0, prog.run([makeValue(x.toString(2), plugin.typeEnvironment)]).result.value);
+        for (let x = 0; x < 100; x++) {
+            const input = x.toString(2);
+            runProg(prog, input, input.length + 1, x % 3 === 0, plugin);
         }
 
     });
@@ -169,18 +161,20 @@ describe("test ideal v2", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
             kind: ["Formal Languages", "DFA"],
-            version: "0.0.7",
+            version: "0.0.8",
             elements: [
                 {
                     kind: "Graph",
                     type: "DFAGraph",
+                    uuid: "0",
                     data: {
-                        startState: { kind: "sinap-pointer", index: 1 },
+                        startState: { kind: "sinap-pointer", uuid: "1" },
                     }
                 },
                 {
                     kind: "Node",
                     type: "DFANode",
+                    uuid: "1",
                     data: {
                         isAcceptState: true,
                         label: "q0",
@@ -189,6 +183,7 @@ describe("test ideal v2", () => {
                 {
                     kind: "Node",
                     type: "DFANode",
+                    uuid: "2",
                     data: {
                         isAcceptState: false,
                         label: "q1",
@@ -197,6 +192,7 @@ describe("test ideal v2", () => {
                 {
                     kind: "Node",
                     type: "DFANode",
+                    uuid: "3",
                     data: {
                         isAcceptState: false,
                         label: "q2",
@@ -205,55 +201,61 @@ describe("test ideal v2", () => {
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "4",
                     data: {
                         label: "0",
-                        source: { kind: "sinap-pointer", index: 1 },
-                        destination: { kind: "sinap-pointer", index: 1 }
+                        source: { kind: "sinap-pointer", uuid: "1" },
+                        destination: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "5",
                     data: {
                         label: "1",
-                        source: { kind: "sinap-pointer", index: 1 },
-                        destination: { kind: "sinap-pointer", index: 2 }
+                        source: { kind: "sinap-pointer", uuid: "1" },
+                        destination: { kind: "sinap-pointer", uuid: "2" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "6",
                     data: {
                         label: "1",
-                        source: { kind: "sinap-pointer", index: 2 },
-                        destination: { kind: "sinap-pointer", index: 1 }
+                        source: { kind: "sinap-pointer", uuid: "2" },
+                        destination: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "7",
                     data: {
                         label: "0",
-                        source: { kind: "sinap-pointer", index: 2 },
-                        destination: { kind: "sinap-pointer", index: 3 }
+                        source: { kind: "sinap-pointer", uuid: "2" },
+                        destination: { kind: "sinap-pointer", uuid: "3" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "8",
                     data: {
                         label: "0",
-                        source: { kind: "sinap-pointer", index: 3 },
-                        destination: { kind: "sinap-pointer", index: 2 }
+                        source: { kind: "sinap-pointer", uuid: "3" },
+                        destination: { kind: "sinap-pointer", uuid: "2" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "DFAEdge",
+                    uuid: "9",
                     data: {
                         label: "1",
-                        source: { kind: "sinap-pointer", index: 3 },
-                        destination: { kind: "sinap-pointer", index: 3 }
+                        source: { kind: "sinap-pointer", uuid: "3" },
+                        destination: { kind: "sinap-pointer", uuid: "3" }
                     },
                 },
             ]
@@ -261,10 +263,11 @@ describe("test ideal v2", () => {
 
         const [context, serialGraph] = setupTest(model);
 
-        for (let x = 0; x < 1000; x++) {
+        for (let x = 0; x < 100; x++) {
             const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
             const prog = new Program(plugProg, plugin);
-            assert.equal(x % 3 === 0, prog.run([makeValue(x.toString(2), plugin.typeEnvironment)]).result.value);
+            const input = x.toString(2);
+            runProg(prog, input, input.length + 1, x % 3 === 0, plugin);
         }
 
     });

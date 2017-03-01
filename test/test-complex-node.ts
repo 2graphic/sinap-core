@@ -1,7 +1,8 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, Plugin, makeValue, Program } from "../src/";
+/// <reference path="../typings/modules/chai/index.d.ts" />
+import { loadPluginDir, CoreModel, Plugin, makeValue, Program, CorePrimitiveValue } from "../src/";
 import { LocalFileService } from "./files-mock";
-import * as assert from "assert";
+import { expect } from "chai";
 import * as vm from "vm";
 
 describe("complex node", () => {
@@ -28,22 +29,31 @@ describe("complex node", () => {
             plugin = plug;
         });
     });
+
+    it("builds", () => {
+        expect(plugin.results.diagnostics.global).to.deep.equal([]);
+        expect(plugin.results.diagnostics.semantic).to.deep.equal([]);
+        expect(plugin.results.diagnostics.syntactic).to.deep.equal([]);
+    });
+
     it("handles nesting", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
             kind: ["Test", "Complex Node"],
-            version: "0.0.7",
+            version: "0.0.8",
             elements: [
                 {
                     kind: "Graph",
                     type: "ComplexGraph",
+                    uuid: "0",
                     data: {
-                        startState: { kind: "sinap-pointer", index: 1 },
+                        startState: { kind: "sinap-pointer", uuid: "1" },
                     }
                 },
                 {
                     kind: "Node",
                     type: "ComplexNode",
+                    uuid: "1",
                     data: {
                         blah: { foo: { bar: { woooo: 1777243 } } },
                     },
@@ -51,18 +61,20 @@ describe("complex node", () => {
             ]
         });
 
-        // TODO: uncomment
-        // assert.equal(1777243, model.elements[1].value.blah.value.foo.value.bar.value.wooo);
-
         const [context, serialGraph] = setupTest(plugin, model);
         const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
         const prog = new Program(pluginProg, plugin);
 
-        let results;
-        results = prog.run([makeValue("11", plugin.typeEnvironment)]);
-        assert.equal(0, results.states.length, "correct number of states");
-        assert.equal(1777243, results.result.value, "correct value");
-        assert.equal(plugin.typeEnvironment.getNumberType(), results.result.type, "correct type");
+        const results = prog.run([makeValue(plugin.typeEnvironment, "11", false)]);
+        if (!(results.result instanceof CorePrimitiveValue)) {
+            throw new Error("fail test");
+        }
+        expect(results.states.length)
+            .to.equal(0, "correct number of states");
+        expect(results.result.data)
+            .to.equal(1777243, "correct value");
+        expect(results.result.type)
+            .to.equal(plugin.typeEnvironment.getNumberType(), "correct type");
     });
 
 });

@@ -1,5 +1,7 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, Plugin, Program, makeValue, isUnionType, TypeEnvironment } from "../src/";
+/// <reference path="../typings/modules/chai/index.d.ts" />
+
+import { loadPluginDir, Plugin, Program, makeValue, isUnionType, PluginTypeEnvironment } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -37,7 +39,7 @@ describe("plugin", () => {
 
     describe("start-functions", () => {
         let program: Program;
-        let tenv: TypeEnvironment;
+        let tenv: PluginTypeEnvironment;
         before(() => {
             return loadTestPlugin("start-functions", ["test", "interpreters"]).then(plugin => {
                 const script = new vm.Script(plugin.results.js as string);
@@ -69,10 +71,10 @@ describe("plugin", () => {
         //     assert.equal("akd", program.run([new CoreValue(anyType, 2), new CoreValue(anyType, 4)]).result.type.name);
         // });
         it("handles string case", () => {
-            assert.equal("string", program.run([makeValue("2", tenv), makeValue("4", tenv)]).result.type.name);
+            assert.equal("string", program.run([makeValue(tenv, "2", false), makeValue(tenv, "4", false)]).result.type.name);
         });
         it("handles number case", () => {
-            assert.equal("number", program.run([makeValue(2, tenv), makeValue(4, tenv)]).result.type.name);
+            assert.equal("number", program.run([makeValue(tenv, 2, false), makeValue(tenv, 4, false)]).result.type.name);
         });
         // it("handles string-number case", () => {
         //     assert.equal("any", program.run([new CoreValue(stringType, "2"), new CoreValue(numberType, 4)]).result.data.name);
@@ -83,7 +85,7 @@ describe("plugin", () => {
     });
     describe("start-functions-2", () => {
         let program: Program;
-        let tenv: TypeEnvironment;
+        let tenv: PluginTypeEnvironment;
         before(() => {
             return loadTestPlugin("start-functions-2", ["test", "interpreters"]).then(plugin => {
                 const script = new vm.Script(plugin.results.js as string);
@@ -103,7 +105,7 @@ describe("plugin", () => {
         });
 
         it("cancels state", () => {
-            const rtype = program.run([makeValue(2, tenv), makeValue(4, tenv)]).result.type;
+            const rtype = program.run([makeValue(tenv, 2, false), makeValue(tenv, 4, false)]).result.type;
             if (!isUnionType(rtype)) {
                 throw new Error("didn't return union type");
             }

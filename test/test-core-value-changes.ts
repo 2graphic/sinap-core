@@ -1,16 +1,20 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
+/// <reference path="../typings/modules/chai/index.d.ts" />
+
 import {
     loadPluginDir,
     Plugin,
-    makeValue,
+    valueWrap,
     Type,
     CoreValue,
     CoreModel,
     CoreElementKind,
-    FakeObjectType,
+    CoreObjectValue,
+    TypeEnvironment,
+    CorePrimitiveValue,
 } from "../src/";
 import { LocalFileService } from "./files-mock";
-import * as assert from "assert";
+import { expect } from "chai";
 
 describe("CV ChangeDetection", () => {
 
@@ -21,7 +25,7 @@ describe("CV ChangeDetection", () => {
     }
 
     let plugin: Plugin;
-    let stringType: Type;
+    let stringType: Type<TypeEnvironment>;
 
     before(() => {
         return loadTestPlugin("ideal-dfa-interpreter-v2").then((p) => {
@@ -31,64 +35,96 @@ describe("CV ChangeDetection", () => {
     });
 
     it("handles simple case", (done) => {
-        const v = makeValue("hello", plugin.typeEnvironment, true);
-        assert(stringType.isIdenticalTo(v.type), "CoreValue isn't a string");
+        const v = valueWrap(plugin.typeEnvironment, "hello", true);
+        expect(stringType.isIdenticalTo(v.type)).to.equal(true, "CoreValue isn't a string");
 
-        v.listeners.add(function(this: CoreValue, newValue: string) {
-            assert.equal("hello", this.value);
-            assert.equal("world", newValue);
+        if (!(v instanceof CorePrimitiveValue)) {
+            throw new Error("bad value made");
+        }
+
+        v.listeners.add(function(value: CoreValue<TypeEnvironment>, newValue: string) {
+            if (!(value instanceof CorePrimitiveValue)) {
+                throw new Error("Test failed");
+            }
+            expect(value.data).to.equal("hello");
+            expect(newValue).to.equal("world");
             done();
         });
 
-        v.value = "world";
+        v.data = "world";
     });
 
     it("handles nesting", (done) => {
-        const O2 = new FakeObjectType(plugin.typeEnvironment, new Map([["myNum", plugin.typeEnvironment.getNumberType()]]));
-        const O1 = new FakeObjectType(plugin.typeEnvironment, new Map([["myO2", O2]]));
+        const nestedValue = valueWrap(plugin.typeEnvironment, { myO2: { myNum: 15 } }, true);
 
-        const nestedValue = makeValue({ myO2: { myNum: 15 } }, O1, true);
+        if (!(nestedValue instanceof CoreObjectValue)) {
+            throw new Error("Not an object value");
+        }
 
-        nestedValue.value.myO2.value.myNum.listeners.add(function(this: CoreValue, newValue: string) {
-            assert.equal(15, this.value);
-            assert.equal(18, newValue);
+        const myO2 = nestedValue.get("myO2");
+
+        if (!(myO2 instanceof CoreObjectValue)) {
+            throw new Error("Not an object value");
+        }
+
+        myO2.get("myNum").listeners.add(function(value: CoreValue<TypeEnvironment>, newValue: string) {
+            if (!(value instanceof CorePrimitiveValue)) {
+                throw new Error("Test failed");
+            }
+            expect(value.data).to.equal(15);
+            expect(newValue).to.equal(18);
             done();
         });
 
-        nestedValue.value.myO2.value.myNum.value = 18;
-    });
+        const o2 = nestedValue.get("myO2");
+        if (!(o2 instanceof CoreObjectValue)) {
+            throw new Error("Test failed");
+        }
+        const primitive = o2.get("myNum");
 
-    it("blocks illegal sets", () => {
-        const O2 = new FakeObjectType(plugin.typeEnvironment, new Map([["myNum", plugin.typeEnvironment.getNumberType()]]));
-        const O1 = new FakeObjectType(plugin.typeEnvironment, new Map([["myO2", O2]]));
-
-        const nestedValue = makeValue({ myO2: { myNum: 15 } }, O1, true);
-
-        assert.throws(() => nestedValue.value = 18);
-        assert.throws(() => nestedValue.value = { "gah": 18 });
-        // TODO: make this fail
-        // assert.throws(()=>nestedValue.value.gah = 18);
-        assert.throws(() => nestedValue.value.myO2.value = 18);
+        if (!(primitive instanceof CorePrimitiveValue)) {
+            throw new Error("primitive should be a primitive");
+        }
+        primitive.data = 18;
     });
 
 
     it("handles CoreElement", (done) => {
         const m = new CoreModel(plugin);
         const e = m.addElement(CoreElementKind.Node, "DFANode");
-        e.data = { acceptState: true, label: "hello" };
+        const isAcceptState = e.get("isAcceptState");
+        const label = e.get("label");
+        if (isAcceptState instanceof CorePrimitiveValue && label instanceof CorePrimitiveValue) {
+            isAcceptState.data = true;
+            label.data = "hello";
+        } else {
+            throw new Error("not primitive values");
+        }
 
-        e.listeners.add(function(this: CoreValue, newValue: string) {
-            assert.equal(true, this.value);
-            assert.equal(false, newValue);
+        e.get("isAcceptState").listeners.add((value: CoreValue<TypeEnvironment>, newValue: boolean) => {
+            if (!(value instanceof CorePrimitiveValue)) {
+                throw new Error("Test failed");
+            }
+            expect(value.data).to.be.true;
+            expect(newValue).to.be.false;
             done();
         });
 
-        e.value['acceptState'] = makeValue(false, plugin.typeEnvironment);
+        const acceptState = e.get("isAcceptState");
+        if (!(acceptState instanceof CorePrimitiveValue)) {
+            throw new Error("! (acceptState instanceof CorePrimitiveValue)");
+        }
+
+        acceptState.data = false;
     });
 
     it("immutablilty means something", () => {
-        const v = makeValue("hello", plugin.typeEnvironment, false);
-        assert(plugin.typeEnvironment.getStringLiteralType("hello").isIdenticalTo(v.type), "CoreValue isn't a string");
-        assert.throws(() => v.value = "world");
+        const v = valueWrap(plugin.typeEnvironment, "hello", false);
+        if (!(v instanceof CorePrimitiveValue)) {
+
+            throw new Error("! (v instanceof CorePrimitiveValue)");
+        }
+        expect(plugin.typeEnvironment.getStringLiteralType("hello").isIdenticalTo(v.type)).to.equal(true, "CoreValue isn't a string");
+        expect(() => v.data = "world").to.throw();
     });
 });
