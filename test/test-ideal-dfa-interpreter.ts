@@ -1,4 +1,6 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
+/// <reference path="../typings/modules/chai/index.d.ts" />
+
 import { interpret, DFAGraph } from "./dfa-definitions";
 import * as assert from "assert";
 

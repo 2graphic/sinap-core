@@ -3,6 +3,8 @@ export class ComplexNode {
 }
 
 export class ComplexEdge {
+    // TODO: this can't be empty because it shouldn't be assignable from most things.
+    kind: "Edge";
 }
 
 export class ComplexGraph {
@@ -19,3 +21,5 @@ export class State {
 export function start(input: ComplexGraph, data: string): number {
     return input.startState.blah.foo.bar.woooo;
 }
+
+export function step(a: any) {}

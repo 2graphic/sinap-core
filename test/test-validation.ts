@@ -1,8 +1,9 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
+/// <reference path="../typings/modules/chai/index.d.ts" />
 
-import * as assert from "assert";
-import { validateEdge, WrappedScriptObjectType, loadPluginDir, Plugin } from "../src/";
+import { validateEdge, WrappedScriptObjectType, loadPluginDir, Plugin, PluginTypeEnvironment } from "../src/";
 import { LocalFileService } from "./files-mock";
+import { expect } from "chai";
 
 describe("isValidEdge", () => {
     const fs = new LocalFileService();
@@ -15,16 +16,16 @@ describe("isValidEdge", () => {
 
     it("map edges", () => {
         return plugin.then(plugin => {
-            const node1 = plugin.typeEnvironment.lookupPluginType("Node1") as WrappedScriptObjectType;
-            const node2 = plugin.typeEnvironment.lookupPluginType("Node2") as WrappedScriptObjectType;
-            const node3 = plugin.typeEnvironment.lookupPluginType("Node3") as WrappedScriptObjectType;
-            const edge1 = plugin.typeEnvironment.lookupPluginType("Edge1") as WrappedScriptObjectType;
-            const edge2 = plugin.typeEnvironment.lookupPluginType("Edge2") as WrappedScriptObjectType;
+            const node1 = plugin.typeEnvironment.lookupPluginType("Node1") as WrappedScriptObjectType<PluginTypeEnvironment>;
+            const node2 = plugin.typeEnvironment.lookupPluginType("Node2") as WrappedScriptObjectType<PluginTypeEnvironment>;
+            const node3 = plugin.typeEnvironment.lookupPluginType("Node3") as WrappedScriptObjectType<PluginTypeEnvironment>;
+            const edge1 = plugin.typeEnvironment.lookupPluginType("Edge1") as WrappedScriptObjectType<PluginTypeEnvironment>;
+            const edge2 = plugin.typeEnvironment.lookupPluginType("Edge2") as WrappedScriptObjectType<PluginTypeEnvironment>;
 
-            assert.equal(true, validateEdge(edge1, node1, node2));
-            assert.equal(false, validateEdge(edge1, node1, node3));
-            assert.equal(true, validateEdge(edge1, node1, node2));
-            assert.equal(false, validateEdge(edge2, node1, node2));
+            expect(validateEdge(edge1, node1, node2)).to.equal(true);
+            expect(validateEdge(edge1, node1, node3)).to.equal(false);
+            expect(validateEdge(edge1, node1, node2)).to.equal(true);
+            expect(validateEdge(edge2, node1, node2)).to.equal(false);
         });
     });
 });

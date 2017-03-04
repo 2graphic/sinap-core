@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { Type, UnionType, IntersectionType, ObjectType, TypeComparisons, isObjectType, isUnionType, TypeEnvironment, ArrayType } from ".";
+import { Type, UnionType, IntersectionType, ObjectType, TypeComparisons, isObjectType, TypeEnvironment, ArrayType } from ".";
 
 /**
  * Store a mapping of typescript types to our wrappers.
@@ -9,17 +9,17 @@ import { Type, UnionType, IntersectionType, ObjectType, TypeComparisons, isObjec
  */
 export class ScriptTypeEnvironment implements TypeEnvironment {
     kind: "SinapTypeEnvironment" = "SinapTypeEnvironment";
-    private types = new Map<ts.Type, WrappedScriptType>();
+    private types = new Map<ts.Type, WrappedScriptType<this>>();
 
     constructor(public checker: ts.TypeChecker) {
     }
 
-    getType(type: ts.Type) {
+    getType(type: ts.Type): WrappedScriptType<this> {
         const t = this.types.get(type);
         if (t) {
             return t;
         }
-        let wrapped: WrappedScriptType;
+        let wrapped: WrappedScriptType<this>;
         if (type.flags & ts.TypeFlags.Union) {
             wrapped = new WrappedScriptUnionType(this, type as ts.UnionType);
         } else if (type.flags & ts.TypeFlags.Intersection) {
@@ -52,7 +52,7 @@ export class ScriptTypeEnvironment implements TypeEnvironment {
     }
 }
 
-export class WrappedScriptType implements Type {
+export class WrappedScriptType<T extends ScriptTypeEnvironment> implements Type<T> {
     get name() {
         return this.env.checker.typeToString(this.type);
     }
@@ -61,13 +61,22 @@ export class WrappedScriptType implements Type {
      * Never call this manually, use getType on the appropriate
      * TypeEnvironment
      */
-    constructor(public env: ScriptTypeEnvironment, public type: ts.Type) {
+    constructor(public env: T, public type: ts.Type) {
     }
 
     /**
+     * Return if this type is a subtype of that type
+     */
+    public isSubtypeOf(that: Type<TypeEnvironment>): boolean {
+        if (!(that instanceof WrappedScriptType)) {
+            return false;
+        }
+        return this.env.checker.isSubtypeOf(this.type, that.type);
+    }
+    /**
      * Return if this type is assignable to that type
      */
-    public isAssignableTo(that: Type): boolean {
+    public isAssignableTo(that: Type<TypeEnvironment>): boolean {
         if (!(that instanceof WrappedScriptType)) {
             return that.isAssignableFrom(this, true);
         }
@@ -76,7 +85,7 @@ export class WrappedScriptType implements Type {
     /**
      * Return if this type is assignable to that type
      */
-    public isAssignableFrom(that: Type): boolean {
+    public isAssignableFrom(that: Type<TypeEnvironment>): boolean {
         if (!(that instanceof WrappedScriptType)) {
             return that.isAssignableTo(this, true);
         }
@@ -85,40 +94,97 @@ export class WrappedScriptType implements Type {
     /**
      * Return if this type is identical to that type
      */
-    public isIdenticalTo(that: Type): boolean {
+    public isIdenticalTo(that: Type<TypeEnvironment>): boolean {
         if (!(that instanceof WrappedScriptType)) {
             return that.isIdenticalTo(this);
         }
         return this.env.checker.isIdenticalTo(this.type, that.type);
     }
+
+    canHold(a: any): { result: boolean, message?: string } {
+        const strVersion: string = typeof a === "string" ? '"' + a + '"' : a != null ? a.toString() : "undefined";
+
+        if (typeof a === this.name) {
+            return { result: true };
+        } else if (strVersion === this.name) {
+            return { result: true };
+        } else {
+            return { result: false, message: `Type ${this.name} cannot hold ${a}` };
+        }
+    }
 }
 
-export class WrappedScriptUnionType extends WrappedScriptType implements UnionType {
-    kind: "SinapUnionType" = "SinapUnionType";
-    types: Set<WrappedScriptType>;
+function objectCanHold(this: ObjectType<TypeEnvironment>, a: any) {
+    if (typeof a !== "object") {
+        return {
+            result: false,
+            message: "Object cannot hold non object"
+        };
+    }
+    for (const [key, value] of this.members.entries()) {
+        const res = value.canHold(a[key]);
+        if (!res.result) {
+            return res;
+        }
+    }
+    return { result: true };
+}
 
-    constructor(env: ScriptTypeEnvironment, type: ts.UnionType) {
+function unionCanHold(this: UnionType<TypeEnvironment>, a: any) {
+    for (const t of this.types) {
+        const canHold = t.canHold(a);
+        if (canHold.result) {
+            return canHold;
+        }
+    }
+    return { result: false, message: "none of the underlying types can hold" };
+}
+
+function intersectionCanHold(this: IntersectionType<TypeEnvironment>, a: any) {
+    for (const t of this.types) {
+        const canHold = t.canHold(a);
+        if (!canHold.result) {
+            return canHold;
+        }
+    }
+    return { result: true };
+}
+
+export class WrappedScriptUnionType<T extends ScriptTypeEnvironment> extends WrappedScriptType<T> implements UnionType<T> {
+    kind: "SinapUnionType" = "SinapUnionType";
+    types: Set<WrappedScriptType<T>>;
+
+    constructor(env: T, type: ts.UnionType) {
         super(env, type);
         this.types = new Set(type.types.map(t => this.env.getType(t)));
     }
-}
 
-export class WrappedScriptIntersectionType extends WrappedScriptType implements IntersectionType {
-    kind: "SinapIntersectionType" = "SinapIntersectionType";
-    types: WrappedScriptType[];
-
-    constructor(env: ScriptTypeEnvironment, type: ts.IntersectionType) {
-        super(env, type);
-        this.types = type.types.map(t => this.env.getType(t));
+    canHold(a: any) {
+        return unionCanHold.apply(this, [a]);
     }
 }
 
-export class WrappedScriptObjectType extends WrappedScriptType implements ObjectType, ArrayType {
+export class WrappedScriptIntersectionType<T extends ScriptTypeEnvironment> extends WrappedScriptType<T> implements IntersectionType<T> {
+    kind: "SinapIntersectionType" = "SinapIntersectionType";
+    types = new Set<WrappedScriptType<T>>();
+
+    constructor(env: T, type: ts.IntersectionType) {
+        super(env, type);
+        this.types = new Set(type.types.map(t => this.env.getType(t)));
+    }
+
+    canHold(a: any) {
+        return intersectionCanHold.apply(this, [a]);
+    }
+}
+
+
+export class WrappedScriptObjectType<T extends ScriptTypeEnvironment> extends WrappedScriptType<T> implements ObjectType<T>, ArrayType<T> {
     kind: "SinapObjectType" = "SinapObjectType";
-    readonly members = new Map<string, WrappedScriptType>();
+    readonly members = new Map<string, WrappedScriptType<T>>();
     readonly prettyNames = new Map<string, string>();
 
-    constructor(env: ScriptTypeEnvironment, type: ts.ObjectType) {
+    constructor(env: T, type: ts.ObjectType) {
         super(env, type);
         if (this.type.symbol === undefined || this.type.symbol.members === undefined) {
             // throw Error("not an object type");
@@ -130,7 +196,7 @@ export class WrappedScriptObjectType extends WrappedScriptType implements Object
                 return;
             }
             const tsType = this.env.checker.getTypeOfSymbol(value);
-            let wrappingType: WrappedScriptType;
+            let wrappingType: WrappedScriptType<T>;
             if (tsType === type) {
                 wrappingType = this;
             } else {
@@ -154,7 +220,7 @@ export class WrappedScriptObjectType extends WrappedScriptType implements Object
         return this.type.symbol === this.env.lookupGlobalType("Array").type.symbol;
     }
 
-    get typeArguments(): WrappedScriptType[] {
+    get typeArguments(): WrappedScriptType<T>[] {
         // not sure what type this actually is,
         // I found `typeArguments` in the debugger,
         // this isn't super safe, but Idk where to get it
@@ -163,14 +229,18 @@ export class WrappedScriptObjectType extends WrappedScriptType implements Object
         const args: ts.Type[] = (this.type as any).typeArguments;
         return args.map(t => this.env.getType(t));
     }
+
+    canHold(a: any) {
+        return objectCanHold.apply(this, [a]);
+    }
 }
 
-export function validateEdge(edge: WrappedScriptObjectType, source?: WrappedScriptObjectType, destination?: WrappedScriptObjectType): boolean {
-    const destinationExpected = edge !== undefined ? edge.members.get("destination") : null;
-    const sourceExpected = edge !== undefined ? edge.members.get("source") : null;
+export function validateEdge<T extends ScriptTypeEnvironment>(edge: WrappedScriptObjectType<T>, source?: WrappedScriptObjectType<T>, destination?: WrappedScriptObjectType<T>): boolean {
+    const destinationExpected = edge !== undefined ? edge.members.get("destination") as WrappedScriptObjectType<T> : null;
+    const sourceExpected = edge !== undefined ? edge.members.get("source") as WrappedScriptObjectType<T> : null;
 
     // constrain that 0th is assignable to 1st
-    const constraints: [WrappedScriptType, WrappedScriptType][] = [];
+    const constraints: [WrappedScriptObjectType<T>, WrappedScriptObjectType<T>][] = [];
 
     if (destinationExpected && destination) {
         constraints.push([destination, destinationExpected]);
@@ -190,14 +260,14 @@ export function validateEdge(edge: WrappedScriptObjectType, source?: WrappedScri
         addParentChildConstraint(source.members.get("children"));
     }
 
-    function addParentChildConstraint(listType?: WrappedScriptType) {
+    function addParentChildConstraint(listType?: WrappedScriptType<T>) {
         // if there is actually the field declared
         if (listType) {
             if (listType.type.flags & ts.TypeFlags.Object) {
                 const obj = listType.type as ts.ObjectType;
                 if (obj.objectFlags & ts.ObjectFlags.Reference) {
                     const ref = obj as ts.TypeReference;
-                    constraints.push([edge, listType.env.getType(ref.typeArguments[0])]);
+                    constraints.push([edge, listType.env.getType(ref.typeArguments[0]) as WrappedScriptObjectType<T>]);
                 } else {
                     // don't care if there is a parents/child field
                     // but if there is, it better be a list
@@ -214,73 +284,85 @@ export function validateEdge(edge: WrappedScriptObjectType, source?: WrappedScri
     return constraints.reduce((prev, [t1, t2]) => prev ? t1.isAssignableTo(t2) : false, true);
 }
 
-export abstract class FakeType implements Type {
-    constructor(public env: TypeEnvironment) {
+export abstract class FakeType<T extends TypeEnvironment> implements Type<T> {
+    constructor(public env: T) {
 
     }
     /**
      * Return if this type is assignable to that type
      */
-    public abstract isXTo(that: Type, X: keyof TypeComparisons): boolean;
+    public abstract isXTo(that: Type<T>, X: keyof TypeComparisons<T>): boolean;
 
-    public isAssignableTo(that: Type) {
+    public isAssignableTo(that: Type<T>) {
         return this.isXTo(that, "isAssignableTo");
     }
-    public isAssignableFrom(that: Type) {
+    public isAssignableFrom(that: Type<T>) {
         return this.isXTo(that, "isAssignableFrom");
     }
-    public isIdenticalTo(that: Type) {
+    public isIdenticalTo(that: Type<T>) {
         return this.isXTo(that, "isIdenticalTo");
     }
-
+    public isSubtypeOf(_: Type<T>) {
+        return false;
+    }
     abstract name: string;
+    abstract canHold(a: any): { result: boolean, value?: string };
 }
 
-export class FakeUnionType extends FakeType implements UnionType {
+export class FakeUnionType<T extends TypeEnvironment> extends FakeType<T> implements UnionType<T> {
     kind: "SinapUnionType" = "SinapUnionType";
 
-    constructor(env: TypeEnvironment, readonly types: Set<Type>) {
+    constructor(env: T, readonly types: Set<Type<T>>) {
         super(env);
     }
 
-    public isXTo(that: Type, X: keyof TypeComparisons): boolean {
+    public isXTo(that: Type<T>, X: keyof TypeComparisons<T>): boolean {
         if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === "any") {
             return true;
         }
-        if (isUnionType(that)) {
-            if (this.types.size !== that.types.size) {
-                return false;
-            }
-
-            outerLoop: for (const type of this.types.values()) {
-                if (that.types.has(type)) {
-                    continue;
-                }
-                for (const thatType of that.types.values()) {
-                    if (type[X](thatType)) {
-                        continue outerLoop;
-                    }
-                }
-                return false;
-            }
-            return true;
-        }
-        return false;
+        throw new Error(`not implemented FakeUnionType.${X}`);
     }
 
     get name() {
         return [...this.types.values()].map(t => t.name).join(" | ");
     }
+
+    canHold(a: any) {
+        return unionCanHold.apply(this, [a]);
+    }
 }
 
-export class FakeObjectType extends FakeType implements ObjectType {
-    kind: "SinapObjectType" = "SinapObjectType";
+export class FakeIntersectionType<T extends TypeEnvironment> extends FakeType<T> implements IntersectionType<T> {
+    kind: "SinapIntersectionType" = "SinapIntersectionType";
 
-    constructor(env: TypeEnvironment, readonly members: Map<string, Type>) {
+    constructor(env: T, readonly types: Set<Type<T>>) {
         super(env);
     }
 
-    public isXTo(that: Type, X: keyof TypeComparisons): boolean {
+    public isXTo(that: Type<T>, X: keyof TypeComparisons<T>): boolean {
+        if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === "any") {
+            return true;
+        }
+        throw new Error(`not implemented FakeIntersectionType.${X}`);
+    }
+
+    get name() {
+        return [...this.types.values()].map(t => t.name).join(" | ");
+    }
+
+    canHold(a: any) {
+        return intersectionCanHold.apply(this, [a]);
+    }
+}
+
+export class FakeObjectType<T extends TypeEnvironment> extends FakeType<T> implements ObjectType<T> {
+    kind: "SinapObjectType" = "SinapObjectType";
+
+    constructor(env: T, readonly members: Map<string, Type<T>>) {
+        super(env);
+    }
+
+    public isXTo(that: Type<T>, X: keyof TypeComparisons<T>): boolean {
         if ((that instanceof WrappedScriptType) && (that.type as any).intrinsicName === "any") {
             return true;
         }
@@ -304,6 +386,10 @@ export class FakeObjectType extends FakeType implements ObjectType {
 
     isArray() {
         return false;
+    }
+
+    canHold(a: any) {
+        return objectCanHold.apply(this, [a]);
     }
 
     name = "SinapObjectType(Change this)";

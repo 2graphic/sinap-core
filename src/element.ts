@@ -1,61 +1,32 @@
-import { Plugin, ObjectType, CoreObjectValue, CoreValue, makeValue } from ".";
+import {
+    Plugin,
+    ObjectType,
+    CoreIntersectionValue,
+    PluginTypeEnvironment,
+    FakeIntersectionType,
+    CoreValue,
+    MakeValue,
+} from ".";
 import * as assert from "assert";
 
 export enum CoreElementKind { Node, Edge, Graph };
 
-function makeDataProxy(data: { [a: string]: any }, type: ObjectType) {
-    return new Proxy(data, {
-        get: (b, k: string) => {
-            const bv = b[k];
-            if (bv instanceof CoreElement) {
-                return bv;
-            }
-            return makeValue(bv, type.members.get(k) || type.env);
-        },
-        set: () => {
-            throw new Error("setting values is unimplemented");
-        }
-    });
-}
-
 /**
  * Represents nodes, edges, and graphs.
  */
-export class CoreElement extends CoreObjectValue {
-    private _data: { [a: string]: any };
-    private _value: { [a: string]: CoreValue };
-
-    /**
-     * Distinction between data and value:
-     * data = {
-     *  [a: string]: CoreElement (if this.members.get(a) == CoreElement
-     *  [b: string]: raw_data (Unwrapped CoreValue if this.members.get(b) != CoreElement)
-     * }
-     */
-    get data() {
-        return this._data;
+export class CoreElement extends CoreIntersectionValue<PluginTypeEnvironment> {
+    constructor(readonly pluginType: ObjectType<PluginTypeEnvironment>, readonly kind: CoreElementKind, readonly uuid: string, data: any, initialValue: MakeValue<PluginTypeEnvironment>) {
+        super(new FakeIntersectionType<PluginTypeEnvironment>(pluginType.env,
+            new Set([pluginType, pluginType.env.lookupSinapType("Drawable" + CoreElementKind[kind])])), data, true, initialValue);
     }
 
-    set data(d) {
-        this._value = makeDataProxy(d, this.type);
-        this._data = d;
-    }
-
-    get value() {
-        return this._value;
-    }
-
-    set value(obj) {
-        // TODO: this needs test cases
-        for (const key of Object.getOwnPropertyNames(obj)) {
-            this._value[key] = obj[key];
-        }
-    }
-
-    constructor(readonly type: ObjectType, readonly kind: CoreElementKind) {
-        super(type, {});
-
-        this.data = {};
+    jsonify(a: (a: CoreValue<PluginTypeEnvironment>) => { value: any, result: boolean }) {
+        return {
+            kind: CoreElementKind[this.kind],
+            type: this.pluginType.name,
+            uuid: this.uuid,
+            data: super.jsonify(a),
+        };
     }
 }
 
@@ -66,11 +37,25 @@ export type SerialJSO = {
     format: string,
     kind: string[],
     version: string,
-    elements: { kind: string, type: string, data: any }[],
+    elements: { kind: string, type: string, data: any, uuid: string }[],
 };
 
+export class FakePromise<T> {
+    waiters: ((t: T) => void)[] = [];
+
+    then(a: (t: T) => void) {
+        this.waiters.push(a);
+    }
+
+    resolve = (t: T) => {
+        for (const waiter of this.waiters) {
+            waiter(t);
+        }
+    }
+}
+
 export class CoreModel {
-    elements: CoreElement[];
+    elements: Map<string, CoreElement>;
 
     /**
      * Create a new CoreModel. If `pojo` is provided, build the model from the
@@ -81,39 +66,43 @@ export class CoreModel {
      */
     constructor(private plugin: Plugin, pojo?: SerialJSO) {
         if (pojo === undefined) {
-            this.elements = [];
+            this.elements = new Map();
             return;
         }
 
         assert.deepEqual(plugin.pluginKind, pojo.kind);
 
-        if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.7") {
+        if (pojo.format !== "sinap-file-format" || pojo.version !== "0.0.8") {
             throw Error("not a CoreModel");
         }
 
-        this.elements = pojo.elements.map((e) => this.plugin.makeElement(CoreElementKind[e.kind as any] as any, e.type));
+        const elementsPromises: [string, ((e: CoreElement) => void)][] = [];
 
-        // TODO: typecheck all values against plugin-declared.
-        const traverse = (a: any) => {
-            if (typeof (a) !== "object") {
-                return;
+        const transformer: MakeValue<PluginTypeEnvironment> = (t, a, mutable) => {
+            if (a && a.kind === "sinap-pointer") {
+                const prom = new FakePromise();
+                elementsPromises.push([a.uuid, prom.resolve]);
+                return prom;
             }
-            for (const k of Object.getOwnPropertyNames(a)) {
-                const el = a[k];
-                if (el.kind === "sinap-pointer") {
-                    a[k] = this.elements[el.index];
-                } else {
-                    traverse(el);
-                }
-            }
+            return this.plugin.typeEnvironment.typeToValue(t, a, mutable, transformer);
         };
 
-        traverse(pojo.elements);
+        const elementsList = pojo.elements.map((e) => {
+            const kind: CoreElementKind = CoreElementKind[e.kind as any] as any;
+            return new CoreElement(
+                plugin.typeEnvironment.getElementType(kind, e.type),
+                kind,
+                e.uuid,
+                e.data,
+                transformer
+            );
+        });
 
-        for (let i = 0; i < pojo.elements.length; i++) {
-            this.elements[i].data = pojo.elements[i].data;
+        this.elements = new Map(elementsList.map(e => [e.uuid, e] as [string, CoreElement]));
+
+        for (const [uuid, resolve] of elementsPromises) {
+            resolve(this.elements.get(uuid)!);
         }
-
     }
 
     /**
@@ -121,16 +110,18 @@ export class CoreModel {
      */
     addElement(kind: CoreElementKind, type?: string) {
         const element = this.plugin.makeElement(kind, type);
-        this.elements.push(element);
+        if (this.elements.has(element.uuid)) {
+            throw new Error("Reused UUID");
+        }
+        this.elements.set(element.uuid, element);
         return element;
     }
 
     removeElement(element: CoreElement) {
-        const idx = this.elements.indexOf(element);
-        if (idx === -1) {
+        if (!this.elements.has(element.uuid)) {
             throw Error("element doesn't exist");
         }
-        this.elements.splice(idx, 1);
+        this.elements.delete(element.uuid);
     }
 
     /**
@@ -141,23 +132,22 @@ export class CoreModel {
         return {
             format: "sinap-file-format",
             kind: this.plugin.pluginKind,
-            version: "0.0.7",
-            elements: this.elements.map((element) => {
-                return {
-                    kind: CoreElementKind[element.kind],
-                    type: element.type.name,
-                    data: JSON.parse(JSON.stringify(element.data, (_, v) => {
-                        const idx = this.elements.indexOf(v);
-                        if (idx !== -1) {
-                            return {
-                                kind: "sinap-pointer",
-                                index: idx,
-                            };
+            version: "0.0.8",
+            elements: [...this.elements.values()].map((element) => element.jsonify((a) => {
+                if (a instanceof CoreElement) {
+                    if (!this.elements.has(a.uuid)) {
+                        throw new Error(`somewhere in the graph is an element not in the model: ${a.uuid}`);
+                    }
+                    return {
+                        result: true,
+                        value: {
+                            kind: "sinap-pointer",
+                            uuid: a.uuid,
                         }
-                        return v;
-                    })),
-                };
-            }),
+                    };
+                }
+                return { result: false, value: undefined };
+            })),
         };
     }
 }
