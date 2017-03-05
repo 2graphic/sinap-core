@@ -37,8 +37,10 @@ export class CorePlaceholderValue<T extends TypeEnvironment> extends CoreValue<T
     }
 }
 
+export type PrimitiveTypes = boolean | number | string | undefined | null;
+
 export class CorePrimitiveValue<T extends TypeEnvironment> extends CoreValue<T> {
-    constructor(type: Type<T>, private _data: boolean | number | string | undefined | null, mutable: boolean, converter: MakeValue<T>) {
+    constructor(type: Type<T>, private _data: PrimitiveTypes, mutable: boolean, converter: MakeValue<T>) {
         super(type, mutable, converter);
         if (this._data == null) {
             this.initialize();
@@ -48,7 +50,7 @@ export class CorePrimitiveValue<T extends TypeEnvironment> extends CoreValue<T> 
     get data() {
         return this._data;
     }
-    set data(a: boolean | number | string | undefined | null) {
+    set data(a: PrimitiveTypes) {
         if (!this.mutable) {
             throw new Error("cannot load into immutable object");
         }
@@ -137,6 +139,10 @@ export class CoreObjectValue<T extends TypeEnvironment> extends CoreValue<T> {
         return this.values[k];
     }
 
+    set(k: string, v: CoreValue<T>) {
+        this.values[k] = v;
+    }
+
     private load(a: any) {
         if (typeof a !== "object") {
             throw new Error("cannot load a non-object to an object");
@@ -220,9 +226,19 @@ export class CoreUnionValue<T extends TypeEnvironment> extends CoreValue<T> {
         }
     }
 
-    get data(): any {
+    get data(): PrimitiveTypes {
         if ((this.value instanceof CorePrimitiveValue) || (this.value instanceof CoreUnionValue)) {
             return this.value.data;
+        } else {
+            throw new Error("can't read data from non-primitive value");
+        }
+    }
+
+    set data(k: PrimitiveTypes) {
+        if (this.type.canHold(k)) {
+            const oldValue = this.value;
+            this.value = valueWrap(this.type.env, k, this.mutable);
+            this.value.listeners = oldValue.listeners;
         } else {
             throw new Error("can't read data from non-primitive value");
         }
@@ -277,6 +293,10 @@ export class CoreIntersectionValue<T extends TypeEnvironment> extends CoreValue<
 
     get(key: string) {
         return this.getType(key).get(key);
+    }
+
+    set(key: string, v: CoreValue<T>) {
+        return this.getType(key).set(key, v);
     }
 
     jsonify(a: (a: CoreValue<T>) => { value: any, result: boolean }) {

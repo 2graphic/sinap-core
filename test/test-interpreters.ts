@@ -2,7 +2,20 @@
 /// <reference path="../typings/modules/chai/index.d.ts" />
 
 import { expect } from "chai";
-import { loadPluginDir, CoreModel, Plugin, makeValue, Program, CorePrimitiveValue, CoreUnionValue, CoreObjectValue } from "../src/";
+import {
+    loadPluginDir,
+    CoreModel,
+    Plugin,
+    makeValue,
+    Program,
+    CorePrimitiveValue,
+    CoreUnionValue,
+    CoreObjectValue,
+    CoreElementKind,
+    CoreValue,
+    CoreIntersectionValue,
+    PluginTypeEnvironment,
+} from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -1273,6 +1286,76 @@ describe("various interpreters", () => {
             runProg(prog, "10001", 6, true, nfa);
             runProg(prog, "0001", 5, true, nfa);
             runProg(prog, "1100", 5, false, nfa);
+        });
+    });
+    describe("turing machine", () => {
+        let turing: Plugin;
+        before((done) => {
+            loadTestPlugin("turing").then((turingPlugin) => {
+                turing = turingPlugin;
+                done();
+            });
+        });
+
+        it("compiles", () => {
+            expect(turing.results.diagnostics).to.deep.equal({
+                global: [],
+                semantic: [],
+                syntactic: [],
+            });
+        });
+
+        function setPrim(c: CoreValue<PluginTypeEnvironment>, s: string, v: any) {
+            if (!(c instanceof CoreObjectValue || c instanceof CoreIntersectionValue)) {
+                throw new Error("set prim wants an object like");
+            }
+            const prim = c.get(s);
+            if (!(prim instanceof CorePrimitiveValue || prim instanceof CoreUnionValue)) {
+                throw new Error(`."${s}" must be a primitive`);
+            }
+            prim.data = v;
+        }
+
+        it("does a simple thing", () => {
+            const model = new CoreModel(turing);
+            const graph = model.addElement(CoreElementKind.Graph);
+            setPrim(graph, "blank", "K");
+            const q1 = model.addElement(CoreElementKind.Node);
+            const q2 = model.addElement(CoreElementKind.Node);
+            const q3 = model.addElement(CoreElementKind.Node);
+            setPrim(q1, "label", "q1");
+            setPrim(q2, "label", "q2");
+            setPrim(q3, "label", "q3");
+            setPrim(q1, "isStartState", true);
+            setPrim(q3, "isAcceptState", true);
+
+            const t1 = model.addElement(CoreElementKind.Edge);
+            t1.set("source", q1);
+            t1.set("destination", q2);
+            setPrim(t1, "read", "1");
+            setPrim(t1, "write", "2");
+            setPrim(t1, "move", "Right");
+
+            const t2 = model.addElement(CoreElementKind.Edge);
+            t2.set("source", q2);
+            t2.set("destination", q3);
+            setPrim(t2, "read", "2");
+            setPrim(t2, "write", "3");
+            setPrim(t2, "move", "Right");
+
+            const [context, serialGraph] = setupTest(turing, model);
+            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
+            const prog = new Program(pluginProg, turing);
+
+            runProg(prog, "11", 3, false, turing);
+            runProg(prog, "12", 3, true, turing);
+
+            // TODO: make this test pass
+            // const results = prog.run([makeValue(turing.typeEnvironment, "12", false)]);
+            // const lastState = results.states.pop()!;
+            // expect(lastState.jsonify(() => { return { result: false, value: undefined }; })).to.deep.equal(
+            //     {}
+            // );
         });
     });
 });

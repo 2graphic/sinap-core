@@ -12,11 +12,15 @@ import {
     CoreObjectValue,
     TypeEnvironment,
     CorePrimitiveValue,
+    makeValue,
+    typeToValue,
+    FakeIntersectionType,
+    CoreIntersectionValue,
 } from "../src/";
 import { LocalFileService } from "./files-mock";
 import { expect } from "chai";
 
-describe("CV ChangeDetection", () => {
+describe("Core Value", () => {
 
     const fs = new LocalFileService();
     function loadTestPlugin(name: string): Promise<Plugin> {
@@ -116,6 +120,45 @@ describe("CV ChangeDetection", () => {
         }
 
         acceptState.data = false;
+    });
+
+    it("has set on object", () => {
+        const value1 = valueWrap(plugin.typeEnvironment, { a: { b: "1" } }, true);
+        const value2 = valueWrap(plugin.typeEnvironment, { b: "4" }, true);
+        if (!(value1 instanceof CoreObjectValue)) {
+            throw new Error("!(value1 instanceof CoreObjectValue)");
+        }
+        value1.set("a", value2);
+
+        expect(value1.jsonify(() => { return { result: false, value: undefined }; }))
+            .to.deep.equal({ a: { b: "4" } });
+    });
+
+    it("has set on intersection", () => {
+        const value1 = valueWrap(plugin.typeEnvironment, { a: { b: "1" } }, true);
+        const value2 = valueWrap(plugin.typeEnvironment, { b: "4" }, true);
+        const value3 = typeToValue(new FakeIntersectionType(plugin.typeEnvironment, new Set([
+            value1.type,
+            value2.type,
+        ])), { a: { b: "2" }, b: "5" }, true, makeValue);
+
+        expect(value3.jsonify(() => { return { result: false, value: undefined }; }))
+            .to.deep.equal({ a: { b: "2" }, b: "5" });
+
+        if (!(value3 instanceof CoreIntersectionValue)) {
+            throw new Error("!(value3 instanceof CoreIntersectionValue)");
+        }
+        value3.set("b", valueWrap(plugin.typeEnvironment, "7", true));
+
+        expect(value3.jsonify(() => { return { result: false, value: undefined }; }))
+            .to.deep.equal({ a: { b: "2" }, b: "7" });
+
+        value3.set("a", value2);
+
+        expect(value3.jsonify(() => { return { result: false, value: undefined }; }))
+            .to.deep.equal({ a: { b: "4" }, b: "7" });
+
+        expect(value3.get("a")).to.equal(value2);
     });
 
     it("immutablilty means something", () => {
