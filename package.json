@@ -24,8 +24,8 @@
     }
   },
   "scripts": {
-    "formater": "tsfmt -r ./src/*.ts && tsfmt -r ./test/*.ts && tsfmt -r ./sinap-includes/*.ts",
-    "formater:verify": "tsfmt --verify ./src/*.ts && tsfmt --verify ./test/*.ts && tsfmt --verify ./sinap-includes/*.ts",
+    "formater": "tsfmt -r  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
+    "formater:verify": "tsfmt --verify  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
     "format": "npm run formater && tslint --project . --fix",
     "lint": "npm run formater:verify && tslint --project .",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
