@@ -1,5 +1,6 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 /// <reference path="../typings/modules/chai/index.d.ts" />
+import * as ts from "typescript";
 
 import {
     loadPluginDir,
@@ -11,11 +12,14 @@ import {
     CoreElementKind,
     CoreObjectValue,
     TypeEnvironment,
+    ScriptTypeEnvironment,
     CorePrimitiveValue,
     makeValue,
+    CoreArrayValue,
     typeToValue,
     FakeIntersectionType,
     CoreIntersectionValue,
+    FakeUnionType,
 } from "../src/";
 import { LocalFileService } from "./files-mock";
 import { expect } from "chai";
@@ -169,5 +173,87 @@ describe("Core Value", () => {
         }
         expect(plugin.typeEnvironment.getStringLiteralType("hello").isIdenticalTo(v.type)).to.equal(true, "CoreValue isn't a string");
         expect(() => v.data = "world").to.throw();
+    });
+
+
+    describe("deep equals", () => {
+        it("primitive", () => {
+            const v1 = valueWrap(plugin.typeEnvironment, "hello", false);
+            const v2 = valueWrap(plugin.typeEnvironment, "hello", true);
+            if (!(v1 instanceof CorePrimitiveValue && (v2 instanceof CorePrimitiveValue))) {
+                throw new Error("! (v[12] instanceof CorePrimitiveValue)");
+            }
+
+            expect(v1.deepEqual(v2)).to.be.true;
+            v2.data = "world";
+            expect(v1.deepEqual(v2)).to.be.false;
+        });
+
+        it("object", () => {
+            const v1 = valueWrap(plugin.typeEnvironment, { "hello": "world" }, false);
+            const v2 = valueWrap(plugin.typeEnvironment, { "hello": "world" }, true);
+            const v3 = valueWrap(plugin.typeEnvironment, "yo", true);
+            if (!(v1 instanceof CoreObjectValue && (v2 instanceof CoreObjectValue))) {
+                throw new Error("! (v[12] object value)");
+            }
+
+            expect(v1.deepEqual(v2)).to.be.true;
+            const v4 = v2.get("hello");
+            if (!(v4 instanceof CorePrimitiveValue)) {
+                throw new Error("v4 not a primitive value");
+            }
+            v4.data = "world1";
+            expect(v1.deepEqual(v2)).to.be.false;
+            expect(v1.deepEqual(v3)).to.be.false;
+            expect(v2.deepEqual(v3)).to.be.false;
+            expect(v1.deepEqual(v1)).to.be.true;
+            expect(v2.deepEqual(v2)).to.be.true;
+            expect(v3.deepEqual(v3)).to.be.true;
+        });
+
+        it("array", () => {
+            const program = ts.createProgram(["test/array-type.ts"], {});
+            const env = new ScriptTypeEnvironment(program.getTypeChecker());
+            const array1 = env.getType(env.checker.lookupTypeAt("array1", program.getSourceFile("test/array-type.ts")));
+            const array2 = env.getType(env.checker.lookupTypeAt("array2", program.getSourceFile("test/array-type.ts")));
+
+            const v1 = makeValue(array1, [{ a: 1 }, { a: 2 }, { a: 3 }], true);
+            const v2 = makeValue(array1, [{ a: 1 }, { a: 2 }, { a: 3 }], true);
+            const v3 = makeValue(array1, [{ a: 2 }, { a: 3 }], true);
+
+            expect(v1).to.instanceOf(CoreArrayValue);
+
+            expect(v1.deepEqual(v2)).to.be.true;
+            expect(v1.deepEqual(v3)).to.be.false;
+
+            const v4 = makeValue(array2, [1, 2, 3], true);
+            const v5 = makeValue(array2, [1, 2, 3], true);
+            const v6 = makeValue(array2, [1, 2, 4], true);
+            const v7 = makeValue(array2, [1, 4, 3], true);
+
+            expect(v4.deepEqual(v5)).to.be.true;
+            expect(v4.deepEqual(v6)).to.be.false;
+            expect(v4.deepEqual(v7)).to.be.false;
+
+            expect(v1.deepEqual(v6)).to.be.false;
+            expect(v6.deepEqual(v1)).to.be.false;
+        });
+
+        it("intersection", () => {
+            throw new Error("not implemented");
+        });
+        it("union", () => {
+            const v1 = valueWrap(plugin.typeEnvironment, 17, true);
+            const v2 = valueWrap(plugin.typeEnvironment, "hello", true);
+            const v3 = makeValue(new FakeUnionType(plugin.typeEnvironment, new Set([v1.type, v2.type])), 15, true);
+
+            expect(v3.deepEqual(v1)).to.be.false;
+            expect(v3.deepEqual(v2)).to.be.false;
+
+            (v3 as any).data = "hello";
+
+            expect(v3.deepEqual(v2)).to.be.true;
+            expect(v2.deepEqual(v3)).to.be.true;
+        });
     });
 });

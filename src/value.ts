@@ -25,6 +25,7 @@ export abstract class CoreValue<T extends TypeEnvironment> {
     }
 
     abstract jsonify(a: (a: CoreValue<T>) => { value: any, result: boolean }): any;
+    abstract deepEqual(v: CoreValue<T>): boolean;
 }
 
 export class CorePlaceholderValue<T extends TypeEnvironment> extends CoreValue<T> {
@@ -34,6 +35,10 @@ export class CorePlaceholderValue<T extends TypeEnvironment> extends CoreValue<T
 
     jsonify(_: any) {
         return { kind: "sinap-placeholder" };
+    }
+
+    deepEqual() {
+        return false;
     }
 }
 
@@ -89,6 +94,13 @@ export class CorePrimitiveValue<T extends TypeEnvironment> extends CoreValue<T> 
 
     jsonify() {
         return this.data;
+    }
+
+    deepEqual(v: CoreValue<T>): boolean {
+        if (!(v instanceof CorePrimitiveValue)) {
+            return false;
+        }
+        return this.data === v.data;
     }
 }
 
@@ -166,6 +178,18 @@ export class CoreObjectValue<T extends TypeEnvironment> extends CoreValue<T> {
         }
         return result;
     }
+
+    deepEqual(that: CoreValue<T>): boolean {
+        if (!(that instanceof CoreObjectValue)) {
+            return false;
+        }
+        for (const key of this.type.members.keys()) {
+            if (!this.get(key).deepEqual(that.get(key))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 export class CoreArrayValue<T extends TypeEnvironment> extends CoreValue<T> {
@@ -211,6 +235,20 @@ export class CoreArrayValue<T extends TypeEnvironment> extends CoreValue<T> {
             }
         });
     }
+
+    deepEqual(that: CoreValue<T>): boolean {
+        if (!(that instanceof CoreArrayValue)) {
+            return false;
+        }
+
+        if (this.values.length !== that.values.length) {
+            return false;
+        }
+
+        return this.values.reduce((pv, v1, idx) => {
+            return pv && v1.deepEqual(that.values[idx]);
+        }, true);
+    }
 }
 
 
@@ -250,6 +288,10 @@ export class CoreUnionValue<T extends TypeEnvironment> extends CoreValue<T> {
             return trans.value;
         }
         return this.value.jsonify(a);
+    }
+
+    deepEqual(that: CoreValue<T>): boolean {
+        return this.value.deepEqual(that);
     }
 }
 
@@ -308,6 +350,14 @@ export class CoreIntersectionValue<T extends TypeEnvironment> extends CoreValue<
         }
         return result;
     }
+
+    deepEqual(that: CoreValue<T>): boolean {
+        if (!(that instanceof CoreIntersectionValue)) {
+            return false;
+        }
+        return false;
+    }
+
 }
 
 function makePrimitiveValue<T extends TypeEnvironment>(a: any, type: Type<T> | T, mutable: boolean, converter: MakeValue<T>): CoreValue<T> {
