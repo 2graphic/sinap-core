@@ -168,7 +168,8 @@ describe("various interpreters", () => {
             const prog = new Program(pluginProg, dfa);
 
             const results = prog.run([makeValue(dfa.typeEnvironment, "1101", false)]);
-            console.log(results.states);
+            // TODO: this will need to check for states better
+            expect(results.states.map((s) => (s as any).values.active)).to.deep.equal(["1", "2", "1", "1", "2"]);
 
             for (let x = 0; x < 100; x++) {
                 const input = x.toString(2);
