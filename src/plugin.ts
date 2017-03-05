@@ -106,7 +106,7 @@ export class CompilationResult {
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[]) {
+    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[], readonly description: string) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 
