@@ -34,7 +34,7 @@
     "test": "npm run build && npm run test:nobuild",
     "test:nobuild": "mocha test/build/index.js",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post",
-    "postinstall": "node -e \"process.env.NODE_ENV != 'production' && process.exit(1)\" || npm run typings"
+    "prepublish": "npm run typings"
   },
   "dependencies": {
     "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true"
