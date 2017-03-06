@@ -5,4 +5,5 @@ export * from "./element";
 export * from "./plugin";
 export * from "./files";
 export * from "./program";
+export * from "./bind";
 export * from "../sinap-includes/types-interfaces";

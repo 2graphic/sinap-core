@@ -23,8 +23,8 @@ import * as vm from "vm";
 export function runProg(prog: Program, input: string, states: number, resultE: boolean, plugin: Plugin) {
     const results = prog.run([makeValue(plugin.typeEnvironment, input, false)]);
     assert.equal(states, results.states.length, "correct number of states");
-    if (results.result instanceof CorePrimitiveValue || results.result instanceof CoreUnionValue) {
-        assert.equal(resultE, results.result.data, "correct value");
+    if (results.result instanceof CoreUnionValue && results.result.value instanceof CorePrimitiveValue) {
+        assert.equal(resultE, results.result.value.data, "correct value");
     } else {
         throw new Error("result should be a primitive value");
     }
@@ -1310,10 +1310,13 @@ describe("various interpreters", () => {
                 throw new Error("set prim wants an object like");
             }
             const prim = c.get(s);
-            if (!(prim instanceof CorePrimitiveValue || prim instanceof CoreUnionValue)) {
+            if (prim instanceof CoreUnionValue && prim.value instanceof CorePrimitiveValue) {
+                prim.value = makeValue(c.type.env, v, false);
+            } else if (prim instanceof CorePrimitiveValue) {
+                prim.data = v;
+            } else {
                 throw new Error(`."${s}" must be a primitive`);
             }
-            prim.data = v;
         }
 
         it("does a simple thing", () => {

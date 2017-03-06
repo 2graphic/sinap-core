@@ -1,5 +1,4 @@
-/// <reference path="../typings/globals/mocha/index.d.ts" />
-/// <reference path="../typings/modules/chai/index.d.ts" />
+/// <reference path="../typings/index.d.ts" />
 import * as ts from "typescript";
 
 import {
@@ -20,6 +19,11 @@ import {
     FakeIntersectionType,
     CoreIntersectionValue,
     FakeUnionType,
+    bind,
+    deepListen,
+    PluginTypeEnvironment,
+    CoreUnionValue,
+    FakeObjectType
 } from "../src/";
 import { LocalFileService } from "./files-mock";
 import { expect } from "chai";
@@ -126,12 +130,21 @@ describe("Core Value", () => {
         acceptState.data = false;
     });
 
-    it("has set on object", () => {
+    it("has set on object", (done) => {
         const value1 = valueWrap(plugin.typeEnvironment, { a: { b: "1" } }, true);
         const value2 = valueWrap(plugin.typeEnvironment, { b: "4" }, true);
         if (!(value1 instanceof CoreObjectValue)) {
             throw new Error("!(value1 instanceof CoreObjectValue)");
         }
+
+        value1.listeners.add((v: CoreObjectValue<TypeEnvironment>, newValue: { [a: string]: CoreValue<TypeEnvironment> }) => {
+            expect(v.jsonify(() => { return { result: false, value: undefined }; }))
+                .to.deep.equal({ a: { b: "1" } });
+            expect(newValue.a.jsonify(() => { return { result: false, value: undefined }; }))
+                .to.deep.equal({ b: "4" });
+            done();
+        });
+
         value1.set("a", value2);
 
         expect(value1.jsonify(() => { return { result: false, value: undefined }; }))
@@ -250,10 +263,227 @@ describe("Core Value", () => {
             expect(v3.deepEqual(v1)).to.be.false;
             expect(v3.deepEqual(v2)).to.be.false;
 
-            (v3 as any).data = "hello";
+            (v3 as any).value = valueWrap(plugin.typeEnvironment, "hello", true);
 
             expect(v3.deepEqual(v2)).to.be.true;
             expect(v2.deepEqual(v3)).to.be.true;
+        });
+    });
+    describe("bind", () => {
+        describe("deepListen", () => {
+            it("prim", (done) => {
+                const v1 = valueWrap(plugin.typeEnvironment, "hi", true);
+
+                deepListen(v1, (v, nv) => {
+                    expect(v1).to.equal(v);
+                    expect(nv).to.equal("hello");
+                    done();
+                });
+
+                (v1 as any).data = "hello";
+            });
+
+            it("object", (done) => {
+                const v1 = valueWrap(plugin.typeEnvironment, { a: "hi" }, true);
+
+                deepListen(v1, (v, nv) => {
+                    expect(v1).to.equal(v);
+                    expect(nv).to.deep.equal({ a: "hello" });
+                    done();
+                });
+
+                (v1 as any).get("a").data = "hello";
+            });
+
+            it("object (deep)", (done) => {
+                const v1 = valueWrap(plugin.typeEnvironment, { a: { b: { c: "hi" }, q: "query" } }, true);
+
+                deepListen(v1, (v, nv) => {
+                    expect(v1).to.equal(v);
+                    expect(nv).to.deep.equal({ a: { b: { c: "hello" } } });
+                    done();
+                });
+
+                (v1 as any).get("a").get("b").get("c").data = "hello";
+            });
+
+            it("object (unsets)", (done) => {
+                const v1 = valueWrap(plugin.typeEnvironment, { a: "initial value" }, true) as CoreObjectValue<PluginTypeEnvironment>;
+                const v2 = (v1 as any).get("a");
+                const v3 = valueWrap(plugin.typeEnvironment, "change index 0", true) as CorePrimitiveValue<PluginTypeEnvironment>;
+
+                let triggerIndex = 0;
+                deepListen(v1, (v, nv) => {
+                    expect(v1).to.equal(v);
+                    if (triggerIndex === 0) {
+                        expect(nv).to.deep.equal({ a: "change index 0" });
+                        triggerIndex++;
+                    } else if (triggerIndex === 1) {
+                        expect(nv).to.deep.equal({ a: "change index 1" });
+                        triggerIndex++;
+                        done();
+                    } else {
+                        throw new Error("unexpected callback");
+                    }
+                });
+
+                // should trigger a change notification
+                v1.set('a', v3);
+                // should not trigger a notification
+                v2.data = "should be undetected";
+                // should trigger a change notification
+                v3.data = "change index 1";
+            });
+
+            // TODO: this test should definitely pass
+            // but we don't need it for beta, so...
+            // it("object (unsets nested)", (done) => {
+            //     const v1 = valueWrap(plugin.typeEnvironment, { a: { b: "initial value" } }, true) as CoreObjectValue<PluginTypeEnvironment>;
+            //     const v2 = (v1 as any).get("a");
+            //     const v3 = valueWrap(plugin.typeEnvironment, { b: "change index 0" }, true) as CoreObjectValue<PluginTypeEnvironment>;
+
+            //     let triggerIndex = 0;
+            //     deepListen(v1, (v, nv) => {
+            //         expect(v1).to.equal(v);
+            //         if (triggerIndex === 0) {
+            //             expect(nv).to.deep.equal({ a: { b: "change index 0" } });
+            //             triggerIndex++;
+            //         } else if (triggerIndex === 1) {
+            //             expect(nv).to.deep.equal({ a: { b: "change index 1" } });
+            //             triggerIndex++;
+            //             done();
+            //         } else {
+            //             throw new Error("unexpected callback");
+            //         }
+            //     });
+
+            //     // should trigger a change notification
+            //     v1.set('a', v3);
+            //     // should not trigger a notification
+            //     v2.get("b").data = "should be undetected";
+            //     // should trigger a change notification
+            //     (v3.get("b") as CorePrimitiveValue<PluginTypeEnvironment>).data = "change index 1";
+            // });
+
+            it("union type 1", (done) => {
+                const v1 = makeValue(new FakeUnionType(plugin.typeEnvironment,
+                    new Set([plugin.typeEnvironment.getStringType(), plugin.typeEnvironment.getNumberType()])),
+                    "hello",
+                    true) as CoreUnionValue<PluginTypeEnvironment>;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v).to.equal(v1);
+                    expect(nv).to.equal("world");
+                    done();
+                });
+                (v1.value as CorePrimitiveValue<PluginTypeEnvironment>).data = "world";
+            });
+
+            it("union type 2", (done) => {
+                const v1 = makeValue(new FakeUnionType(plugin.typeEnvironment,
+                    new Set([plugin.typeEnvironment.getStringType(), plugin.typeEnvironment.getNumberType()])),
+                    "hello",
+                    true) as CoreUnionValue<PluginTypeEnvironment>;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v).to.equal(v1);
+                    expect(nv).to.equal("world");
+                    done();
+                });
+                v1.value = valueWrap(plugin.typeEnvironment, "world", true);
+            });
+
+            it("union type (boolean)", (done) => {
+                const v1 = makeValue(plugin.typeEnvironment.getBooleanType(),
+                    true,
+                    true) as CorePrimitiveValue<PluginTypeEnvironment>;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v).to.equal(v1);
+                    expect(nv).to.equal(false);
+                    done();
+                });
+                v1.data = false;
+            });
+
+            it("intersection 1", (done) => {
+                const v1 = makeValue(
+                    new FakeIntersectionType(plugin.typeEnvironment,
+                        new Set([new FakeObjectType(plugin.typeEnvironment, new Map([["a", plugin.typeEnvironment.getStringType()]])),
+                        new FakeObjectType(plugin.typeEnvironment, new Map([["b", plugin.typeEnvironment.getStringType()]]))])),
+                    { a: "hi", b: "hello" },
+                    true) as CoreIntersectionValue<PluginTypeEnvironment>;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v).to.equal(v1);
+                    expect(nv).to.deep.equal({ b: "yolo" });
+                    done();
+                });
+                v1.set("b", valueWrap(plugin.typeEnvironment, "yolo", true));
+            });
+
+            it("intersection 2", (done) => {
+                const v1 = makeValue(
+                    new FakeIntersectionType(plugin.typeEnvironment,
+                        new Set([new FakeObjectType(plugin.typeEnvironment, new Map([["a", plugin.typeEnvironment.getStringType()]])),
+                        new FakeObjectType(plugin.typeEnvironment, new Map([["b", plugin.typeEnvironment.getStringType()]]))])),
+                    { a: "hi", b: "hello" },
+                    true) as CoreIntersectionValue<PluginTypeEnvironment>;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v).to.equal(v1);
+                    expect(nv).to.deep.equal({ b: "yolo" });
+                    done();
+                });
+                (v1.get("b") as any).data = "yolo";
+            });
+
+            it("intersection 3", (done) => {
+                const v1 = makeValue(
+                    new FakeIntersectionType(plugin.typeEnvironment,
+                        new Set([new FakeObjectType(plugin.typeEnvironment, new Map([["a", plugin.typeEnvironment.getStringType()]])),
+                        new FakeObjectType(plugin.typeEnvironment, new Map([["b", plugin.typeEnvironment.getStringType()]]))])),
+                    { a: "hi", b: "hello" },
+                    true) as CoreIntersectionValue<PluginTypeEnvironment>;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v).to.equal(v1);
+                    expect(nv).to.deep.equal({ a: "yolo" });
+                    done();
+                });
+                (v1.get("a") as any).data = "yolo";
+            });
+        });
+
+        it("simple case 1", () => {
+            const v1 = valueWrap(plugin.typeEnvironment, { a: "hi" }, true);
+            const backer = {};
+
+            bind(v1 as CoreObjectValue<PluginTypeEnvironment>, backer);
+            expect(backer).to.deep.equal({ a: "hi" });
+
+            (v1 as any).get("a").data = "hello";
+            expect(backer).to.deep.equal({ a: "hello" });
+        });
+        it("simple case 2", () => {
+            const v1 = valueWrap(plugin.typeEnvironment, { a: "hi" }, true);
+            const backer = {};
+
+            bind(v1 as CoreObjectValue<PluginTypeEnvironment>, backer);
+            expect(backer).to.deep.equal({ a: "hi" });
+
+            (v1 as any).set("a", valueWrap(plugin.typeEnvironment, "hello", true));
+            expect(backer).to.deep.equal({ a: "hello" });
+        });
+        it("more complex case", () => {
+            const v1 = valueWrap(plugin.typeEnvironment, { a: { b: "hi" } }, true);
+            const backer = {};
+
+            bind(v1 as CoreObjectValue<PluginTypeEnvironment>, backer);
+            expect(backer).to.deep.equal({ a: { b: "hi" } });
+
+            (v1 as any).set("a", valueWrap(plugin.typeEnvironment, { b: "hello" }, true));
+            expect(backer).to.deep.equal({ a: { b: "hello" } });
         });
     });
 });

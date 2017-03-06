@@ -22,6 +22,12 @@ export type MakeValue<T extends TypeEnvironment> = (t: Type<T>, a: any, mutable:
 export abstract class CoreValue<T extends TypeEnvironment> {
     listeners = new Set<(value: CoreValue<T>, newValue: any) => void>();
 
+    protected notify(nv: any) {
+        for (const listener of this.listeners) {
+            listener(this, nv);
+        }
+    }
+
     constructor(readonly type: Type<T>, public mutable: boolean, protected converter: MakeValue<T>) {
     }
 
@@ -70,9 +76,7 @@ export class CorePrimitiveValue<T extends TypeEnvironment> extends CoreValue<T> 
         if (!canHold.result) {
             throw new Error(canHold.message);
         }
-        for (const listener of this.listeners) {
-            listener(this, a);
-        }
+        this.notify(a);
         this._data = a;
     }
 
@@ -158,6 +162,8 @@ export class CoreObjectValue<T extends TypeEnvironment> extends CoreValue<T> {
     }
 
     set(k: string, v: CoreValue<T>) {
+        // TODO: insert safety check here
+        this.notify({ [k]: v });
         this.values[k] = v;
     }
 
@@ -259,33 +265,24 @@ export class CoreArrayValue<T extends TypeEnvironment> extends CoreValue<T> {
 
 
 export class CoreUnionValue<T extends TypeEnvironment> extends CoreValue<T> {
-    value: CoreValue<T>;
+    _value: CoreValue<T>;
     constructor(readonly type: UnionType<T>, data: any, mutable: boolean, converter: MakeValue<T>) {
         super(type, mutable, converter);
         const value = this.converter(this.type.types.values().next().value, data, this.mutable);
         if (value instanceof FakePromise) {
-            value.then(value => this.value = value);
+            value.then(value => this._value = value);
         } else {
-            this.value = value;
+            this._value = value;
         }
     }
 
-    get data(): PrimitiveTypes {
-        if ((this.value instanceof CorePrimitiveValue) || (this.value instanceof CoreUnionValue)) {
-            return this.value.data;
-        } else {
-            throw new Error("can't read data from non-primitive value");
-        }
+    get value() {
+        return this._value;
     }
 
-    set data(k: PrimitiveTypes) {
-        if (this.type.canHold(k)) {
-            const oldValue = this.value;
-            this.value = valueWrap(this.type.env, k, this.mutable);
-            this.value.listeners = oldValue.listeners;
-        } else {
-            throw new Error("can't read data from non-primitive value");
-        }
+    set value(value) {
+        this.notify(value);
+        this._value = value;
     }
 
     jsonify(a: (a: CoreValue<T>) => { value: any, result: boolean }) {
@@ -308,6 +305,9 @@ export class CoreIntersectionValue<T extends TypeEnvironment> extends CoreValue<
 
         const values: { [a: string]: CoreValue<T> } = {};
         const types = [...type.types.values()].filter(isObjectType) as ObjectType<T>[];
+        if (types.length !== type.types.size) {
+            throw new Error("all members of intersection must be objects");
+        }
         this.values = new Map(types.map(t => [t, new CoreObjectValue(t, data, values, mutable, converter)] as [Type<T>, CoreValue<T>]));
 
 
@@ -429,8 +429,12 @@ const primitiveFlags = ts.TypeFlags.Boolean
     | ts.TypeFlags.Undefined
     | ts.TypeFlags.StringOrNumberLiteral;
 
+function isPrimitiveType<T extends TypeEnvironment>(type: Type<T>) {
+    return type instanceof WrappedScriptType && (type.type.flags & primitiveFlags);
+}
+
 export function typeToValue<T extends TypeEnvironment>(type: Type<T>, data: any, mutable: boolean, converter: MakeValue<T>): CoreValue<T> {
-    if (type instanceof WrappedScriptType && (type.type.flags & primitiveFlags)) {
+    if (isPrimitiveType(type)) {
         return new CorePrimitiveValue(type, data, mutable, converter);
     } else if (isObjectType(type)) {
         if (type.isArray()) {
