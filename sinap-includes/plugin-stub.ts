@@ -97,9 +97,9 @@ export class Program implements PluginProgram {
 
     validate() {
         // TODO: improve if plugin defines a validate function
-        const res = this.run([]);
-        if (isError(res)) {
-            return [res.message];
+        const res = this.run([""]);
+        if (isError(res.result)) {
+            return [res.result.message];
         }
         return [];
     }
