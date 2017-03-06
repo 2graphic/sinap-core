@@ -1,8 +1,10 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
-import { loadPluginDir, CoreModel, Plugin, Program, CoreValue, isObjectType } from "../src/";
+/// <reference path="../typings/modules/chai/index.d.ts" />
+
+import { loadPluginDir, CoreModel, Plugin, Program, makeValue, isObjectType, PluginTypeEnvironment } from "../src/";
 import { LocalFileService } from "./files-mock";
-import * as assert from "assert";
 import * as vm from "vm";
+import { expect } from "chai";
 
 describe("plugin stub", () => {
     let plugin: Plugin;
@@ -16,7 +18,8 @@ describe("plugin stub", () => {
             });
     });
     it("no dianostic errors", () => {
-        assert.deepEqual({ global: [], syntactic: [], semantic: [] }, plugin.results.diagnostics);
+        expect(plugin.results.diagnostics)
+            .to.deep.equal({ global: [], syntactic: [], semantic: [] });
     });
     it("runs do it", () => {
         const script = new vm.Script(plugin.results.js as string);
@@ -24,7 +27,7 @@ describe("plugin stub", () => {
         const context = vm.createContext(sandbox);
         script.runInContext(context);
         new vm.Script("value = global.plugin.doIt()").runInContext(context);
-        assert.equal("Did it", sandbox.value);
+        expect(sandbox.value).to.equal("Did it");
     });
 
     function setupTest(model: CoreModel, sandbox: any = {}) {
@@ -41,22 +44,24 @@ describe("plugin stub", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
             kind: ["test"],
-            version: "0.0.7",
+            version: "0.0.8",
             elements: [
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "1",
                     data: {
                         a: 123,
-                        b: { kind: "sinap-pointer", index: 1 }
+                        b: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "2",
                     data: {
                         a: 456,
-                        b: { kind: "sinap-pointer", index: 0 }
+                        b: { kind: "sinap-pointer", uuid: "0" }
                     },
                 },
             ]
@@ -64,37 +69,40 @@ describe("plugin stub", () => {
 
         const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        assert.equal(123, context.graph.nodes[0].b.b.b.b.a);
+        expect(context.graph.nodes[0].b.b.b.b.a).to.equal(123);
     });
 
     it("does source and destination", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
             kind: ["test"],
-            version: "0.0.7",
+            version: "0.0.8",
             elements: [
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "0",
                     data: {
                         a: 123,
-                        b: { kind: "sinap-pointer", index: 1 }
+                        b: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "1",
                     data: {
                         a: 456,
-                        b: { kind: "sinap-pointer", index: 0 }
+                        b: { kind: "sinap-pointer", uuid: "0" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "Edge",
+                    uuid: "2",
                     data: {
-                        source: { kind: "sinap-pointer", index: 0 },
-                        destination: { kind: "sinap-pointer", index: 1 }
+                        source: { kind: "sinap-pointer", uuid: "0" },
+                        destination: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
             ]
@@ -102,38 +110,41 @@ describe("plugin stub", () => {
 
         const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        assert.equal(123, context.graph.edges[0].source.a);
-        assert.equal(456, context.graph.edges[0].destination.a);
+        expect(context.graph.edges[0].source.a).to.equal(123);
+        expect(context.graph.edges[0].destination.a).to.equal(456);
     });
 
     it("does parents and children", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
             kind: ["test"],
-            version: "0.0.7",
+            version: "0.0.8",
             elements: [
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "0",
                     data: {
                         a: 123,
-                        b: { kind: "sinap-pointer", index: 1 }
+                        b: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "1",
                     data: {
                         a: 456,
-                        b: { kind: "sinap-pointer", index: 0 }
+                        b: { kind: "sinap-pointer", uuid: "0" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "Edge",
+                    uuid: "2",
                     data: {
-                        source: { kind: "sinap-pointer", index: 0 },
-                        destination: { kind: "sinap-pointer", index: 1 }
+                        source: { kind: "sinap-pointer", uuid: "0" },
+                        destination: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
             ]
@@ -141,8 +152,8 @@ describe("plugin stub", () => {
 
         const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        assert.equal(456, context.graph.nodes[0].children[0].destination.a);
-        assert.equal(123, context.graph.nodes[1].parents[0].source.a);
+        expect(context.graph.nodes[0].children[0].destination.a).to.equal(456);
+        expect(context.graph.nodes[1].parents[0].source.a).to.equal(123);
     });
 
 
@@ -150,30 +161,33 @@ describe("plugin stub", () => {
         const model = new CoreModel(plugin, {
             format: "sinap-file-format",
             kind: ["test"],
-            version: "0.0.7",
+            version: "0.0.8",
             elements: [
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "0",
                     data: {
                         a: 123,
-                        b: { kind: "sinap-pointer", index: 1 }
+                        b: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
                 {
                     kind: "Node",
                     type: "Node",
+                    uuid: "1",
                     data: {
                         a: 456,
-                        b: { kind: "sinap-pointer", index: 0 }
+                        b: { kind: "sinap-pointer", uuid: "0" }
                     },
                 },
                 {
                     kind: "Edge",
                     type: "Edge",
+                    uuid: "2",
                     data: {
-                        source: { kind: "sinap-pointer", index: 0 },
-                        destination: { kind: "sinap-pointer", index: 1 }
+                        source: { kind: "sinap-pointer", uuid: "0" },
+                        destination: { kind: "sinap-pointer", uuid: "1" }
                     },
                 },
             ]
@@ -185,8 +199,10 @@ describe("plugin stub", () => {
         const prog = new Program(pluginProg, plugin);
         const numberType = plugin.typeEnvironment.getNumberType();
 
-        assert.equal(1, prog.run([new CoreValue(numberType, 456)]).states.length, "only one state");
-        assert.equal(123, prog.run([new CoreValue(numberType, 456)]).result.value, "correct value");
+        expect((prog.run([makeValue<PluginTypeEnvironment>(numberType, 456, false)]).states.length))
+            .to.equal(1, "only one state");
+        expect((prog.run([makeValue<PluginTypeEnvironment>(numberType.env, 456, false)]).result as any).data)
+            .to.equal(123, "correct value");
     });
 
     it("fails on bad graph", () => {
@@ -198,8 +214,10 @@ describe("plugin stub", () => {
         const numberType = plugin.typeEnvironment.getStringType();
         const errorType = plugin.typeEnvironment.lookupGlobalType("Error");
 
-        assert.equal(errorType, prog.run([new CoreValue(numberType, 456)]).result.type);
-        assert.equal("Cannot read property 'parents' of undefined", prog.run([new CoreValue(numberType, 456)]).result.value.message);
+        expect(prog.run([makeValue<PluginTypeEnvironment>(numberType.env, 456, false)]).result.type)
+            .to.equal(errorType);
+        expect((prog.run([makeValue<PluginTypeEnvironment>(numberType.env, 456, false)]) as any).result.get("message").data)
+            .to.equal("Cannot read property 'parents' of undefined");
     });
 
     it("has sinap types", () => {
@@ -210,6 +228,7 @@ describe("plugin stub", () => {
         }
         const borderColor = drawableNode.members.get("borderColor")!;
 
-        assert.equal(true, borderColor.isAssignableTo(color));
+        expect(borderColor.isAssignableTo(color))
+            .to.be.true;
     });
 });
