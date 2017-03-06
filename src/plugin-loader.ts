@@ -3,6 +3,7 @@ import { File, FileService, readAsJson, Directory, Plugin, CompilationResult } f
 
 const pluginFileKey = "plugin-file";
 const pluginKindKey = "kind";
+const descriptionKey = "description";
 
 const options: ts.CompilerOptions = {
     noEmitOnError: false,
@@ -19,7 +20,7 @@ function nullPromise<T>(obj: T, name: string): Promise<T> {
 }
 
 class InterpreterInfo {
-    constructor(readonly interp: File, readonly pluginKind: string[]) {
+    constructor(readonly interp: File, readonly pluginKind: string[], readonly description: string) {
     }
 }
 
@@ -36,13 +37,15 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
             .then((npmFile: File): Promise<InterpreterInfo> => {
                 return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, "sinap"))
                     .then((sinapJson) => {
+                        let description = sinapJson[descriptionKey];
+                        description = description ? description : 'No plugin description provided.';
                         const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
                         const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
-                        return Promise.all([filePromise, pluginKind]);
+                        return Promise.all([filePromise, pluginKind, Promise.resolve(description)]);
                     })
-                    .then(([pluginName, pluginKind]) => {
+                    .then(([pluginName, pluginKind, description]) => {
                         return nullPromise(fileMap.get(pluginName), pluginName)
-                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind));
+                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind, description));
                     });
             });
     });
@@ -79,7 +82,7 @@ function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Prom
             throw Error("failed to emit");
         }
         const compInfo = new CompilationResult(script, results);
-        return new Plugin(program, compInfo, pluginInfo.pluginKind);
+        return new Plugin(program, compInfo, pluginInfo.pluginKind, pluginInfo.description);
     });
 }
 

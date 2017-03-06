@@ -24,8 +24,8 @@
     }
   },
   "scripts": {
-    "formater": "tsfmt -r  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
-    "formater:verify": "tsfmt --verify  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
+    "formater": "globstar -- tsfmt -r  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
+    "formater:verify": "globstar -- tsfmt --verify  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
     "format": "npm run formater && tslint --project . --fix",
     "lint": "npm run formater:verify && tslint --project .",
     "clean": "rm -r ./lib/ ./test/build/ ./node_modules/ ./typings/",
@@ -45,6 +45,7 @@
     "chai": "^3.5.0",
     "cracks": "^3.1.2",
     "glob": "^7.1.1",
+    "globstar": "^1.0.0",
     "mocha": "^3.2.0",
     "raw-loader": "0.5.1",
     "semantic-release": "^6.3.2",
