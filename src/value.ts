@@ -14,6 +14,7 @@ import {
 } from ".";
 
 import * as ts from "typescript";
+const deepEqual = require("deep-equal");
 
 // If returning a promise, it must be resolved before the CoreValue structure is used
 export type MakeValue<T extends TypeEnvironment> = (t: Type<T>, a: any, mutable: boolean) => CoreValue<T> | FakePromise<CoreValue<T>>;
@@ -25,7 +26,12 @@ export abstract class CoreValue<T extends TypeEnvironment> {
     }
 
     abstract jsonify(a: (a: CoreValue<T>) => { value: any, result: boolean }): any;
-    abstract deepEqual(v: CoreValue<T>): boolean;
+    deepEqual(v: CoreValue<T>): boolean {
+        const thisJSO = this.jsonify(() => { return { result: false, value: undefined }; });
+        const thatJSO = v.jsonify(() => { return { result: false, value: undefined }; });
+
+        return deepEqual(thisJSO, thatJSO);
+    };
 }
 
 export class CorePlaceholderValue<T extends TypeEnvironment> extends CoreValue<T> {
@@ -96,12 +102,12 @@ export class CorePrimitiveValue<T extends TypeEnvironment> extends CoreValue<T> 
         return this.data;
     }
 
-    deepEqual(v: CoreValue<T>): boolean {
-        if (!(v instanceof CorePrimitiveValue)) {
-            return false;
-        }
-        return this.data === v.data;
-    }
+    // deepEqual(v: CoreValue<T>): boolean {
+    //     if (!(v instanceof CorePrimitiveValue)) {
+    //         return false;
+    //     }
+    //     return this.data === v.data;
+    // }
 }
 
 export class CoreWrappedStringValue<T extends TypeEnvironment> extends CorePrimitiveValue<T> {
@@ -290,9 +296,9 @@ export class CoreUnionValue<T extends TypeEnvironment> extends CoreValue<T> {
         return this.value.jsonify(a);
     }
 
-    deepEqual(that: CoreValue<T>): boolean {
-        return this.value.deepEqual(that);
-    }
+    // deepEqual(that: CoreValue<T>): boolean {
+    //     return this.value.deepEqual(that);
+    // }
 }
 
 export class CoreIntersectionValue<T extends TypeEnvironment> extends CoreValue<T> {
@@ -351,12 +357,12 @@ export class CoreIntersectionValue<T extends TypeEnvironment> extends CoreValue<
         return result;
     }
 
-    deepEqual(that: CoreValue<T>): boolean {
-        if (!(that instanceof CoreIntersectionValue)) {
-            return false;
-        }
-        return false;
-    }
+    // deepEqual(that: CoreValue<T>): boolean {
+    //     if (!(that instanceof CoreIntersectionValue)) {
+    //         return false;
+    //     }
+    //     return false;
+    // }
 
 }
 
