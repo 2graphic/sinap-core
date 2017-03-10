@@ -43,7 +43,11 @@ function pickReturnType<T extends TypeEnvironment>(argTypes: Type<T>[], signatur
     }
 
     if (bestSignature instanceof WrappedScriptUnionType) {
-        return new FakeUnionType(env, new Set([...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType))));
+        const types = [...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType));
+        if (types.length === 1) {
+            return types[0];
+        }
+        return new FakeUnionType(env, new Set(types));
     }
 
     return bestSignature;
@@ -54,6 +58,10 @@ export class Program {
     constructor(private program: PluginProgram, public plugin: Plugin) {
         this.runArguments = this.plugin.typeEnvironment.startTypes.map(
             t => t[0].slice(1)
+        );
+
+        this.runReturn = this.plugin.typeEnvironment.startTypes.map(
+            t => t[1]
         );
 
         const wrappedStringType = this.plugin.typeEnvironment.lookupSinapType("WrappedString");
@@ -83,6 +91,7 @@ export class Program {
     }
 
     runArguments: Type<PluginTypeEnvironment>[][];
+    runReturn: Type<PluginTypeEnvironment>[];
     run(a: CoreValue<PluginTypeEnvironment>[]): { states: CoreValue<PluginTypeEnvironment>[], result: CoreValue<PluginTypeEnvironment> } {
         const output = this.program.run(a.map(v => v.jsonify((a) => {
             if (a instanceof CoreElement) {

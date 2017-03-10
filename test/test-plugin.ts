@@ -1,7 +1,7 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 /// <reference path="../typings/modules/chai/index.d.ts" />
 
-import { loadPluginDir, Plugin, Program, makeValue, isUnionType, PluginTypeEnvironment } from "../src/";
+import { loadPluginDir, Plugin, Program, makeValue, PluginTypeEnvironment } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -106,11 +106,7 @@ describe("plugin", () => {
 
         it("cancels state", () => {
             const rtype = program.run([makeValue(tenv, 2, false), makeValue(tenv, 4, false)]).result.type;
-            if (!isUnionType(rtype)) {
-                throw new Error("didn't return union type");
-            }
-            assert.equal(1, rtype.types.size);
-            assert.equal(tenv.getNumberType(), rtype.types.values().next().value);
+            assert.equal(tenv.getNumberType(), rtype);
         });
     });
 });
