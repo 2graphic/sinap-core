@@ -3,7 +3,6 @@ import {
     CoreValue,
     Plugin,
     Type,
-    WrappedScriptUnionType,
     FakeUnionType,
     TypeEnvironment,
     PluginTypeEnvironment,
@@ -12,10 +11,22 @@ import {
     makeValueFactory,
     CoreWrappedStringValue,
     isObjectType,
+    isUnionType,
 } from ".";
 
 function signatureAssignable<T extends TypeEnvironment>(t1: Type<T>[], t2: Type<T>[]) {
     return t1.reduce((a, v, i) => a && v.isAssignableTo(t2[i]), true);
+}
+
+function filterState<T extends TypeEnvironment>(type: Type<T>, stateType: Type<T>): Type<T> {
+    if (isUnionType(type)) {
+        const types = [...type.types.values()].filter(t => !t.isIdenticalTo(stateType));
+        if (types.length === 1) {
+            return types[0];
+        }
+        return new FakeUnionType(type.env, new Set(types));
+    }
+    return type;
 }
 
 function pickReturnType<T extends TypeEnvironment>(argTypes: Type<T>[], signatures: [Type<T>[], Type<T>][], stateType: Type<T>, env: T): Type<T> {
@@ -42,26 +53,19 @@ function pickReturnType<T extends TypeEnvironment>(argTypes: Type<T>[], signatur
         }
     }
 
-    if (bestSignature instanceof WrappedScriptUnionType) {
-        const types = [...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType));
-        if (types.length === 1) {
-            return types[0];
-        }
-        return new FakeUnionType(env, new Set(types));
-    }
-
-    return bestSignature;
+    return filterState(bestSignature, stateType);
 }
 
 export class Program {
     makeValue: (type: Type<PluginTypeEnvironment>, a: any, mutable: boolean) => CoreValue<PluginTypeEnvironment>;
     constructor(private program: PluginProgram, public plugin: Plugin) {
+        this.stateType = this.plugin.typeEnvironment.lookupPluginType("State");
         this.runArguments = this.plugin.typeEnvironment.startTypes.map(
             t => t[0].slice(1)
         );
 
         this.runReturn = this.plugin.typeEnvironment.startTypes.map(
-            t => t[1]
+            t => filterState<PluginTypeEnvironment>(t[1], this.stateType)
         );
 
         const wrappedStringType = this.plugin.typeEnvironment.lookupSinapType("WrappedString");
@@ -90,6 +94,7 @@ export class Program {
         return this.program.validate();
     }
 
+    stateType: Type<PluginTypeEnvironment>;
     runArguments: Type<PluginTypeEnvironment>[][];
     runReturn: Type<PluginTypeEnvironment>[];
     run(a: CoreValue<PluginTypeEnvironment>[]): { states: CoreValue<PluginTypeEnvironment>[], result: CoreValue<PluginTypeEnvironment> } {
@@ -99,18 +104,17 @@ export class Program {
             }
             return { result: false, value: undefined };
         })));
-        const stateType = this.plugin.typeEnvironment.lookupPluginType("State");
         const errorType = this.plugin.typeEnvironment.lookupGlobalType("Error");
 
         const resultType = isError(output.result) ?
             errorType :
             pickReturnType<PluginTypeEnvironment>(a.map(v => v.type),
-                this.plugin.typeEnvironment.startTypes, stateType,
+                this.plugin.typeEnvironment.startTypes, this.stateType,
                 this.plugin.typeEnvironment);
         const result = this.makeValue(resultType, output.result, false);
 
         return {
-            states: output.states.map(v => this.makeValue(stateType, v, false)),
+            states: output.states.map(v => this.makeValue(this.stateType, v, false)),
             result: result,
         };
     }
