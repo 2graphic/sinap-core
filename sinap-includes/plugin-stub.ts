@@ -167,6 +167,8 @@ export class DrawableEdge {
     destination: DrawableNode;
     showSourceArrow: boolean;
     showDestinationArrow: boolean;
+    sourcePoint: Point;
+    destinationPoint: Point;
 }
 
 export class DrawableGraph {
