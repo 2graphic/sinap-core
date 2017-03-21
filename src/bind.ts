@@ -4,7 +4,8 @@ import {
     CoreObjectValue,
     CorePrimitiveValue,
     CoreUnionValue,
-    CoreIntersectionValue
+    CoreIntersectionValue,
+    CoreArrayValue
 } from ".";
 
 
@@ -80,6 +81,12 @@ export function deepListen<T extends TypeEnvironment>(value: CoreValue<T>, liste
     } else if (value instanceof CoreIntersectionValue) {
         for (const v of value.values.values()) {
             deepListen(v, (_, nv) => listener(value, nv));
+        }
+    } else if (value instanceof CoreArrayValue) {
+        // TODO: track new elements to array
+        // and removals from arrays
+        for (const v of value.values) {
+            deepListen(v, (_, nv) => listener(value, [nv]));
         }
     } else {
         throw new Error("Unknown object kind to bind to");

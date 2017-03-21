@@ -23,7 +23,8 @@ import {
     deepListen,
     PluginTypeEnvironment,
     CoreUnionValue,
-    FakeObjectType
+    FakeObjectType,
+    isObjectType
 } from "../src/";
 import { LocalFileService } from "./files-mock";
 import { expect } from "chai";
@@ -307,6 +308,69 @@ describe("Core Value", () => {
                 (v1 as any).get("a").get("b").get("c").data = "hello";
             });
 
+            it("object (deep twice)", (done) => {
+                const v1 = valueWrap(plugin.typeEnvironment, { a: { b: { c: "hi" }, q: "query" } }, true);
+
+                let callbacks = 0;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v1).to.equal(v);
+                    if (callbacks === 0) {
+                        expect(nv).to.deep.equal({ a: { b: { c: "hello" } } });
+                        callbacks++;
+                    } else if (callbacks === 1) {
+                        expect(nv).to.deep.equal({ a: { b: { c: "jajaj" } } });
+                        callbacks++;
+                        done();
+                    }
+                });
+
+                (v1 as any).get("a").get("b").get("c").data = "hello";
+                (v1 as any).get("a").get("b").get("c").data = "jajaj";
+            });
+
+            it("object (deep twice, setting)", (done) => {
+                const v1 = valueWrap(plugin.typeEnvironment, { a: { b: { c: "hi" }, q: "query" } }, true);
+
+                let callbacks = 0;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v1).to.equal(v);
+                    if (callbacks === 0) {
+                        expect(nv).to.deep.equal({ a: { b: { c: "hello" } } });
+                        callbacks++;
+                    } else if (callbacks === 1) {
+                        expect(nv).to.deep.equal({ a: { b: { c: "jajaj" } } });
+                        callbacks++;
+                        done();
+                    }
+                });
+
+                (v1 as any).get("a").get("b").set("c", valueWrap(plugin.typeEnvironment, "hello", true));
+                (v1 as any).get("a").get("b").set("c", valueWrap(plugin.typeEnvironment, "jajaj", true));
+            });
+
+            it("object (deep twice, setting deeper)", (done) => {
+                const v1 = valueWrap(plugin.typeEnvironment, { a: { b: { c: "hi" }, q: "query" } }, true);
+
+                let callbacks = 0;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v1).to.equal(v);
+                    if (callbacks === 0) {
+                        expect(nv).to.deep.equal({ a: { b: { c: "hello" } } });
+                        callbacks++;
+                    } else if (callbacks === 1) {
+                        expect(nv).to.deep.equal({ a: { b: { c: "jajaj" } } });
+                        callbacks++;
+                        done();
+                    }
+                });
+
+                (v1 as any).get("a").set("b", valueWrap(plugin.typeEnvironment, { c: "hello" }, true));
+                (v1 as any).get("a").get("b").set("c", valueWrap(plugin.typeEnvironment, "jajaj", true));
+            });
+
             it("object (unsets)", (done) => {
                 const v1 = valueWrap(plugin.typeEnvironment, { a: "initial value" }, true) as CoreObjectValue<PluginTypeEnvironment>;
                 const v2 = (v1 as any).get("a");
@@ -404,6 +468,24 @@ describe("Core Value", () => {
                     done();
                 });
                 v1.data = false;
+            });
+
+            it("array type", (done) => {
+                const nodeType = plugin.typeEnvironment.lookupSinapType("DrawableNode");
+                if (!isObjectType(nodeType)) {
+                    throw new Error("test failed");
+                }
+                const listOfPoints = nodeType.members.get("anchorPoints")!;
+                const v1 = makeValue(listOfPoints,
+                    [{ x: 0, y: 4 }, { x: 1, y: 4 }],
+                    true) as CoreArrayValue<PluginTypeEnvironment>;
+
+                deepListen(v1, (v, nv) => {
+                    expect(v).to.equal(v1);
+                    expect(nv).to.deep.equal([{ x: 7 }]);
+                    done();
+                });
+                (v1.values[1] as any).get("x").data = 7;
             });
 
             it("intersection 1", (done) => {
