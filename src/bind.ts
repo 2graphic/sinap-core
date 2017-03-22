@@ -32,6 +32,10 @@ function recursivelyUnsetListener<T extends TypeEnvironment>(value: CoreValue<T>
     } else if (value instanceof CorePrimitiveValue) {
     } else if (value instanceof CoreUnionValue) {
         recursivelyUnsetListener(value.value, listener);
+    } else if (value instanceof CoreArrayValue) {
+        for (const val of value.values) {
+            recursivelyUnsetListener(val, listener);
+        }
     } else {
         throw new Error("Unknown core value type to unset");
     }
