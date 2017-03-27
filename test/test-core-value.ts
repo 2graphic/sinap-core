@@ -38,12 +38,34 @@ describe("Core Value", () => {
     }
 
     let plugin: Plugin;
+    let mapPlugin: Plugin;
     let stringType: Type<TypeEnvironment>;
 
     before(() => {
-        return loadTestPlugin("ideal-dfa-interpreter-v2").then((p) => {
-            plugin = p;
-            stringType = plugin.typeEnvironment.getStringType();
+        return Promise.all([
+            loadTestPlugin("ideal-dfa-interpreter-v2").then((p) => {
+                plugin = p;
+                stringType = plugin.typeEnvironment.getStringType();
+            }),
+            loadTestPlugin("map-interpreter").then((p) => {
+                mapPlugin = p;
+            }),
+        ]);
+    });
+
+    it("compiles plugin", () => {
+        expect(plugin.results.diagnostics).to.deep.equal({
+            semantic: [],
+            syntactic: [],
+            global: [],
+        });
+    });
+
+    it("compiles map-plugin", () => {
+        expect(mapPlugin.results.diagnostics).to.deep.equal({
+            semantic: [],
+            syntactic: [],
+            global: [],
         });
     });
 
@@ -101,6 +123,16 @@ describe("Core Value", () => {
         primitive.data = 18;
     });
 
+    it("handles Maps", () => {
+        const v = makeValue(mapPlugin.typeEnvironment.lookupPluginType("M1"), new Map<string, number>([["hello", 4]]), true);
+        expect(v.jsonify(() => { return { result: false, value: undefined }; })).to.deep.equal(
+            {
+                kind: "custom-object",
+                type: "Map",
+                members: [["hello", 4]]
+            }
+        );
+    });
 
     it("handles CoreElement", (done) => {
         const m = new CoreModel(plugin);

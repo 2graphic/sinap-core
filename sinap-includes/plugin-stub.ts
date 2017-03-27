@@ -1,5 +1,5 @@
 import * as plugin from "./plugin";
-import { PluginProgram, isError } from "./plugin-program";
+import { PluginProgram, isError, SerialJSO } from "./plugin-program";
 
 interface INode {
     parents: IEdge[];
@@ -31,9 +31,28 @@ type GraphT = IGraph & plugin.Graph;
 type NodeT = INode & plugin.Nodes;
 type EdgeT = IEdge & plugin.Edges;
 
-export type SerialJSO = { elements: { kind: string, type: string, uuid: string, data: any }[] };
+function traverse(a: any, elements: Map<string, NodeT | EdgeT | GraphT>) {
+    if (typeof (a) !== "object") {
+        return;
+    }
+    for (const k of Object.getOwnPropertyNames(a)) {
+        const el = a[k];
+        if (el.kind === "custom-object") {
+            if (el.type === "Map") {
+                traverse(el.members, elements);
+                a[k] = new Map(el.members);
+            } else {
+                throw new Error("unknown custom object");
+            }
+        } else if (el.kind === "sinap-pointer") {
+            a[k] = elements.get(el.uuid)!;
+        } else {
+            traverse(el, elements);
+        }
+    }
+};
 
-export function deserialize(pojo: SerialJSO): GraphT {
+export function deserialize(pojo: SerialJSO) {
     const elements = new Map(pojo.elements.map(e => {
         const type = (plugin as any)[e.type];
         const result = (type ? new type() : {}) as GraphT | NodeT | EdgeT;
@@ -42,22 +61,8 @@ export function deserialize(pojo: SerialJSO): GraphT {
         return [e.uuid, result] as [string, GraphT | NodeT | EdgeT];
     }));
 
-    const traverse = (a: any) => {
-        if (typeof (a) !== "object") {
-            return;
-        }
-        for (const k of Object.getOwnPropertyNames(a)) {
-            const el = a[k];
-            if (el.kind === "sinap-pointer") {
-                a[k] = elements.get(el.uuid)!;
-            } else {
-                traverse(el);
-            }
-        }
-    };
-
     for (const element of elements.values()) {
-        traverse(element);
+        traverse(element, elements);
     }
 
     let graph: GraphT = {} as any;
@@ -86,13 +91,32 @@ export function deserialize(pojo: SerialJSO): GraphT {
     graph.nodes = nodes;
     graph.edges = edges;
 
-    return graph;
+    return [graph, elements] as [GraphT, Map<string, NodeT | EdgeT | GraphT>];
+}
+
+function encodeResult(a: any, types: string[]) {
+    return JSON.parse(
+        JSON.stringify(
+            a,
+            (key, value) => {
+                for (const type of types) {
+                    if (value instanceof (plugin as any)[type]) {
+                        return { kind: "sinap-pointer", uuid: value.sinapUniqueIdentifier };
+                    }
+                }
+                return value;
+            }
+        )
+    );
 }
 
 export class Program implements PluginProgram {
     private graph: GraphT;
-    constructor(graph: SerialJSO) {
-        this.graph = deserialize(graph);
+    private elements: Map<string, NodeT | EdgeT | GraphT>;
+    private elementTypeNameList: string[];
+    constructor(graph: SerialJSO, private elementTypeNames: { nodes: string[], edges: string[], graph: string }) {
+        [this.graph, this.elements] = deserialize(graph);
+        this.elementTypeNameList = elementTypeNames.nodes.concat(elementTypeNames.edges, [elementTypeNames.graph]);
     }
 
     validate() {
@@ -107,14 +131,15 @@ export class Program implements PluginProgram {
     run(input: any[]) {
         const states: plugin.State[] = [];
         try {
+            traverse(input, this.elements);
             let current = (plugin as any).start(this.graph, ...input);
             while (current instanceof plugin.State) {
-                states.push(current);
+                states.push(encodeResult(current, this.elementTypeNameList));
                 current = plugin.step(current);
             }
             return {
                 states: states,
-                result: current,
+                result: encodeResult(current, this.elementTypeNameList),
             };
         } catch (e) {
             const message = e instanceof Error ? e.message : e;
