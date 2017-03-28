@@ -11,6 +11,7 @@ export class Graph {
 }
 
 export class State {
+    m = new Map<number, string>([[17, "hi"]]);
     constructor(public message: string,
         public data: boolean
     ) {

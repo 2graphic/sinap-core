@@ -103,6 +103,9 @@ function encodeResult(a: any, types: string[]) {
                     if (value instanceof (plugin as any)[type]) {
                         return { kind: "sinap-pointer", uuid: value.sinapUniqueIdentifier };
                     }
+                    if (value instanceof Map) {
+                        return { kind: "custom-object", type: "Map", members: [...value.entries()] };
+                    }
                 }
                 return value;
             }

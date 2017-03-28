@@ -89,6 +89,11 @@ describe("various interpreters", () => {
                     makeValue(prog.runArguments[0][1], 0, true)
                 ]);
                 expect(results.result.jsonify(() => { return { result: false, value: undefined }; })).to.equal(true);
+                expect((results.states[0] as any).get("m").jsonify(() => { return { result: false, value: undefined }; })).to.deep.equal({
+                    kind: "custom-object",
+                    members: [[17, "hi"]],
+                    type: "Map",
+                });
             }
             {
                 const results = prog.run([

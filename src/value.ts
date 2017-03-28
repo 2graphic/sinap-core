@@ -297,8 +297,11 @@ export class CoreMapValue<T extends ScriptTypeEnvironment> extends CoreValue<T> 
             }
         })(), mutable, converter);
 
-        if (data) {
-            this.load(data);
+        if (data instanceof Map) {
+            this.load(data.entries());
+        }
+        if ((data as any).kind === "custom-object" && (data as any).type === "Map") {
+            this.load((data as any).members);
         }
     }
 
@@ -316,7 +319,7 @@ export class CoreMapValue<T extends ScriptTypeEnvironment> extends CoreValue<T> 
         };
     }
 
-    private load(a: Map<any, any>) {
+    private load(a: IterableIterator<[any, any]>) {
         // todo: validate
         for (const [k, v] of a) {
             const transformed: { key?: CoreValue<T>, value?: CoreValue<T> } = {};
