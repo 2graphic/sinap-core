@@ -20,7 +20,7 @@ function nullPromise<T>(obj: T, name: string): Promise<T> {
 }
 
 class InterpreterInfo {
-    constructor(readonly interp: File, readonly pluginKind: string[], readonly description: string) {
+    constructor(readonly interp: File, readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
     }
 }
 
@@ -45,7 +45,7 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
                     })
                     .then(([pluginName, pluginKind, description]) => {
                         return nullPromise(fileMap.get(pluginName), pluginName)
-                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind, description));
+                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind, description, directory));
                     });
             });
     });
@@ -82,7 +82,7 @@ function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Prom
             throw Error("failed to emit");
         }
         const compInfo = new CompilationResult(script, results);
-        return new Plugin(program, compInfo, pluginInfo.pluginKind, pluginInfo.description);
+        return new Plugin(program, compInfo, pluginInfo.pluginKind, pluginInfo.description, pluginInfo.directory);
     });
 }
 

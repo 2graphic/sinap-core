@@ -1,5 +1,6 @@
 /// <reference path="../typings/modules/uuid/index.d.ts" />
 import * as ts from "typescript";
+import { Directory } from "./files";
 import {
     Type,
     CoreElementKind,
@@ -144,7 +145,7 @@ export class CompilationResult {
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[], readonly description: string) {
+    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 
