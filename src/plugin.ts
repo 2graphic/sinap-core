@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { CoreElementKind, CoreElement, ScriptTypeEnvironment, WrappedScriptType, WrappedScriptUnionType, WrappedScriptObjectType, printDiagnostics } from ".";
+import { Directory } from "./files";
 
 function unionToList(type: WrappedScriptType): [string, WrappedScriptObjectType][] {
     if (type instanceof WrappedScriptUnionType) {
@@ -106,7 +107,7 @@ export class CompilationResult {
 export class Plugin {
     public typeEnvironment: PluginTypeEnvironment;
 
-    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[], readonly description: string) {
+    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
         this.typeEnvironment = new PluginTypeEnvironment(program);
     }
 
