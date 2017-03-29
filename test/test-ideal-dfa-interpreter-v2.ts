@@ -25,15 +25,13 @@ describe("test ideal v2", () => {
         assert.deepEqual({ global: [], syntactic: [], semantic: [] }, plugin.results.diagnostics);
     });
 
-    function setupTest(model: CoreModel) {
+    function setupTest() {
         const script = new vm.Script(plugin.results.js as string);
-
-        const serialGraph = JSON.stringify(model.serialize());
 
         const sandbox: any = { console: console, global: {} };
         const context = vm.createContext(sandbox);
         script.runInContext(context);
-        return [context as any, serialGraph];
+        return context as any;
     }
 
     it("does nice names", () => {
@@ -146,9 +144,8 @@ describe("test ideal v2", () => {
             ]
         });
 
-        const [context, serialGraph] = setupTest(model);
-        const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-        const prog = new Program(plugProg, plugin);
+        const context = setupTest();
+        const prog = new Program(model, context.global["plugin-stub"].Program);
 
         for (let x = 0; x < 100; x++) {
             const input = x.toString(2);
@@ -261,11 +258,10 @@ describe("test ideal v2", () => {
             ]
         });
 
-        const [context, serialGraph] = setupTest(model);
+        const context = setupTest();
 
         for (let x = 0; x < 100; x++) {
-            const plugProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(plugProg, plugin);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
             const input = x.toString(2);
             runProg(prog, input, input.length + 1, x % 3 === 0, plugin);
         }

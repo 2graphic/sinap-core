@@ -4,6 +4,7 @@ export type Error = {
     stack?: string,
 };
 export type Result = { states: any[], result: any };
+export type SerialJSO = { elements: { kind: string, type: string, uuid: string, data: any }[] };
 
 export interface PluginProgram {
     run(a: any): Result;

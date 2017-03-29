@@ -1,7 +1,7 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 /// <reference path="../typings/modules/chai/index.d.ts" />
 
-import { loadPluginDir, Plugin, Program, makeValue, PluginTypeEnvironment } from "../src/";
+import { loadPluginDir, Plugin, Program, makeValue, PluginTypeEnvironment, CoreModel } from "../src/";
 import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
@@ -48,9 +48,7 @@ describe("plugin", () => {
                 const context: any = vm.createContext(sandbox);
                 script.runInContext(context);
 
-                const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
-
-                program = new Program(pluginProgram, plugin);
+                program = new Program(new CoreModel(plugin), context.global["plugin-stub"].Program);
 
                 assert.deepEqual([
                     ["any", "any"],
@@ -94,9 +92,7 @@ describe("plugin", () => {
                 const context: any = vm.createContext(sandbox);
                 script.runInContext(context);
 
-                const pluginProgram = new context.global["plugin-stub"].Program({ elements: [] });
-
-                program = new Program(pluginProgram, plugin);
+                program = new Program(new CoreModel(plugin), context.global["plugin-stub"].Program);
                 assert.deepEqual([["any", "any"]], program.runArguments.map(t => t.map(t2 => t2.name)));
 
                 // const anyType = plugin.typeEnvironment.getType(plugin.typeEnvironment.checker.getAnyType());

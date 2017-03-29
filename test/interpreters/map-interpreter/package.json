@@ -1,0 +1,6 @@
+{
+    "sinap": {
+        "kind": ["Test", "Map"],
+        "plugin-file": "plugin.ts"
+    }
+}
