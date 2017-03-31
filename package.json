@@ -37,10 +37,12 @@
     "prepublish": "npm run typings"
   },
   "dependencies": {
-    "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true"
+    "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true",
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "@types/node": "latest",
+    "chai": "^3.5.0",
     "cracks": "^3.1.2",
     "glob": "^7.1.1",
     "globstar": "^1.0.0",
