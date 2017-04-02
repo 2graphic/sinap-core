@@ -2,14 +2,12 @@
 /// <reference path="../typings/modules/chai/index.d.ts" />
 
 import { validateEdge, WrappedScriptObjectType, loadPluginDir, Plugin, PluginTypeEnvironment } from "../src/";
-import { LocalFileService } from "./files-mock";
 import { expect } from "chai";
+import * as path from "path";
 
 describe("isValidEdge", () => {
-    const fs = new LocalFileService();
     function loadTestPlugin(name: string, dirs = ["test", "interpreters"]): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath(...dirs.concat([name])))
-            .then((directory) => loadPluginDir(directory, fs));
+        return loadPluginDir(path.join(...dirs.concat([name])));
     }
 
     const plugin = loadTestPlugin("validation");

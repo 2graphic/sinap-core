@@ -2,16 +2,14 @@
 /// <reference path="../typings/modules/chai/index.d.ts" />
 
 import { loadPluginDir, CoreModel, Plugin, Program, makeValue, isObjectType, PluginTypeEnvironment } from "../src/";
-import { LocalFileService } from "./files-mock";
 import * as vm from "vm";
 import { expect } from "chai";
+import * as path from "path";
 
 describe("plugin stub", () => {
     let plugin: Plugin;
     before((done) => {
-        const fs = new LocalFileService();
-        fs.directoryByName(fs.joinPath("test", "interpreters", "stub"))
-            .then((directory) => loadPluginDir(directory, fs))
+        loadPluginDir(path.join("test", "interpreters", "stub"))
             .then((newPlugin) => {
                 plugin = newPlugin;
                 done();

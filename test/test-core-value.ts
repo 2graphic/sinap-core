@@ -26,15 +26,13 @@ import {
     FakeObjectType,
     isObjectType
 } from "../src/";
-import { LocalFileService } from "./files-mock";
 import { expect } from "chai";
+import * as path from "path";
 
 describe("Core Value", () => {
 
-    const fs = new LocalFileService();
     function loadTestPlugin(name: string): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath("test", "interpreters", name))
-            .then((directory) => loadPluginDir(directory, fs));
+        return loadPluginDir(path.join("test", "interpreters", name));
     }
 
     let plugin: Plugin;

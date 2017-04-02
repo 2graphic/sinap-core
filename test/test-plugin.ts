@@ -2,15 +2,13 @@
 /// <reference path="../typings/modules/chai/index.d.ts" />
 
 import { loadPluginDir, Plugin, Program, makeValue, PluginTypeEnvironment } from "../src/";
-import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
+import * as path from "path";
 
 describe("plugin", () => {
-    const fs = new LocalFileService();
     function loadTestPlugin(name: string, dirs = ["interpreters"]): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath(...dirs.concat([name])))
-            .then((directory) => loadPluginDir(directory, fs));
+        return loadPluginDir(path.join(...dirs.concat([name])));
     }
 
     it("loading", () => {
@@ -21,6 +19,19 @@ describe("plugin", () => {
         return loadTestPlugin("dfa").then(plugin => {
             const ts = plugin.typeEnvironment.startTypes.map(m => [m[0].map(n => n.name), m[1].name]);
             assert.deepEqual([[["DFAGraph", "string"], "boolean | State"]], ts);
+        });
+    });
+
+    it("Has a description", () => {
+        return loadTestPlugin("dfa").then(plugin => {
+            assert.equal(plugin.description, "A DFA interpreter for Sinap.");
+        });
+    });
+
+    it("Has its directory", () => {
+        return loadTestPlugin("dfa").then(plugin => {
+            const directory = path.resolve(plugin.directory);
+            assert.equal(directory, path.resolve("interpreters", "dfa"));
         });
     });
 

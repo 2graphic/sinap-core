@@ -1,9 +1,12 @@
 import * as ts from "typescript";
-import { File, FileService, readAsJson, Directory, Plugin, CompilationResult } from ".";
+import { CompilationResult } from ".";
+import { readFile } from "./files";
+import * as path from "path";
+import * as fs from "fs";
+import { Plugin } from "./plugin";
 
 const pluginFileKey = "plugin-file";
 const pluginKindKey = "kind";
-const descriptionKey = "description";
 
 const options: ts.CompilerOptions = {
     noEmitOnError: false,
@@ -20,41 +23,34 @@ function nullPromise<T>(obj: T, name: string): Promise<T> {
 }
 
 class InterpreterInfo {
-    constructor(readonly interp: File, readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
+    constructor(readonly interp: string, readonly pluginKind: string[], readonly description: string, readonly directory: string) {
     }
 }
 
-export function loadPluginDir(directory: Directory, fileService: FileService): Promise<Plugin> {
-    return getInterpreterInfo(directory).then((interpreterInfo) => loadPlugin(interpreterInfo, fileService));
+export function loadPluginDir(directory: string): Promise<Plugin> {
+    return getInterpreterInfo(directory).then((interpreterInfo) => loadPlugin(interpreterInfo));
 }
 
-function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
-    return directory.getFiles().then((pluginFiles: File[]): Promise<InterpreterInfo> => {
-        const fileArr: [string, File][] = pluginFiles.map((file): [string, File] => [file.name, file]);
-        const fileMap = new Map(fileArr);
-        // TODO run npm install.
-        return nullPromise(fileMap.get("package.json"), `package.json for plugin ${directory.fullName}`)
-            .then((npmFile: File): Promise<InterpreterInfo> => {
-                return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, "sinap"))
-                    .then((sinapJson: any) => {
-                        let description = sinapJson[descriptionKey];
-                        description = description ? description : 'No plugin description provided.';
-                        const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
-                        const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
-                        return Promise.all([filePromise, pluginKind, Promise.resolve(description)]);
-                    })
-                    .then(([pluginName, pluginKind, description]) => {
-                        return nullPromise(fileMap.get(pluginName), pluginName)
-                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind, description, directory));
-                    });
-            });
-    });
+function getInterpreterInfo(directory: string): Promise<InterpreterInfo> {
+    return readFile(path.join(directory, "package.json"))
+        .then((contents): Promise<InterpreterInfo> => {
+            const pack = JSON.parse(contents);
+            const description = pack.description ? pack.description : "No plugin description provided.";
+            return nullPromise(pack.sinap, "sinap").then((sinapJson) => {
+                const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
+                const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
+                return Promise.all([filePromise, pluginKind]);
+            })
+                .then(([pluginFile, pluginKind]): InterpreterInfo => {
+                    return new InterpreterInfo(path.join(directory, pluginFile), pluginKind, description, directory);
+                });
+        });
 }
 
 /**
  * An abstract representation of a plugin
  */
-function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Promise<Plugin> {
+function loadPlugin(pluginInfo: InterpreterInfo): Promise<Plugin> {
     const pluginLocation = pluginInfo.interp;
     let script: string | undefined = undefined;
     const pluginStub = require("!!raw-loader!../sinap-includes/plugin-stub.ts");
@@ -63,12 +59,12 @@ function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Prom
         // TODO: actually use AMD for cicular dependencies
         script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
     }
-    return pluginLocation.readData().then((pluginScript) => {
+    return readFile(pluginLocation).then((pluginScript) => {
         const host = createCompilerHost(new Map([
             ["plugin.ts", pluginScript],
             ["plugin-stub.ts", pluginStub],
             ["plugin-program.ts", pluginProgram],
-        ]), options, emitter, fileService);
+        ]), options, emitter);
 
         const program = ts.createProgram(["plugin-stub.ts"], options, host);
         // TODO: only compute if asked for.
@@ -108,7 +104,7 @@ export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
     }
 }
 
-function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void, fileService: FileService): ts.CompilerHost {
+function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void): ts.CompilerHost {
     return {
         getSourceFile: (fileName): ts.SourceFile => {
             let source = files.get(fileName);
@@ -117,7 +113,7 @@ function createCompilerHost(files: Map<string, string>, options: ts.CompilerOpti
                 if (fileName.indexOf("/") !== -1) {
                     throw Error("no relative/absolute paths here");
                 }
-                source = fileService.getModuleFile(fileService.joinPath("typescript", "lib", fileName));
+                source = fs.readFileSync(path.join("node_modules", "typescript", "lib", fileName), "utf8");
             }
 
             // any to suppress strict error about undefined
