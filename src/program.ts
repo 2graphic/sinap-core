@@ -1,77 +1,125 @@
-import { PluginProgram, isError } from "../sinap-includes/plugin-program";
-import { CoreValue, Plugin, Type, WrappedScriptUnionType, FakeUnionType, TypeEnvironment } from ".";
+import { Plugin, Model } from ".";
+import { Type, Value } from "sinap-types";
 
-function signatureAssignable(t1: Type[], t2: Type[]) {
-    return t1.reduce((a, v, i) => a && v.isAssignableTo(t2[i]), true);
-}
+class DFAProgram {
+    readonly environment = new Value.Environment();
+    constructor(readonly model: Model, readonly plugin: Plugin) {
+        // TODO: investigate copying models
 
-function pickReturnType(argTypes: Type[], signatures: [Type[], Type][], stateType: Type, env: TypeEnvironment): Type {
-    // find all the signatures that argTypes is assignable to
-    const viableSignatures = signatures.filter(sig =>
-        signatureAssignable(argTypes, sig[0].slice(1))
-    ).map(t => t[1]);
+        const nodes = new Value.ArrayObject(new Value.ArrayType(plugin.nodesType), model.environment);
+        const edges = new Value.ArrayObject(new Value.ArrayType(plugin.edgesType), model.environment);
 
-    if (viableSignatures.length === 0) {
-        throw new Error("no matching function signatures found");
-    }
-
-    const nonAnySigs = viableSignatures.filter(t => !t.isIdenticalTo(env.getAnyType()));
-
-    let bestSignature = nonAnySigs.pop();
-    if (bestSignature === undefined) {
-        return viableSignatures[0];
-    }
-
-    // the best signature is the most specific signature
-    for (const signature of nonAnySigs) {
-        if (signature.isAssignableTo(bestSignature)) {
-            bestSignature = signature;
+        for (const node of model.nodes) {
+            nodes.push(node);
+            node.set("children", new Value.ArrayObject(new Value.ArrayType(plugin.edgesType), this.environment));
+            node.set("parents", new Value.ArrayObject(new Value.ArrayType(plugin.edgesType), this.environment));
         }
+
+        for (const edge of model.edges) {
+            edges.push(edge);
+            ((edge.get("source") as Value.CustomObject).get("children") as Value.ArrayObject).push(edge);
+            ((edge.get("destination") as Value.CustomObject).get("parents") as Value.ArrayObject).push(edge);
+        }
+
+        model.graph.set("nodes", nodes);
+        model.graph.set("edges", edges);
     }
 
-    if (bestSignature instanceof WrappedScriptUnionType) {
-        return new FakeUnionType(env, new Set([...bestSignature.types.values()].filter(t => !t.isIdenticalTo(stateType))));
+    run(input: Value.Primitive): { steps: Value.CustomObject[], result?: Value.Value, error?: Value.Primitive } {
+        let state: Value.Value;
+        try {
+            state = this.start(this.model.graph, input);
+        } catch (err) {
+            return { steps: [], error: Value.makePrimitive(this.environment, err) };
+        }
+        const steps: Value.CustomObject[] = [];
+        while (Type.isSubtype(state.type, this.plugin.stateType)) {
+            steps.push(state as Value.CustomObject);
+            try {
+                state = this.step(state as Value.CustomObject);
+            } catch (err) {
+                return { steps: steps, error: Value.makePrimitive(this.environment, err) };
+            }
+        }
+        return { steps: steps, result: state };
     }
 
-    return bestSignature;
+    validate() {
+        try {
+            this.start(this.model.graph, Value.makePrimitive(this.environment, ""));
+        } catch (err) {
+            return Value.makePrimitive(this.environment, err);
+        }
+        return null;
+    }
+
+    private start(graph: Value.Intersection, input: Value.Primitive): Value.Value {
+        const nodes = graph.get("nodes") as Value.ArrayObject;
+        const startStates = [...nodes].filter(v => ((v as Value.CustomObject).get("isStartState") as Value.Primitive).value);
+        if (startStates.length !== 1) {
+            throw new Error(`must have exactly 1 start state, found: ${startStates.length}`);
+        }
+
+        const state = new Value.CustomObject(this.plugin.stateType, this.environment);
+        state.set("currentNode", startStates[0]);
+        state.set("inputLeft", input);
+        return state;
+    }
+
+    private step(state: Value.CustomObject): Value.Value {
+        const currentNodeV = state.get("currentNode") as Value.CustomObject;
+        const inputLeftV = state.get("inputLeft") as Value.Primitive;
+        const inputLeft = inputLeftV.value as string;
+        if (inputLeft.length === 0) {
+            return currentNodeV.get("isAcceptState");
+        }
+
+        const nextToken = inputLeft[0];
+
+        const possibleEdgesV = currentNodeV.get("children") as Value.ArrayObject;
+
+        const possibleEdges = [...possibleEdgesV]
+            .filter(v => ((v as Value.CustomObject).get("label") as Value.Primitive).value === nextToken);
+
+        if (possibleEdges.length === 0) {
+            return Value.makePrimitive(this.environment, false);
+        }
+        if (possibleEdges.length > 1) {
+            throw new Error(`must have 0 or 1 possible edges, found: ${possibleEdges.length}`);
+        }
+
+        const newState = new Value.CustomObject(this.plugin.stateType, this.environment);
+        newState.set("currentNode", (possibleEdges[0] as Value.CustomObject).get("destination"));
+        newState.set("inputLeft", Value.makePrimitive(this.environment, inputLeft.substr(1)));
+        return newState;
+    }
 }
+
+
 
 export class Program {
-    constructor(private program: PluginProgram, public plugin: Plugin) {
-        this.runArguments = this.plugin.typeEnvironment.startTypes.map(
-            t => t[0].slice(1)
-        );
+    private program: DFAProgram;
+    get environment() {
+        return this.program.environment;
+    }
+
+    constructor(model: Model, public plugin: Plugin) {
+        this.program = new DFAProgram(model, plugin);
     };
 
-    validate(): string[] {
+    validate() {
         return this.program.validate();
     }
 
-    runArguments: Type[][];
-    run(a: CoreValue[]): { states: CoreValue[], result: CoreValue } {
-        const output = this.program.run(a.map(v => v.value));
-        const stateType = this.plugin.typeEnvironment.lookupPluginType("State");
-        const errorType = this.plugin.typeEnvironment.lookupGlobalType("Error");
-
-        let result: CoreValue;
-
-        if (isError(output.result)) {
-            const err = new Error(output.result.message);
-            err.stack = output.result.stack;
-            result = new CoreValue(
-                errorType,
-                err,
-            );
-        } else {
-            result = new CoreValue(
-                pickReturnType(a.map(v => v.type), this.plugin.typeEnvironment.startTypes, stateType, this.plugin.typeEnvironment),
-                output.result
-            );
+    run(a: Value.Value[]): { steps: Value.CustomObject[], result?: Value.Value, error?: Value.Primitive } {
+        if (a.length !== this.plugin.argumentTypes.length) {
+            throw new Error("Program.run: incorrect arity");
         }
-
-        return {
-            states: output.states.map(s => new CoreValue(stateType, s)),
-            result: result,
-        };
+        a.forEach((v, i) => {
+            if (!Type.isSubtype(v.type, this.plugin.argumentTypes[i])) {
+                throw new Error(`Program.run argument at index: ${i} is of incorrect type`);
+            }
+        });
+        return (this.program.run as any)(...a);
     }
 }

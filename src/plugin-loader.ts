@@ -1,19 +1,8 @@
-import * as ts from "typescript";
-import { File, FileService, readAsJson, Directory, Plugin, CompilationResult } from ".";
+import { File, FileService, readAsJson, Directory, Plugin, DFAPlugin } from ".";
 
 const pluginFileKey: "plugin-file" = "plugin-file";
 const pluginKindKey: "kind" = "kind";
 const descriptionKey = "description";
-
-const options: ts.CompilerOptions = {
-    noEmitOnError: false,
-
-    noImplicitAny: true,
-    target: ts.ScriptTarget.ES2016,
-    removeComments: false,
-    module: ts.ModuleKind.AMD,
-    outFile: "result.js",
-};
 
 function nullPromise<T>(obj: T, name: string): Promise<T> {
     return obj ? Promise.resolve(obj) : Promise.reject(`${name} may not be null.`);
@@ -54,92 +43,6 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
 /**
  * An abstract representation of a plugin
  */
-function loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Promise<Plugin> {
-    const pluginLocation = pluginInfo.interp;
-    let script: string | undefined = undefined;
-    const pluginStub = require("!!raw-loader!../sinap-includes/plugin-stub.ts");
-    const pluginProgram = require("!!raw-loader!../sinap-includes/plugin-program.ts");
-    function emitter(_: string, content: string): void {
-        // TODO: actually use AMD for cicular dependencies
-        script = require("!!raw-loader!../sinap-includes/amd-loader.js") + "\n" + content;
-    }
-    return pluginLocation.readData().then((pluginScript) => {
-        const host = createCompilerHost(new Map([
-            ["plugin.ts", pluginScript],
-            ["plugin-stub.ts", pluginStub],
-            ["plugin-program.ts", pluginProgram],
-        ]), options, emitter, fileService);
-
-        const program = ts.createProgram(["plugin-stub.ts"], options, host);
-        // TODO: only compute if asked for.
-        const results = {
-            global: program.getGlobalDiagnostics(),
-            syntactic: program.getSyntacticDiagnostics(),
-            semantic: program.getSemanticDiagnostics(),
-        };
-        program.emit();
-        if (script === undefined) {
-            throw Error("failed to emit");
-        }
-        const compInfo = new CompilationResult(script, results);
-        return new Plugin(program, compInfo, pluginInfo.pluginKind, pluginInfo.description, pluginInfo.directory);
-    });
-}
-
-export function printDiagnostics(diagnostics: ts.Diagnostic[]) {
-    for (const result of diagnostics) {
-        console.log();
-        if (result.file) {
-            const { line, character } = result.file.getLineAndCharacterOfPosition(result.start);
-            const starts = result.file.getLineStarts();
-            console.log(result.file.fileName, line.toString() + ", " + character.toString() + ":", result.messageText);
-            console.log(result.file.text.substring(starts[line], starts[line + 1] - 1).replace("\t", " "));
-            let pad = "";
-            for (let i = 0; i < character; i++) {
-                pad += " ";
-            }
-            for (let i = 0; i < result.length; i++) {
-                pad += "~";
-            }
-            console.log(pad);
-        } else {
-            console.log("unknown file:", result.messageText);
-        }
-    }
-}
-
-function createCompilerHost(files: Map<string, string>, options: ts.CompilerOptions, emit: (name: string, content: string) => void, fileService: FileService): ts.CompilerHost {
-    return {
-        getSourceFile: (fileName): ts.SourceFile => {
-            let source = files.get(fileName);
-            if (!source) {
-                // if we didn't bundle the source file, maybe it's a lib?
-                if (fileName.indexOf("/") !== -1) {
-                    throw Error("no relative/absolute paths here");
-                }
-                source = fileService.getModuleFile(fileService.joinPath("typescript", "lib", fileName));
-            }
-
-            // any to suppress strict error about undefined
-            return source ?
-                ts.createSourceFile(fileName, source, options.target ? options.target : ts.ScriptTarget.ES2016)
-                : undefined as any;
-        },
-        writeFile: (name, text) => {
-            emit(name, text);
-        },
-        getDefaultLibFileName: () => {
-            return "lib.es2016.d.ts";
-        },
-        useCaseSensitiveFileNames: () => false,
-        getCanonicalFileName: fileName => fileName,
-        getCurrentDirectory: () => "",
-        getNewLine: () => "\n",
-        fileExists: (fileName): boolean => {
-            return files.has(fileName);
-        },
-        readFile: () => "",
-        directoryExists: () => true,
-        getDirectories: () => []
-    };
+function loadPlugin(pluginInfo: InterpreterInfo, _fileService: FileService): Promise<Plugin> {
+    return Promise.resolve(new DFAPlugin(pluginInfo.pluginKind, pluginInfo.description, pluginInfo.directory));
 }

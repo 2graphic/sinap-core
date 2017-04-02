@@ -1,131 +1,143 @@
-import * as ts from "typescript";
-import { CoreElementKind, CoreElement, ScriptTypeEnvironment, WrappedScriptType, WrappedScriptUnionType, WrappedScriptObjectType, printDiagnostics } from ".";
 import { Directory } from "./files";
+import { Program } from ".";
+import { Type, Value } from "sinap-types";
 
-function unionToList(type: WrappedScriptType): [string, WrappedScriptObjectType][] {
-    if (type instanceof WrappedScriptUnionType) {
-        return [...type.types.values()].map(unionToList).reduce((p, c) => p.concat(c));
-    } else if (type instanceof WrappedScriptObjectType) {
-        return [[type.name, type]];
-    }
-    throw `type must be a union type or an object type.`;
+const stringType = new Type.Primitive("string");
+const booleanType = new Type.Primitive("boolean");
 
+const drawableNodeType = new Type.CustomObject("DrawableNode", null, new Map<string, Type.Type>([
+    ["label", stringType],
+]));
+
+const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<string, Type.Type>([
+    ["label", stringType],
+    ["source", drawableNodeType],
+    ["destination", drawableNodeType],
+]));
+
+drawableNodeType.members.set("parents", new Value.ArrayType(drawableEdgeType));
+drawableNodeType.members.set("children", new Value.ArrayType(drawableEdgeType));
+
+const drawableGraphType = new Type.CustomObject("DrawableGraph", null, new Map<string, Type.Type>([
+    ["nodes", new Value.ArrayType(drawableNodeType)],
+    ["edges", new Value.ArrayType(drawableEdgeType)],
+]));
+
+
+
+const nodeType = new Type.CustomObject("DFANode", null, new Map<string, Type.Type>([
+    ["label", stringType],
+    ["isAcceptState", booleanType],
+    ["isStartState", booleanType],
+    ["children", "placeholder" as any],
+]), undefined, new Map([
+    ["isAcceptState", "Accept State"],
+    ["isStartState", "Start State"],
+]));
+
+const edgeType = new Type.CustomObject("DFAEdge", null, new Map<string, Type.Type>([
+    ["label", stringType],
+    ["destination", nodeType],
+]));
+
+nodeType.members.set("children", new Value.ArrayType(edgeType));
+
+const stateType = new Type.CustomObject("State", null, new Map<string, Type.Type>([
+    ["currentNode", nodeType],
+    ["inputLeft", stringType],
+]));
+
+const graphType = new Type.CustomObject("DFAGraph", null, new Map<string, Type.Type>([
+    ["nodes", new Value.ArrayType(nodeType)],
+    ["edges", new Value.ArrayType(edgeType)],
+]));
+
+const nodesTypes = [nodeType];
+const edgesTypes = [edgeType];
+
+export interface Plugin {
+    stateType: Type.CustomObject;
+    nodesType: Type.Union;
+    edgesType: Type.Union;
+    graphType: Type.Intersection;
+    argumentTypes: Type.Type[];
+    resultType: Type.Type;
+
+    makeProgram(model: Model): Program;
 }
 
-function kindToKey(kind: CoreElementKind): string {
-    switch (kind) {
-        case CoreElementKind.Edge:
-            return "Edges";
-        case CoreElementKind.Node:
-            return "Nodes";
-        case CoreElementKind.Graph:
-            return "Graph";
-    }
-}
+export class DFAPlugin implements Plugin {
+    stateType = stateType;
+    nodesType = new Type.Union(nodesTypes.map(t => Type.intersectTypes([t, drawableNodeType], [])));
+    edgesType = new Type.Union(edgesTypes.map(t => Type.intersectTypes([t, drawableEdgeType], [])));
+    graphType = new Type.Intersection([graphType, drawableGraphType]);
+    argumentTypes = [new Type.Primitive("string")];
+    resultType = new Type.Primitive("boolean");
 
-
-export class PluginTypeEnvironment extends ScriptTypeEnvironment {
-    private pluginTypes: Map<string, Map<string, WrappedScriptObjectType>>;
-    private pluginSourceFile: ts.SourceFile;
-    private sinapSourceFile: ts.SourceFile;
-
-    public drawableTypes: Map<CoreElementKind, WrappedScriptObjectType>;
-
-    public startTypes: [WrappedScriptType[], WrappedScriptType][];
-
-    lookupPluginType(n: string) {
-        return this.getType(this.checker.lookupTypeAt(n, this.pluginSourceFile));
+    constructor(readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
     }
 
-    lookupSinapType(n: string) {
-        return this.getType(this.checker.lookupTypeAt(n, this.sinapSourceFile));
-    }
-
-    private getFunctionSignatures(name: string, node: ts.Node) {
-        const functionSymbol = this.checker.getSymbolsInScope(node, ts.SymbolFlags.Function)
-            .filter((a) => a.name === name)[0];
-        if (functionSymbol === undefined) {
-            throw new Error(`function "${name}" not found`);
-        }
-        const functionType = this.checker.getTypeOfSymbol(functionSymbol);
-        const sig = functionType.getCallSignatures();
-        return sig.map(s =>
-            [
-                s.getParameters().map(p => this.getType(this.checker.getTypeOfSymbol(p))),
-                this.getType(s.getReturnType())
-            ] as [WrappedScriptType[], WrappedScriptType]);
-    }
-
-    constructor(program: ts.Program) {
-        super(program.getTypeChecker());
-        this.pluginSourceFile = program.getSourceFile("plugin.ts");
-        this.sinapSourceFile = program.getSourceFile("plugin-stub.ts");
-        this.drawableTypes = new Map();
-        this.drawableTypes.set(CoreElementKind.Node, this.lookupSinapType("DrawableNode") as WrappedScriptObjectType);
-        this.drawableTypes.set(CoreElementKind.Edge, this.lookupSinapType("DrawableEdge") as WrappedScriptObjectType);
-        this.drawableTypes.set(CoreElementKind.Graph, this.lookupSinapType("DrawableGraph") as WrappedScriptObjectType);
-
-        this.startTypes = this.getFunctionSignatures("start", program.getSourceFile("plugin.ts"));
-
-        this.pluginTypes = new Map(["Nodes", "Edges", "Graph"]
-            .map(k => [k, this.lookupPluginType(k)] as [string, WrappedScriptType])
-            .map(([n, v]) => [n, new Map(unionToList(v))] as [string, Map<string, WrappedScriptObjectType>]));
-    }
-
-    elementTypes(kind: CoreElementKind) {
-        const type = this.pluginTypes.get(kindToKey(kind));
-        if (type === undefined) {
-            throw Error("kind not found");
-        }
-        return type.keys();
-    }
-
-    getElementType(kind: CoreElementKind, type: string): WrappedScriptObjectType {
-        const t = this.pluginTypes.get(kindToKey(kind));
-        if (t === undefined) {
-            throw Error("kind not found");
-        }
-        const ty = t.get(type);
-        if (ty === undefined) {
-            throw Error("type not found");
-        }
-        return ty;
+    makeProgram(model: Model): Program {
+        return new Program(model, this);
     }
 }
 
-export interface CompilationDiagnostics {
-    global: ts.Diagnostic[];
-    semantic: ts.Diagnostic[];
-    syntactic: ts.Diagnostic[];
-}
-
-export class CompilationResult {
-    constructor(readonly js: string, readonly diagnostics: CompilationDiagnostics) {
-    }
-}
-
-export class Plugin {
-    public typeEnvironment: PluginTypeEnvironment;
-
-    constructor(program: ts.Program, readonly results: CompilationResult, readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
-        this.typeEnvironment = new PluginTypeEnvironment(program);
+export class Model {
+    environment = new Value.Environment();
+    constructor(readonly plugin: Plugin) {
+        this.graph = new Value.Intersection(this.plugin.graphType, this.environment);
     }
 
-    // TODO: remove
-    public printResults() {
-        printDiagnostics(this.results.diagnostics.global);
-        printDiagnostics(this.results.diagnostics.semantic);
-        printDiagnostics(this.results.diagnostics.syntactic);
+    readonly nodes = new Set<Value.Intersection>();
+    readonly edges = new Set<Value.Intersection>();
+    readonly graph: Value.Intersection;
+
+    *values() {
+        yield this.graph;
+        yield* this.nodes;
+        yield* this.edges;
     }
 
-    makeElement(kind: CoreElementKind, type?: string) {
-        if (type === undefined) {
-            type = this.elementTypes(kind).next().value;
+    makeNode(type?: Type.Intersection) {
+        if (!type) {
+            type = this.plugin.nodesType.types.values().next().value as Type.Intersection;
         }
-        return new CoreElement(this.typeEnvironment.getElementType(kind, type), kind);
+        if (!Type.isSubtype(type, this.plugin.nodesType)) {
+            throw new Error("type must be a kind of node");
+        }
+        const value = new Value.Intersection(type, this.environment);
+        this.environment.add(value);
+        this.nodes.add(value);
+        return value;
     }
 
-    elementTypes(kind: CoreElementKind) {
-        return this.typeEnvironment.elementTypes(kind);
+    makeEdge(type: Type.Intersection | undefined, from: Value.Intersection, to: Value.Intersection) {
+        if (!type) {
+            type = this.plugin.edgesType.types.values().next().value as Type.Intersection;
+        }
+        if (!Type.isSubtype(type, this.plugin.edgesType)) {
+            throw new Error("type must be a kind of edge");
+        }
+        const value = new Value.Intersection(type, this.environment);
+        this.environment.add(value);
+        value.set("source", from);
+        value.set("destination", to);
+        this.edges.add(value);
+        return value;
+    }
+
+    delete(value: Value.Intersection) {
+        if (Type.isSubtype(value.type, this.plugin.nodesType)) {
+            this.nodes.delete(value);
+            this.collect();
+        } else if (Type.isSubtype(value.type, this.plugin.edgesType)) {
+            this.edges.delete(value);
+            this.collect();
+        }
+        throw new Error("can't delete value, not a node or edge");
+    }
+
+    collect() {
+        this.environment.garbageCollect(this.values());
     }
 }

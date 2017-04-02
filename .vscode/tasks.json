@@ -22,7 +22,6 @@
         {
             "taskName": "build",
             "args": ["run", "build", "--", "--watch"],
-            "isBackground": true,
             "isBuildCommand": true
         },
         {
