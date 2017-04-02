@@ -41,9 +41,9 @@ function getInterpreterInfo(directory: string): Promise<InterpreterInfo> {
                 const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
                 return Promise.all([filePromise, pluginKind]);
             })
-            .then(([pluginFile, pluginKind]): InterpreterInfo => {
-                return new InterpreterInfo(path.join(directory, pluginFile), pluginKind, description, directory);
-            });
+                .then(([pluginFile, pluginKind]): InterpreterInfo => {
+                    return new InterpreterInfo(path.join(directory, pluginFile), pluginKind, description, directory);
+                });
         });
 }
 
