@@ -1,9 +1,9 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 /// <reference path="../typings/modules/chai/index.d.ts" />
 import { loadPluginDir, CoreModel, Plugin, makeValue, Program, CorePrimitiveValue } from "../src/";
-import { LocalFileService } from "./files-mock";
 import { expect } from "chai";
 import * as vm from "vm";
+import * as path from "path";
 
 describe("complex node", () => {
     function setupTest(plugin: Plugin, model: CoreModel) {
@@ -17,10 +17,8 @@ describe("complex node", () => {
         return [context as any, serialGraph];
     }
 
-    const fs = new LocalFileService();
     function loadTestPlugin(name: string): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath("test", "interpreters", name))
-            .then((directory) => loadPluginDir(directory, fs));
+        return loadPluginDir(path.join("test", "interpreters", name));
     }
 
     let plugin: Plugin;

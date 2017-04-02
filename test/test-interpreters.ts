@@ -16,9 +16,9 @@ import {
     CoreIntersectionValue,
     PluginTypeEnvironment,
 } from "../src/";
-import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
+import * as path from "path";
 
 export function runProg(prog: Program, input: string, states: number, resultE: boolean, plugin: Plugin) {
     const results = prog.run([makeValue(plugin.typeEnvironment, input, false)]);
@@ -56,10 +56,8 @@ describe("various interpreters", () => {
         return [context as any, serialGraph];
     }
 
-    const fs = new LocalFileService();
     function loadTestPlugin(name: string): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath("interpreters", name))
-            .then((directory) => loadPluginDir(directory, fs));
+        return loadPluginDir(path.join("interpreters", name));
     }
 
     describe("dfa", () => {

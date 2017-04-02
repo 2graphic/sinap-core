@@ -1,8 +1,8 @@
 /// <reference path="../typings/globals/mocha/index.d.ts" />
 /// <reference path="../typings/modules/chai/index.d.ts" />
 import { loadPluginDir, Plugin, CoreModel, CoreElement, CoreObjectValue, CorePrimitiveValue, valueWrap, FakeIntersectionType, makeValue, isObjectType, CoreElementKind } from "../src/";
-import { LocalFileService } from "./files-mock";
 import { expect } from 'chai';
+import * as path from "path";
 
 function roundTripJSO(plugin: Plugin, jso: any) {
     const jsoString = JSON.stringify(jso);
@@ -21,10 +21,8 @@ describe("Serialization", () => {
     let firstPlugin: Plugin;
     let secondPlugin: Plugin;
 
-    const fs = new LocalFileService();
     function loadSerPlugin(name: string): Promise<Plugin> {
-        return fs.directoryByName(fs.joinPath("test", "interpreters", "serial", name))
-            .then((directory) => loadPluginDir(directory, fs));
+        return loadPluginDir(path.join("test", "interpreters", "serial", name));
     }
 
     it("builds", () => {

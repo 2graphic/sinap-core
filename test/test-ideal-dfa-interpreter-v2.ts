@@ -2,24 +2,18 @@
 /// <reference path="../typings/modules/chai/index.d.ts" />
 
 import { loadPluginDir, CoreModel, CoreElementKind, Plugin, Program } from "../src/";
-import { LocalFileService } from "./files-mock";
 import * as assert from "assert";
 import * as vm from "vm";
 import { runProg } from "./test-interpreters";
-
 
 describe("test ideal v2", () => {
     let plugin: Plugin;
 
     before(function(done) {
-        const fileService = new LocalFileService();
-        fileService.directoryByName("test/interpreters/ideal-dfa-interpreter-v2").then((directory) => {
-            return loadPluginDir(directory, fileService);
-        })
-            .then((locPlug) => {
-                plugin = locPlug;
-                done();
-            });
+        loadPluginDir("test/interpreters/ideal-dfa-interpreter-v2").then((locPlug) => {
+            plugin = locPlug;
+            done();
+        });
     });
     it("no dianostic errors", () => {
         assert.deepEqual({ global: [], syntactic: [], semantic: [] }, plugin.results.diagnostics);
