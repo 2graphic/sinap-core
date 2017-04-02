@@ -20,6 +20,7 @@ describe("the nerfed interpreter", () => {
 
     it("computes divisibility", () => {
         const model = new Model(plugin);
+        // for reference: makeEdge(NodeKind)
         const q0 = model.makeNode();
         q0.set("label", Value.makePrimitive(model.environment, "q0"));
         q0.set("isStartState", Value.makePrimitive(model.environment, true));
@@ -33,6 +34,7 @@ describe("the nerfed interpreter", () => {
         q2.set("isStartState", Value.makePrimitive(model.environment, false));
         q2.set("isAcceptState", Value.makePrimitive(model.environment, false));
 
+        // for reference: makeEdge(EdgeKind, source, destination)
         const e00 = model.makeEdge(undefined, q0, q0);
         e00.set("label", Value.makePrimitive(model.environment, "0"));
         const e01 = model.makeEdge(undefined, q0, q1);
