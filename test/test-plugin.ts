@@ -22,6 +22,19 @@ describe("plugin", () => {
         });
     });
 
+    it("Has a description", () => {
+        return loadTestPlugin("dfa").then(plugin => {
+            assert.equal(plugin.description, "A DFA interpreter for Sinap.");
+        });
+    });
+
+    it("Has its directory", () => {
+        return loadTestPlugin("dfa").then(plugin => {
+            const directory = path.resolve(plugin.directory);
+            assert.equal(directory, path.resolve("interpreters", "dfa"));
+        });
+    });
+
     it("handles overloads", () => {
         return loadTestPlugin("start-functions", ["test", "interpreters"]).then(plugin => {
             const ts = plugin.typeEnvironment.startTypes.map(m => [m[0].map(n => n.name), m[1].name]);
