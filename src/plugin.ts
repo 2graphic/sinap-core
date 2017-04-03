@@ -1,15 +1,15 @@
 import { Directory } from "./files";
-import { Program } from ".";
+import { ProgramClass } from "./program";
 import { Type, Value } from "sinap-types";
 
 const stringType = new Type.Primitive("string");
 const booleanType = new Type.Primitive("boolean");
 
-const drawableNodeType = new Type.CustomObject("DrawableNode", null, new Map<string, Type.Type>([
+export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new Map<string, Type.Type>([
     ["label", stringType],
 ]));
 
-const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<string, Type.Type>([
+export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<string, Type.Type>([
     ["label", stringType],
     ["source", drawableNodeType],
     ["destination", drawableNodeType],
@@ -18,7 +18,7 @@ const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<str
 drawableNodeType.members.set("parents", new Value.ArrayType(drawableEdgeType));
 drawableNodeType.members.set("children", new Value.ArrayType(drawableEdgeType));
 
-const drawableGraphType = new Type.CustomObject("DrawableGraph", null, new Map<string, Type.Type>([
+export const drawableGraphType = new Type.CustomObject("DrawableGraph", null, new Map<string, Type.Type>([
     ["nodes", new Value.ArrayType(drawableNodeType)],
     ["edges", new Value.ArrayType(drawableEdgeType)],
 ]));
@@ -63,7 +63,7 @@ export interface Plugin {
     argumentTypes: Type.Type[];
     resultType: Type.Type;
 
-    makeProgram(model: Model): Program;
+    makeProgram(model: Model): ProgramClass;
 }
 
 export class DFAPlugin implements Plugin {
@@ -77,8 +77,8 @@ export class DFAPlugin implements Plugin {
     constructor(readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
     }
 
-    makeProgram(model: Model): Program {
-        return new Program(model, this);
+    makeProgram(model: Model): ProgramClass {
+        return new ProgramClass(model, this);
     }
 }
 

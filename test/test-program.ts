@@ -48,7 +48,7 @@ describe("the nerfed interpreter", () => {
         const e21 = model.makeEdge(undefined, q2, q2);
         e21.set("label", Value.makePrimitive(model.environment, "1"));
 
-        const prog = new Program(model, plugin);
+        const prog: Program = plugin.makeProgram(model);
 
         for (let x = 0; x < 1000; x++) {
             const result = prog.run([Value.makePrimitive(prog.environment, x.toString(2))]);

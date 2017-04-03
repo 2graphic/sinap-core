@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true",
-    "sinap-types": "0.0.13"
+    "sinap-types": "0.0.14"
   },
   "devDependencies": {
     "@types/node": "latest",

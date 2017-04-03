@@ -96,8 +96,13 @@ class DFAProgram {
 }
 
 
+export interface Program {
+    environment: Value.Environment;
+    validate(): Value.Primitive | null;
+    run(a: Value.Value[]): { steps: Value.CustomObject[], result?: Value.Value, error?: Value.Primitive };
+}
 
-export class Program {
+export class ProgramClass implements Program {
     private program: DFAProgram;
     get environment() {
         return this.program.environment;
