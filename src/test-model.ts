@@ -28,4 +28,23 @@ describe("Model", () => {
         const node = model.nodes.values().next().value;
         expect(node.get("label")).to.be.instanceof(Value.Primitive);
     });
+
+    it("serializes simple graph", () => {
+        const model = new Model(dfa);
+        model.makeNode();
+        const raw = model.serialize();
+        const node = model.nodes.values().next().value;
+        expect(raw).to.deep.equal({
+            graph: {[model.graph.uuid]: model.graph.serialRepresentation},
+            nodes: {[node.uuid]: node.serialRepresentation},
+            edges: {},
+            others: {
+                [node.get("isAcceptState").uuid]: node.get("isAcceptState").serialRepresentation,
+                [node.get("isStartState").uuid]: node.get("isStartState").serialRepresentation,
+                [node.get("parents").uuid]: node.get("parents").serialRepresentation,
+                [node.get("children").uuid]: node.get("children").serialRepresentation,
+                [node.get("label").uuid]: node.get("label").serialRepresentation,
+            },
+        });
+    });
 });

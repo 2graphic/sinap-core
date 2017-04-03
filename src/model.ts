@@ -63,4 +63,32 @@ export class Model {
     collect() {
         this.environment.garbageCollect(this.values());
     }
+
+    serialize() {
+        this.collect();
+        const otherValues = new Set(this.environment.values.values());
+        for (const v of this.values()) {
+            otherValues.delete(v);
+        }
+
+        const nodes: {[uuid: string]: any} = {};
+        for (const node of this.nodes) {
+            nodes[node.uuid] = node.serialRepresentation;
+        }
+        const edges: {[uuid: string]: any} = {};
+        for (const edge of this.edges) {
+            edges[edge.uuid] = edge.serialRepresentation;
+        }
+        const others: {[uuid: string]: any} = {};
+        for (const other of otherValues) {
+            others[other.uuid] = other.serialRepresentation;
+        }
+
+        return {
+            graph: {[this.graph.uuid]: this.graph.serialRepresentation},
+            nodes: nodes,
+            edges: edges,
+            others: others,
+        };
+    }
 }
