@@ -7,6 +7,7 @@ export class Model {
     environment = new Value.Environment();
     constructor(readonly plugin: Plugin) {
         this.graph = new Value.Intersection(this.plugin.graphType, this.environment);
+        this.environment.add(this.graph);
     }
 
     readonly nodes = new Set<Element>();
