@@ -14,6 +14,9 @@ manager.loaders.set("typescript", new TypescriptPluginLoader());
 manager.loadPlugin(directory, fs)
 ```
 
+## Plugin Architecture
+**TODO: Dyllon, describe the overall structure of an plugin, being a directory with some package.json**
+
 ## Model
 
 `Model` is the class that manages Sinap's representation of a graph. 
