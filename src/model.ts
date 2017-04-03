@@ -57,7 +57,7 @@ export class Model {
             this.edges.delete(value);
             this.collect();
         } else {
-            Type.isSubtype(value.type, this.plugin.nodesType);
+            throw new Error("can't delete value, not a node or edge");
         }
     }
 
@@ -72,21 +72,21 @@ export class Model {
             otherValues.delete(v);
         }
 
-        const nodes: {[uuid: string]: any} = {};
+        const nodes: { [uuid: string]: any } = {};
         for (const node of this.nodes) {
             nodes[node.uuid] = node.serialRepresentation;
         }
-        const edges: {[uuid: string]: any} = {};
+        const edges: { [uuid: string]: any } = {};
         for (const edge of this.edges) {
             edges[edge.uuid] = edge.serialRepresentation;
         }
-        const others: {[uuid: string]: any} = {};
+        const others: { [uuid: string]: any } = {};
         for (const other of otherValues) {
             others[other.uuid] = other.serialRepresentation;
         }
 
         return {
-            graph: {[this.graph.uuid]: this.graph.serialRepresentation},
+            graph: { [this.graph.uuid]: this.graph.serialRepresentation },
             nodes: nodes,
             edges: edges,
             others: others,

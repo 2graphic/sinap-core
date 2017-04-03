@@ -42,8 +42,8 @@ describe("Model", () => {
         const raw = model.serialize();
         const node = model.nodes.values().next().value;
         expect(raw).to.deep.equal({
-            graph: {[model.graph.uuid]: model.graph.serialRepresentation},
-            nodes: {[node.uuid]: node.serialRepresentation},
+            graph: { [model.graph.uuid]: model.graph.serialRepresentation },
+            nodes: { [node.uuid]: node.serialRepresentation },
             edges: {},
             others: {
                 [node.get("isAcceptState").uuid]: node.get("isAcceptState").serialRepresentation,
