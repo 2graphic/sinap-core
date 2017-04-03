@@ -20,7 +20,6 @@ describe("Model", () => {
             });
     });
 
-
     it("creates simple graph", () => {
         const model = new Model(dfa);
         model.makeNode();
