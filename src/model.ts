@@ -1,15 +1,17 @@
 import { Type, Value } from "sinap-types";
 import { Plugin } from "./plugin";
 
+export type Element = Value.Intersection;
+
 export class Model {
     environment = new Value.Environment();
     constructor(readonly plugin: Plugin) {
         this.graph = new Value.Intersection(this.plugin.graphType, this.environment);
     }
 
-    readonly nodes = new Set<Value.Intersection>();
-    readonly edges = new Set<Value.Intersection>();
-    readonly graph: Value.Intersection;
+    readonly nodes = new Set<Element>();
+    readonly edges = new Set<Element>();
+    readonly graph: Element;
 
     *values() {
         yield this.graph;
@@ -31,7 +33,7 @@ export class Model {
         return value;
     }
 
-    makeEdge(type: Type.Intersection | undefined, from: Value.Intersection, to: Value.Intersection) {
+    makeEdge(type: Type.Intersection | undefined, from: Element, to: Element) {
         if (!type) {
             type = this.plugin.edgesType.types.values().next().value as Type.Intersection;
         }
@@ -47,7 +49,7 @@ export class Model {
         return value;
     }
 
-    delete(value: Value.Intersection) {
+    delete(value: Element) {
         if (Type.isSubtype(value.type, this.plugin.nodesType)) {
             this.nodes.delete(value);
             this.collect();
