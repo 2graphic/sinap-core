@@ -1,4 +1,4 @@
-import { File, FileService, readAsJson, Directory, Plugin, DFAPlugin } from ".";
+import { File, FileService, readAsJson, Directory, Plugin } from ".";
 
 const pluginFileKey: "plugin-file" = "plugin-file";
 const pluginKindKey: "kind" = "kind";
@@ -8,13 +8,27 @@ function nullPromise<T>(obj: T, name: string): Promise<T> {
     return obj ? Promise.resolve(obj) : Promise.reject(`${name} may not be null.`);
 }
 
-class InterpreterInfo {
-    constructor(readonly interp: File, readonly pluginKind: string[], readonly description: string, readonly directory: Directory) {
+export class InterpreterInfo {
+    constructor(readonly interp: File, readonly pluginKind: string[], readonly description: string, readonly directory: Directory, readonly loader: string) {
     }
 }
 
-export function loadPluginDir(directory: Directory, fileService: FileService): Promise<Plugin> {
-    return getInterpreterInfo(directory).then((interpreterInfo) => loadPlugin(interpreterInfo, fileService));
+export interface PluginLoader {
+    loadPlugin(pluginInfo: InterpreterInfo, fileService: FileService): Promise<Plugin>;
+}
+
+export class PluginLoaderManager {
+    loaders = new Map<string, PluginLoader>();
+
+    loadPlugin(directory: Directory, fileService: FileService): Promise<Plugin> {
+        return getInterpreterInfo(directory).then((interpreterInfo) => {
+            const loader = this.loaders.get(interpreterInfo.loader);
+            if (!loader) {
+                throw new Error(`loader: ${interpreterInfo.loader} is not recognized`);
+            }
+            return loader.loadPlugin(interpreterInfo, fileService);
+        });
+    }
 }
 
 function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
@@ -34,15 +48,8 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
                     })
                     .then(([pluginName, pluginKind, description]) => {
                         return nullPromise(fileMap.get(pluginName), pluginName)
-                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind, description, directory));
+                            .then((pluginFile: File) => new InterpreterInfo(pluginFile, pluginKind, description, directory, "typescript"));
                     });
             });
     });
-}
-
-/**
- * An abstract representation of a plugin
- */
-function loadPlugin(pluginInfo: InterpreterInfo, _fileService: FileService): Promise<Plugin> {
-    return Promise.resolve(new DFAPlugin(pluginInfo.pluginKind, pluginInfo.description, pluginInfo.directory));
 }

@@ -1,8 +1,0 @@
-{
-    
-    "sinap": {
-        "kind": ["Formal Languages", "DFA"],
-        "description": "this is a DFA plugin",
-        "plugin-file": "plugin.ts"
-    }
-}

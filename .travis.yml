@@ -12,11 +12,7 @@ node_js:
 before_script:
 - npm prune
 script:
-- npm run lint
-- git diff --exit-code HEAD
-- npm test
-after_success:
-- npm run semantic-release
+- npm run prepublish
 branches:
   except:
   - "/^v\\d+\\.\\d+\\.\\d+$/"
