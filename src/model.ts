@@ -56,8 +56,9 @@ export class Model {
         } else if (Type.isSubtype(value.type, this.plugin.edgesType)) {
             this.edges.delete(value);
             this.collect();
+        } else {
+            Type.isSubtype(value.type, this.plugin.nodesType);
         }
-        throw new Error("can't delete value, not a node or edge");
     }
 
     collect() {

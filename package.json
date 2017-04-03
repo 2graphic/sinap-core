@@ -1,7 +1,7 @@
 {
   "name": "sinap-core",
   "description": "Core Utilities for dealing with plugins",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "readme": "README.json",
   "license": "MIT",
   "repository": {
@@ -33,6 +33,6 @@
     "sinap-typescript": "0.0.x"
   },
   "dependencies": {
-    "sinap-types": "~0.0.17"
+    "sinap-types": "~0.0.18"
   }
 }

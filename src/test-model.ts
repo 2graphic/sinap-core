@@ -29,6 +29,13 @@ describe("Model", () => {
         expect(node.get("label")).to.be.instanceof(Value.Primitive);
     });
 
+    it("deletes", () => {
+        const model = new Model(dfa);
+        const node = model.makeNode();
+        model.delete(node);
+        expect(model.nodes.size).to.equal(0);
+    });
+
     it("serializes simple graph", () => {
         const model = new Model(dfa);
         model.makeNode();
