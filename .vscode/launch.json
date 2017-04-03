@@ -18,10 +18,10 @@
                 "--timeout", "999999",
                 "--grep", "",
                 "--colors",
-                "${workspaceRoot}/test/build/index.js"
+                "${workspaceRoot}/lib/test-*.js"
             ],
             "outFiles": [
-                "${workspaceRoot}/test/build/*"
+                "${workspaceRoot}/lib/*"
             ],
             "internalConsoleOptions": "openOnSessionStart"
         }

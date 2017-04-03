@@ -29,7 +29,8 @@
     "tslint": "^4.5.1",
     "typescript": "^2.2.2",
     "typescript-formatter": "^5.1.2",
-    "typings": "^2.1.0"
+    "typings": "^2.1.0",
+    "sinap-typescript": "0.0.1"
   },
   "dependencies": {
     "sinap-types": "0.0.15"
