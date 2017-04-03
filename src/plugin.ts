@@ -31,5 +31,6 @@ export interface Plugin {
     argumentTypes: Type.Type[];
     resultType: Type.Type;
 
+    validateEdge(src: Value.Intersection, dst?: Value.Intersection, like?: Value.Intersection): boolean;
     makeProgram(model: Model): Program;
 }
