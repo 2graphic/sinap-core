@@ -26,6 +26,7 @@ export class Model {
         }
         const value = new Value.Intersection(type, this.environment);
         this.environment.add(value);
+        // value.initialize();
         this.nodes.add(value);
         return value;
     }
@@ -39,6 +40,7 @@ export class Model {
         }
         const value = new Value.Intersection(type, this.environment);
         this.environment.add(value);
+        // value.initialize();
         value.set("source", from);
         value.set("destination", to);
         this.edges.add(value);
