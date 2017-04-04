@@ -1,7 +1,7 @@
 {
   "name": "sinap-core",
   "description": "Core Utilities for dealing with plugins",
-  "version": "3.0.14",
+  "version": "3.1.0",
   "readme": "README.md",
   "license": "MIT",
   "repository": {
@@ -28,7 +28,6 @@
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
     "rimraf": "^2.6.1",
-    "sinap-typescript": "~0.0.7",
     "tslint": "^4.5.1",
     "typescript": "^2.2.2",
     "typescript-formatter": "^5.1.2",

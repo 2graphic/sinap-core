@@ -1,12 +1,48 @@
 import { Type, Value } from "sinap-types";
 import { Plugin } from "./plugin";
 
-export type Element = Value.Intersection;
+const stringType = new Type.Primitive("string");
+
+export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new Map<string, Type.Type>([
+    ["label", stringType],
+]));
+
+export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<string, Type.Type>([
+    ["label", stringType],
+    ["source", drawableNodeType],
+    ["destination", drawableNodeType],
+]));
+
+drawableNodeType.members.set("parents", new Value.ArrayType(drawableEdgeType));
+drawableNodeType.members.set("children", new Value.ArrayType(drawableEdgeType));
+
+export const drawableGraphType = new Type.CustomObject("DrawableGraph", null, new Map<string, Type.Type>([
+    ["nodes", new Value.ArrayType(drawableNodeType)],
+    ["edges", new Value.ArrayType(drawableEdgeType)],
+]));
+
+export class ElementType extends Type.Intersection {
+    constructor(readonly pluginType: Type.CustomObject, readonly drawableType: Type.CustomObject) {
+        super([pluginType, drawableType]);
+    }
+}
+
+export class ElementUnion extends Type.Union {
+    constructor(readonly types: Set<ElementType>) {
+        super(types);
+    }
+}
+
+export class Element extends Value.Intersection {
+    constructor(readonly type: ElementType, environment: Value.Environment) {
+        super(type, environment);
+    }
+}
 
 export class Model {
     environment = new Value.Environment();
     constructor(readonly plugin: Plugin) {
-        this.graph = new Value.Intersection(this.plugin.graphType, this.environment);
+        this.graph = new Element(this.plugin.graphType, this.environment);
         this.environment.add(this.graph);
     }
 
@@ -20,28 +56,28 @@ export class Model {
         yield* this.edges;
     }
 
-    makeNode(type?: Type.Intersection) {
+    makeNode(type?: ElementType) {
         if (!type) {
-            type = this.plugin.nodesType.types.values().next().value as Type.Intersection;
+            type = this.plugin.nodesType.types.values().next().value as ElementType;
         }
         if (!Type.isSubtype(type, this.plugin.nodesType)) {
             throw new Error("type must be a kind of node");
         }
-        const value = new Value.Intersection(type, this.environment);
+        const value = new Element(type, this.environment);
         this.environment.add(value);
         value.initialize();
         this.nodes.add(value);
         return value;
     }
 
-    makeEdge(type: Type.Intersection | undefined, from: Element, to: Element) {
+    makeEdge(type: ElementType | undefined, from: Element, to: Element) {
         if (!type) {
-            type = this.plugin.edgesType.types.values().next().value as Type.Intersection;
+            type = this.plugin.edgesType.types.values().next().value as ElementType;
         }
         if (!Type.isSubtype(type, this.plugin.edgesType)) {
             throw new Error("type must be a kind of edge");
         }
-        const value = new Value.Intersection(type, this.environment);
+        const value = new Element(type, this.environment);
         this.environment.add(value);
         value.initialize();
         value.set("source", from);

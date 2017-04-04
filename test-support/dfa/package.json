@@ -27,6 +27,6 @@
       "DFA"
     ],
     "plugin-file": "dfa-interpreter.ts",
-    "loader": "typescript"
+    "loader": "example"
   }
 }
