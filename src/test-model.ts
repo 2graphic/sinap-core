@@ -46,9 +46,19 @@ describe("Model", () => {
             nodes: { [node.uuid]: node.serialRepresentation },
             edges: {},
             others: {
-                [node.get("parents").uuid]: node.get("parents").serialRepresentation,
-                [node.get("children").uuid]: node.get("children").serialRepresentation,
                 [node.get("label").uuid]: node.get("label").serialRepresentation,
+                [node.get("color").uuid]: node.get("color").serialRepresentation,
+                [node.get("position").uuid]: node.get("position").serialRepresentation,
+                [node.get("shape").uuid]: node.get("shape").serialRepresentation,
+                [node.get("image").uuid]: node.get("image").serialRepresentation,
+                [node.get("anchorPoints").uuid]: node.get("anchorPoints").serialRepresentation,
+                [node.get("borderColor").uuid]: node.get("borderColor").serialRepresentation,
+                [node.get("borderStyle").uuid]: node.get("borderStyle").serialRepresentation,
+                [node.get("borderWidth").uuid]: node.get("borderWidth").serialRepresentation,
+                [(node.get("position") as Value.Record).value.x.uuid]: (node.get("position") as Value.Record).value.x.serialRepresentation,
+                [(node.get("position") as Value.Record).value.y.uuid]: (node.get("position") as Value.Record).value.y.serialRepresentation,
+                [(node.get("shape") as Value.Union).value.uuid]: (node.get("shape") as Value.Union).value.serialRepresentation,
+                [(node.get("borderStyle") as Value.Union).value.uuid]: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
             },
         });
     });
