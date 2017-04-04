@@ -28,4 +28,4 @@ const q0 = model.makeNode();
 q0.set("label", Value.makePrimitive(model.environment, "q0"));
 ```
 
-For more of a reference on how to use sinap `Values` (the thing that makeNode/Edge return) see [sinap-types](https://www.github.com/2graphic/sinap-types). For more examples of using the model see **TODO: Insert reference to a local test here once made**
+For more of a reference on how to use sinap `Values` (the thing that makeNode/Edge return) see [sinap-types](https://www.github.com/2graphic/sinap-types). For more examples of using the model see [test-model](src/test-model.ts).
