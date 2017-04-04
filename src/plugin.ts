@@ -1,4 +1,5 @@
 import { Program } from "./program";
+import { InterpreterInfo } from "./plugin-loader";
 import { Type, Value } from "sinap-types";
 import { Model } from "./model";
 
@@ -24,12 +25,14 @@ export const drawableGraphType = new Type.CustomObject("DrawableGraph", null, ne
 
 
 export interface Plugin {
-    stateType: Type.CustomObject;
-    nodesType: Type.Union;
-    edgesType: Type.Union;
-    graphType: Type.Intersection;
-    argumentTypes: Type.Type[];
-    resultType: Type.Type;
+    readonly pluginInfo: InterpreterInfo;
+
+    readonly stateType: Type.CustomObject;
+    readonly nodesType: Type.Union;
+    readonly edgesType: Type.Union;
+    readonly graphType: Type.Intersection;
+    readonly argumentTypes: Type.Type[];
+    readonly resultType: Type.Type;
 
     validateEdge(src: Value.Intersection, dst?: Value.Intersection, like?: Value.Intersection): boolean;
     makeProgram(model: Model): Program;
