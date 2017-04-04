@@ -2,22 +2,17 @@
 import { expect } from "chai";
 import { TypescriptPluginLoader } from "sinap-typescript";
 import { Value } from "sinap-types";
-import { PluginLoaderManager, Model, Plugin } from "./index";
-import { LocalFileService } from "./test-files-mock";
+import { Model, Plugin, getInterpreterInfo } from "./index";
+import * as path from "path";
 
 describe("Model", () => {
-
-    const manager = new PluginLoaderManager();
-    manager.loaders.set("typescript", new TypescriptPluginLoader());
-
+    const loader = new TypescriptPluginLoader();
     let dfa: Plugin;
     before(() => {
-        const fs = new LocalFileService();
-        return fs.directoryByName(fs.joinPath("test-support", "dfa"))
-            .then((directory) => manager.loadPlugin(directory, fs))
-            .then((plugin) => {
-                dfa = plugin;
-            });
+        // TODO: Remove the casts to any once sinap-typescript is updated.
+        getInterpreterInfo(path.join("test-support", "dfa")).then((info) => loader.loadPlugin(info.interpreterInfo as any, null as any)).then((plugin) => {
+            dfa = plugin as any;
+        });
     });
 
     it("creates simple graph", () => {
