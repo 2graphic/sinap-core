@@ -9,9 +9,8 @@ describe("Model", () => {
     const loader = new TypescriptPluginLoader();
     let dfa: Plugin;
     before(() => {
-        // TODO: Remove the casts to any once sinap-typescript is updated.
-        getInterpreterInfo(path.join("test-support", "dfa")).then((info) => loader.loadPlugin(info.interpreterInfo as any, null as any)).then((plugin) => {
-            dfa = plugin as any;
+        return getInterpreterInfo(path.join("test-support", "dfa")).then((info) => loader.load(info.interpreterInfo)).then((plugin) => {
+            dfa = plugin;
         });
     });
 

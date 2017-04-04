@@ -30,7 +30,7 @@
     "typescript": "^2.2.2",
     "typescript-formatter": "^5.1.2",
     "typings": "^2.1.0",
-    "sinap-typescript": "~0.0.5"
+    "sinap-typescript": "file:../sinap-typescript"
   },
   "dependencies": {
     "sinap-types": "~0.0.21"

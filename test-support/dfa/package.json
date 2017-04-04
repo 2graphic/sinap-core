@@ -27,6 +27,6 @@
       "DFA"
     ],
     "plugin-file": "dfa-interpreter.ts",
-    "description": "This interpreter provides a simple deterministic finite automata (DFA) implementation."
+    "loader": "typescript"
   }
 }
