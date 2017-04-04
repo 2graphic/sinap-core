@@ -69,7 +69,7 @@ describe("plugin stub", () => {
 
         const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        expect(context.graph.nodes[0].b.b.b.b.a).to.equal(123);
+        expect(context.graph[0].nodes[0].b.b.b.b.a).to.equal(123);
     });
 
     it("does source and destination", () => {
@@ -110,8 +110,8 @@ describe("plugin stub", () => {
 
         const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        expect(context.graph.edges[0].source.a).to.equal(123);
-        expect(context.graph.edges[0].destination.a).to.equal(456);
+        expect(context.graph[0].edges[0].source.a).to.equal(123);
+        expect(context.graph[0].edges[0].destination.a).to.equal(456);
     });
 
     it("does parents and children", () => {
@@ -152,8 +152,8 @@ describe("plugin stub", () => {
 
         const [context, serialGraph] = setupTest(model);
         new vm.Script("graph = global['plugin-stub'].deserialize(" + serialGraph + ")").runInContext(context);
-        expect(context.graph.nodes[0].children[0].destination.a).to.equal(456);
-        expect(context.graph.nodes[1].parents[0].source.a).to.equal(123);
+        expect(context.graph[0].nodes[0].children[0].destination.a).to.equal(456);
+        expect(context.graph[0].nodes[1].parents[0].source.a).to.equal(123);
     });
 
 
@@ -193,10 +193,9 @@ describe("plugin stub", () => {
             ]
         });
 
-        const [context, serialGraph] = setupTest(model, { global: { "plugin-stub": { "Program": null } } });
+        const context = setupTest(model, { global: { "plugin-stub": { "Program": null } } })[0];
 
-        const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-        const prog = new Program(pluginProg, plugin);
+        const prog = new Program(model, context.global["plugin-stub"].Program);
         const numberType = plugin.typeEnvironment.getNumberType();
 
         expect((prog.run([makeValue<PluginTypeEnvironment>(numberType, 456, false)]).states.length))
@@ -209,8 +208,7 @@ describe("plugin stub", () => {
         const script = new vm.Script(plugin.results.js as string);
         const context = vm.createContext({ global: { "plugin-stub": { "Program": null } } });
         script.runInContext(context);
-        const pluginProg = new (context as any).global["plugin-stub"].Program({ elements: [] });
-        const prog = new Program(pluginProg, plugin);
+        const prog = new Program(new CoreModel(plugin), (context as any).global["plugin-stub"].Program);
         const numberType = plugin.typeEnvironment.getStringType();
         const errorType = plugin.typeEnvironment.lookupGlobalType("Error");
 

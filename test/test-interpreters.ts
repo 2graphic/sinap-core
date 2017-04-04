@@ -45,15 +45,14 @@ export function checkError(prog: Program, input: string, errorMessage: string, p
 }
 
 describe("various interpreters", () => {
-    function setupTest(plugin: Plugin, model: CoreModel) {
+    function setupTest(plugin: Plugin) {
         const script = new vm.Script(plugin.results.js as string);
 
-        const serialGraph = JSON.stringify(model.serialize());
 
         const sandbox: any = { console: console, global: {} };
         const context = vm.createContext(sandbox);
         script.runInContext(context);
-        return [context as any, serialGraph];
+        return context as any;
     }
 
     const fs = new LocalFileService();
@@ -176,13 +175,12 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, dfa);
+            const context = setupTest(dfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             const results = prog.run([makeValue(dfa.typeEnvironment, "1101", false)]);
             // TODO: this will need to check for states better
-            expect(results.states.map((s) => (s as any).values.active)).to.deep.equal(["1", "2", "1", "1", "2"]);
+            expect(results.states.map((s) => (s as any).values.active.uuid)).to.deep.equal(["1", "2", "1", "1", "2"]);
 
             for (let x = 0; x < 100; x++) {
                 const input = x.toString(2);
@@ -296,9 +294,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(dfa, model);
-            const dfaProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(dfaProg, dfa);
+            const context = setupTest(dfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             checkError(prog, "11", "Only one start state allowed", dfa);
         });
@@ -408,9 +405,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, dfa);
+            const context = setupTest(dfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             checkError(prog, "11", "Must have one start state", dfa);
         });
@@ -520,9 +516,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, dfa);
+            const context = setupTest(dfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             checkError(prog, "11", "Lambda transition from q0 to q0 is not allowed", dfa);
         });
@@ -632,9 +627,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(dfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, dfa);
+            const context = setupTest(dfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             checkError(prog, "11", "Edge 23 must be one symbol", dfa);
         });
@@ -753,9 +747,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, nfa);
+            const context = setupTest(nfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             expect(prog.runArguments.map(t => t.map(t2 => t2.name))).to.deep.equal([["string"]]);
 
@@ -870,9 +863,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, nfa);
+            const context = setupTest(nfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             checkError(prog, "11", "Only one start state allowed", nfa);
         });
@@ -982,9 +974,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, nfa);
+            const context = setupTest(nfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             checkError(prog, "11", "Must have one start state", nfa);
         });
@@ -1094,9 +1085,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, nfa);
+            const context = setupTest(nfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             runProg(prog, "11", 3, true, nfa);
         });
@@ -1206,9 +1196,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, nfa);
+            const context = setupTest(nfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             checkError(prog, "11", "Edge 23 must be one symbol", nfa);
         });
@@ -1278,9 +1267,8 @@ describe("various interpreters", () => {
                 ]
             });
 
-            const [context, serialGraph] = setupTest(nfa, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, nfa);
+            const context = setupTest(nfa);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             runProg(prog, "11", 3, true, nfa);
             runProg(prog, "10001", 6, true, nfa);
@@ -1346,9 +1334,8 @@ describe("various interpreters", () => {
             setPrim(t2, "write", "3");
             setPrim(t2, "move", "Right");
 
-            const [context, serialGraph] = setupTest(turing, model);
-            const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-            const prog = new Program(pluginProg, turing);
+            const context = setupTest(turing);
+            const prog = new Program(model, context.global["plugin-stub"].Program);
 
             runProg(prog, "11", 3, false, turing);
             runProg(prog, "12", 3, true, turing);

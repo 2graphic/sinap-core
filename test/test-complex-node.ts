@@ -6,15 +6,12 @@ import { expect } from "chai";
 import * as vm from "vm";
 
 describe("complex node", () => {
-    function setupTest(plugin: Plugin, model: CoreModel) {
+    function setupTest(plugin: Plugin) {
         const script = new vm.Script(plugin.results.js as string);
-
-        const serialGraph = JSON.stringify(model.serialize());
-
         const sandbox: any = { console: console, global: {} };
         const context = vm.createContext(sandbox);
         script.runInContext(context);
-        return [context as any, serialGraph];
+        return context as any;
     }
 
     const fs = new LocalFileService();
@@ -61,9 +58,8 @@ describe("complex node", () => {
             ]
         });
 
-        const [context, serialGraph] = setupTest(plugin, model);
-        const pluginProg = new context.global["plugin-stub"].Program(JSON.parse(serialGraph));
-        const prog = new Program(pluginProg, plugin);
+        const context = setupTest(plugin);
+        const prog = new Program(model, context.global["plugin-stub"].Program);
 
         const results = prog.run([makeValue(plugin.typeEnvironment, "11", false)]);
         if (!(results.result instanceof CorePrimitiveValue)) {

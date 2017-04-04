@@ -64,7 +64,7 @@ export class CoreModel {
      * Note that this modifies the pojo object given and once it is passed to this
      * constructor, it should not be reused.
      */
-    constructor(private plugin: Plugin, pojo?: SerialJSO) {
+    constructor(public plugin: Plugin, pojo?: SerialJSO) {
         if (pojo === undefined) {
             this.elements = new Map();
             return;
@@ -124,6 +124,22 @@ export class CoreModel {
         this.elements.delete(element.uuid);
     }
 
+    transformer = (a: CoreValue<PluginTypeEnvironment>) => {
+        if (a instanceof CoreElement) {
+            if (!this.elements.has(a.uuid)) {
+                throw new Error(`somewhere in the graph is an element not in the model: ${a.uuid}`);
+            }
+            return {
+                result: true,
+                value: {
+                    kind: "sinap-pointer",
+                    uuid: a.uuid,
+                }
+            };
+        }
+        return { result: false, value: undefined };
+    }
+
     /**
      * Generate an acyclic JS object which can be used to reconstruct this
      * model.
@@ -133,21 +149,7 @@ export class CoreModel {
             format: "sinap-file-format",
             kind: this.plugin.pluginKind,
             version: "0.0.8",
-            elements: [...this.elements.values()].map((element) => element.jsonify((a) => {
-                if (a instanceof CoreElement) {
-                    if (!this.elements.has(a.uuid)) {
-                        throw new Error(`somewhere in the graph is an element not in the model: ${a.uuid}`);
-                    }
-                    return {
-                        result: true,
-                        value: {
-                            kind: "sinap-pointer",
-                            uuid: a.uuid,
-                        }
-                    };
-                }
-                return { result: false, value: undefined };
-            })),
+            elements: [...this.elements.values()].map((element) => element.jsonify(this.transformer)),
         };
     }
 }

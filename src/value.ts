@@ -11,6 +11,8 @@ import {
     WrappedScriptType,
     FakeObjectType,
     FakePromise,
+    WrappedScriptObjectType,
+    ScriptTypeEnvironment
 } from ".";
 
 import * as ts from "typescript";
@@ -42,11 +44,28 @@ export abstract class CoreValue<T extends TypeEnvironment> {
 
 export class CorePlaceholderValue<T extends TypeEnvironment> extends CoreValue<T> {
     constructor(type: Type<T>, converter: MakeValue<T>) {
-        super(type, true, converter);
+        super(type, false, converter);
     }
 
     jsonify(_: any) {
         return { kind: "sinap-placeholder" };
+    }
+
+    deepEqual() {
+        return false;
+    }
+}
+
+export class CoreReferenceValue<T extends TypeEnvironment> extends CorePlaceholderValue<T> {
+    constructor(type: Type<T>, public uuid: string, converter: MakeValue<T>) {
+        super(type, converter);
+    }
+
+    jsonify(_: any) {
+        return {
+            kind: "sinap-pointer",
+            uuid: this.uuid,
+        };
     }
 
     deepEqual() {
@@ -263,6 +282,72 @@ export class CoreArrayValue<T extends TypeEnvironment> extends CoreValue<T> {
     }
 }
 
+function isMapType<T extends ScriptTypeEnvironment>(type: WrappedScriptType<T>) {
+    return type.type.symbol === type.env.lookupGlobalType("Map").type.symbol;
+}
+
+export class CoreMapValue<T extends ScriptTypeEnvironment> extends CoreValue<T> {
+    readonly map = new Map<CoreValue<T>, CoreValue<T>>();
+    constructor(public type: WrappedScriptObjectType<T>, data: Map<any, any>, public mutable: boolean, converter: MakeValue<T>) {
+        super((() => {
+            if (isMapType(type)) {
+                return type;
+            } else {
+                throw new Error("Not a map type");
+            }
+        })(), mutable, converter);
+
+        if (data) {
+            this.load(data);
+        }
+    }
+
+    jsonify(a: (a: CoreValue<T>) => { value: any, result: boolean }) {
+        return {
+            kind: "custom-object",
+            type: "Map",
+            members: [...this.map.entries()].map(p => p.map(v => {
+                const trans = a(v);
+                if (trans.result) {
+                    return trans.value;
+                }
+                return v.jsonify(a);
+            }))
+        };
+    }
+
+    private load(a: Map<any, any>) {
+        // todo: validate
+        for (const [k, v] of a) {
+            const transformed: { key?: CoreValue<T>, value?: CoreValue<T> } = {};
+            const fadd = () => {
+                if (transformed.key && transformed.value) {
+                    this.map.set(transformed.key, transformed.value);
+                }
+            };
+            const fk = (key: CoreValue<T>) => {
+                transformed.key = key;
+                fadd();
+            };
+            const fv = (value: CoreValue<T>) => {
+                transformed.value = value;
+                fadd();
+            };
+            const convertPromise = (t: WrappedScriptType<T>, v: any, c: (k: CoreValue<T>) => void) => {
+                const value = this.converter(t, v, this.mutable);
+                if (value instanceof FakePromise) {
+                    value.then(c);
+                } else {
+                    c(value);
+                }
+            };
+
+            convertPromise(this.type.typeArguments[0], k, fk);
+            convertPromise(this.type.typeArguments[1], v, fv);
+        }
+    }
+}
+
 
 export class CoreUnionValue<T extends TypeEnvironment> extends CoreValue<T> {
     _value: CoreValue<T>;
@@ -439,6 +524,10 @@ export function typeToValue<T extends TypeEnvironment>(type: Type<T>, data: any,
     } else if (isObjectType(type)) {
         if (type.isArray()) {
             return new CoreArrayValue(type, data, mutable, converter);
+        }
+        if (type instanceof WrappedScriptType && isMapType(type)) {
+            // TODO: so much evil casting
+            return new CoreMapValue<ScriptTypeEnvironment>(type as any, data, mutable, converter as any) as any;
         }
         return new CoreObjectValue(type, data, {}, mutable, converter);
     } else if (isUnionType(type)) {

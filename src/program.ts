@@ -1,4 +1,4 @@
-import { PluginProgram, isError } from "../sinap-includes/plugin-program";
+import { PluginProgram, isError, SerialJSO } from "../sinap-includes/plugin-program";
 import {
     CoreValue,
     Plugin,
@@ -6,12 +6,14 @@ import {
     FakeUnionType,
     TypeEnvironment,
     PluginTypeEnvironment,
-    CoreElement,
     isTypeEnvironment,
     makeValueFactory,
     CoreWrappedStringValue,
     isObjectType,
     isUnionType,
+    CoreReferenceValue,
+    CoreElementKind,
+    CoreModel,
 } from ".";
 
 function signatureAssignable<T extends TypeEnvironment>(t1: Type<T>[], t2: Type<T>[]) {
@@ -58,7 +60,18 @@ function pickReturnType<T extends TypeEnvironment>(argTypes: Type<T>[], signatur
 
 export class Program {
     makeValue: (type: Type<PluginTypeEnvironment>, a: any, mutable: boolean) => CoreValue<PluginTypeEnvironment>;
-    constructor(private program: PluginProgram, public plugin: Plugin) {
+    private program: PluginProgram;
+    public plugin: Plugin;
+    constructor(private model: CoreModel,
+        programClass: {
+            new (x: SerialJSO, t: { nodes: string[], edges: string[], graph: string }): PluginProgram
+        }) {
+        this.plugin = model.plugin;
+        this.program = new programClass(model.serialize(), {
+            nodes: [...this.plugin.elementTypes(CoreElementKind.Node)],
+            edges: [...this.plugin.elementTypes(CoreElementKind.Edge)],
+            graph: this.plugin.elementTypes(CoreElementKind.Graph).next().value
+        });
         this.stateType = this.plugin.typeEnvironment.lookupPluginType("State");
         this.runArguments = this.plugin.typeEnvironment.startTypes.map(
             t => t[0].slice(1)
@@ -81,7 +94,10 @@ export class Program {
                         return new CoreWrappedStringValue(type.env, "", mutable, this.makeValue);
                     }
                     if (type.isSubtypeOf(elementType)) {
-                        return { gah: 7 } as any;
+                        if (!(a.kind === "sinap-pointer")) {
+                            throw new Error("must return CoreElements as pointers");
+                        }
+                        return new CoreReferenceValue(type, a.uuid, this.makeValue);
                     }
                 }
             }
@@ -98,12 +114,8 @@ export class Program {
     runArguments: Type<PluginTypeEnvironment>[][];
     runReturn: Type<PluginTypeEnvironment>[];
     run(a: CoreValue<PluginTypeEnvironment>[]): { states: CoreValue<PluginTypeEnvironment>[], result: CoreValue<PluginTypeEnvironment> } {
-        const output = this.program.run(a.map(v => v.jsonify((a) => {
-            if (a instanceof CoreElement) {
-                throw new Error("passing core elements to programs is not yet supported");
-            }
-            return { result: false, value: undefined };
-        })));
+        const input = a.map(v => v.jsonify(this.model.transformer));
+        const output = this.program.run(input);
         const errorType = this.plugin.typeEnvironment.lookupGlobalType("Error");
 
         const resultType = isError(output.result) ?
