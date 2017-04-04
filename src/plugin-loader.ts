@@ -38,9 +38,10 @@ function getInterpreterInfo(directory: Directory): Promise<InterpreterInfo> {
                 return readAsJson(npmFile).then((pluginJson): Promise<InterpreterInfo> => nullPromise(pluginJson.sinap, "sinap"))
                     .then((sinapJson) => {
                         let description = sinapJson[descriptionKey];
+                        const sj: any = sinapJson;
                         description = description ? description : 'No plugin description provided.';
-                        const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
-                        const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
+                        const filePromise = nullPromise(sj[pluginFileKey], `sinap.${pluginFileKey}`);
+                        const pluginKind = nullPromise(sj[pluginKindKey], `sinap.${pluginKindKey}`);
                         return Promise.all([filePromise, pluginKind, Promise.resolve(description)]);
                     })
                     .then(([pluginName, pluginKind, description]) => {
