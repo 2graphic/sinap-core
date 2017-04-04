@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { File, Directory, FileService, AppLocations } from "sinap-core";
+import { File, Directory, FileService, AppLocations } from ".";
 
 function surroundSync<T>(func: () => T): Promise<T> {
     return new Promise<T>((resolve, reject) => {
