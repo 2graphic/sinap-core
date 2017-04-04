@@ -1,7 +1,7 @@
 import { Program } from "./program";
 import { InterpreterInfo } from "./plugin-loader";
 import { Type } from "sinap-types";
-import { Model, ElementType, Element, ElementUnion } from "./model";
+import { Model, ElementType, ElementValue, ElementUnion } from "./model";
 
 export interface Plugin {
     readonly pluginInfo: InterpreterInfo;
@@ -13,6 +13,6 @@ export interface Plugin {
     readonly argumentTypes: Type.Type[];
     readonly resultType: Type.Type;
 
-    validateEdge(src: Element, dst?: Element, like?: Element): boolean;
+    validateEdge(src: ElementValue, dst?: ElementValue, like?: ElementValue): boolean;
     makeProgram(model: Model): Program;
 }

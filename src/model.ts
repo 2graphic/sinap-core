@@ -33,7 +33,7 @@ export class ElementUnion extends Type.Union {
     }
 }
 
-export class Element extends Value.Intersection {
+export class ElementValue extends Value.Intersection {
     constructor(readonly type: ElementType, environment: Value.Environment) {
         super(type, environment);
     }
@@ -42,13 +42,13 @@ export class Element extends Value.Intersection {
 export class Model {
     environment = new Value.Environment();
     constructor(readonly plugin: Plugin) {
-        this.graph = new Element(this.plugin.graphType, this.environment);
+        this.graph = new ElementValue(this.plugin.graphType, this.environment);
         this.environment.add(this.graph);
     }
 
-    readonly nodes = new Set<Element>();
-    readonly edges = new Set<Element>();
-    readonly graph: Element;
+    readonly nodes = new Set<ElementValue>();
+    readonly edges = new Set<ElementValue>();
+    readonly graph: ElementValue;
 
     *values() {
         yield this.graph;
@@ -63,21 +63,21 @@ export class Model {
         if (!Type.isSubtype(type, this.plugin.nodesType)) {
             throw new Error("type must be a kind of node");
         }
-        const value = new Element(type, this.environment);
+        const value = new ElementValue(type, this.environment);
         this.environment.add(value);
         value.initialize();
         this.nodes.add(value);
         return value;
     }
 
-    makeEdge(type: ElementType | undefined, from: Element, to: Element) {
+    makeEdge(type: ElementType | undefined, from: ElementValue, to: ElementValue) {
         if (!type) {
             type = this.plugin.edgesType.types.values().next().value as ElementType;
         }
         if (!Type.isSubtype(type, this.plugin.edgesType)) {
             throw new Error("type must be a kind of edge");
         }
-        const value = new Element(type, this.environment);
+        const value = new ElementValue(type, this.environment);
         this.environment.add(value);
         value.initialize();
         value.set("source", from);
@@ -86,7 +86,7 @@ export class Model {
         return value;
     }
 
-    delete(value: Element) {
+    delete(value: ElementValue) {
         if (Type.isSubtype(value.type, this.plugin.nodesType)) {
             this.nodes.delete(value);
             this.collect();
