@@ -1,6 +1,6 @@
 {
   "name": "sinap-core",
-  "version": "0.0.0-development",
+  "version": "2.1.5",
   "readme": "README.md",
   "description": "Core utilities for sinap",
   "license": "MIT",
@@ -13,16 +13,6 @@
   "files": [
     "lib/"
   ],
-  "release": {
-    "verifyRelease": {
-      "path": "cracks",
-      "paths": [
-        "test/",
-        "package.json"
-      ],
-      "silent": false
-    }
-  },
   "scripts": {
     "formater": "globstar -- tsfmt -r  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
     "formater:verify": "globstar -- tsfmt --verify  --baseDir . ./src/*.ts ./test/*.ts ./sinap-includes/*.ts",
@@ -37,7 +27,7 @@
     "prepublish": "npm run typings"
   },
   "dependencies": {
-    "typescript": "https://github.com/2graphic/sinap-core/blob/master/typescript-2.2.0.tgz?raw=true"
+    "typescript": "https://github.com/Sheyne/TypeScript/releases/download/sheyne-2.3.0-beta1/typescript-2.3.0.tgz"
   },
   "devDependencies": {
     "@types/node": "latest",
