@@ -45,7 +45,7 @@ export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new 
     ["label", stringType],
     ["color", colorType],
     ["position", pointType],
-    ["shape", new Type.Union([new Type.Literal("circle"), new Type.Literal("square"), new Type.Literal("image")])],
+    ["shape", new Type.Union([new Type.Literal("circle"), new Type.Literal("square"), new Type.Literal("ellipse"), new Type.Literal("rectangle"), new Type.Literal("image")])],
     ["image", fileType],
     ["anchorPoints", new Value.ArrayType(pointType)],
     ["borderColor", colorType],
