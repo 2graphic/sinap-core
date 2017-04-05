@@ -66,9 +66,11 @@ export const drawableGraphType = new Type.CustomObject("DrawableGraph", null, ne
 ]));
 
 export function fromRaw(types: RawPluginTypes): types is PluginTypes {
-    const edgeArray = new Value.ArrayType('undefined' as any);
-
     const p = types as PluginTypes;
+    const nodesUnion = new Type.Union(p.rawNodes);
+    const edgesUnion = new Type.Union(p.rawEdges);
+    const edgeArray = new Value.ArrayType(edgesUnion);
+
     for (const node of p.rawNodes) {
         if (!node.members.has("parents")) {
             node.members.set("parents", edgeArray);
@@ -83,10 +85,10 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
 
     for (const edge of p.rawEdges) {
         if (!edge.members.has("source")) {
-            edge.members.set("source", p.nodes);
+            edge.members.set("source", nodesUnion);
         }
         if (!edge.members.has("destination")) {
-            edge.members.set("destination", p.nodes);
+            edge.members.set("destination", nodesUnion);
         }
         (edge as any).visibility.set("source", false);
         (edge as any).visibility.set("destination", false);
