@@ -1,19 +1,24 @@
 import { Type } from "sinap-types";
-import { ElementType, Plugin, drawableNodeType, ElementUnion, drawableEdgeType, drawableGraphType, InterpreterInfo, Model, Program } from ".";
+import { Plugin, InterpreterInfo, Model, Program, PluginTypes, RawPluginTypes, fromRaw } from ".";
 
 
 const stringType = new Type.Primitive("string");
 
 export class ExamplePlugin implements Plugin {
-    stateType = new Type.CustomObject("State", null, new Map([['hello', stringType]]));
-    nodesType = new ElementUnion(new Set([new ElementType(new Type.CustomObject("Node", null, new Map()), drawableNodeType)]));
-    edgesType = new ElementUnion(new Set([new ElementType(new Type.CustomObject("Edge", null, new Map()), drawableEdgeType)]));
-    graphType = new ElementType(new Type.CustomObject("Graph", null, new Map([['hello', stringType]])), drawableGraphType);
-    argumentTypes = [stringType];
-    resultType = stringType;
+    types: PluginTypes;
 
     constructor(readonly pluginInfo: InterpreterInfo) {
-
+        const types: RawPluginTypes = {
+            state: new Type.CustomObject("State", null, new Map([['hello', stringType]])),
+            rawNodes: [new Type.CustomObject("Node", null, new Map())],
+            rawEdges: [new Type.CustomObject("Edge", null, new Map())],
+            rawGraph: new Type.CustomObject("Graph", null, new Map([['hello', stringType]])),
+            arguments: [stringType],
+            result: stringType,
+        };
+        if (fromRaw(types)) {
+            this.types = types;
+        }
     }
 
     validateEdge(): boolean {

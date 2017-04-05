@@ -1,42 +1,94 @@
 import { Type, Value } from "sinap-types";
 import { Plugin } from "./plugin";
 
-const stringType = new Type.Primitive("string");
-const numberType = new Type.Primitive("number");
-const colorType = new Type.Primitive("color");
-const booleanType = new Type.Primitive("boolean");
-const fileType = new Type.Primitive("file");
-const pointType = new Type.Record("Point", new Map([["x", numberType], ["y", numberType]]));
-const styleType = new Type.Union([new Type.Literal("solid"), new Type.Literal("dotted"), new Type.Literal("dashed")]);
 
+export function pluginTypes(plugin: Plugin): { toType: Map<string, Type.Type>, toName: Map<Type.Type, string> } {
+    const initialTypes: Type.Type[] = [
+        plugin.types.state,
+        plugin.types.nodes,
+        plugin.types.edges,
+        plugin.types.graph,
+        plugin.types.result,
+        ...plugin.types.arguments,
+    ];
 
-export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new Map<string, Type.Type>([
-    ["label", stringType],
-    ["color", colorType],
-    ["position", pointType],
-    ["shape", new Type.Union([new Type.Literal("circle"), new Type.Literal("square"), new Type.Literal("image")])],
-    ["image", fileType],
-    ["anchorPoints", new Value.ArrayType(pointType)],
-    ["borderColor", colorType],
-    ["borderStyle", styleType],
-    ["borderWidth", numberType],
-]));
+    const seen = new Set<Type.Type>();
+    const names = new Map<string, Type.Type[]>();
 
-export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<string, Type.Type>([
-    ["label", stringType],
-    ["color", colorType],
-    ["lineStyle", styleType],
-    ["lineWidth", numberType],
-    ["showSourceArrow", booleanType],
-    ["showDestinationArrow", booleanType],
-    ["sourcePoint", pointType],
-    ["destinationPoint", pointType],
-]));
+    function traverse(type: Type.Type) {
+        if (seen.has(type)) {
+            return;
+        }
+        seen.add(type);
+        let bucket = names.get(type.name);
+        if (!bucket) {
+            bucket = [];
+            names.set(type.name, bucket);
+        }
+        bucket.push(type);
 
-export const drawableGraphType = new Type.CustomObject("DrawableGraph", null, new Map<string, Type.Type>([
-    ["nodes", new Value.ArrayType(drawableNodeType)],
-    ["edges", new Value.ArrayType(drawableEdgeType)],
-]));
+        if (type instanceof Type.CustomObject) {
+            for (const t2 of type.members.values()) {
+                traverse(t2);
+            }
+        } else if (type instanceof Type.Record) {
+            for (const t2 of type.members.values()) {
+                traverse(t2);
+            }
+        } else if (type instanceof Value.SetType) {
+            traverse(type.typeParameter);
+        } else if (type instanceof Value.ArrayType) {
+            traverse(type.typeParameter);
+        } else if (type instanceof Value.MapType) {
+            traverse(type.keyType);
+            traverse(type.valueType);
+        } else if (type instanceof Type.Union) {
+            for (const t2 of type.types) {
+                traverse(t2);
+            }
+        } else if (type instanceof Type.Intersection) {
+            for (const t2 of type.types) {
+                traverse(t2);
+            }
+        } else if ((type instanceof Type.Literal) || (type instanceof Type.Primitive)) {
+        } else {
+            throw new Error("unknown type encountered");
+        }
+    }
+
+    for (const t of initialTypes) {
+        traverse(t);
+    }
+
+    const toName = new Map<Type.Type, string>();
+
+    for (const [prefix, bucket] of names) {
+        for (let i = 0; i < bucket.length; i++) {
+            const toSet = [bucket[i]];
+            for (let j = bucket.length; j > i; j--) {
+                if (bucket[i].equals(bucket[j])) {
+                    toSet.push(bucket[j]);
+                    bucket.splice(j, 1);
+                }
+            }
+            let name = prefix;
+            if (bucket.length !== 1) {
+                name = `(${prefix})[${i}]`;
+            }
+            for (const el of toSet) {
+                toName.set(el, name);
+            }
+        }
+    }
+
+    const toType = new Map<string, Type.Type>();
+
+    for (const [type, name] of toName) {
+        toType.set(name, type);
+    }
+
+    return { toName: toName, toType: toType };
+}
 
 export class ElementType extends Type.Intersection {
     constructor(readonly pluginType: Type.CustomObject, readonly drawableType: Type.CustomObject) {
@@ -59,7 +111,7 @@ export class ElementValue extends Value.Intersection {
 export class Model {
     environment = new Value.Environment();
     constructor(readonly plugin: Plugin) {
-        this.graph = new ElementValue(this.plugin.graphType, this.environment);
+        this.graph = new ElementValue(this.plugin.types.graph, this.environment);
         this.environment.add(this.graph);
     }
 
@@ -75,9 +127,9 @@ export class Model {
 
     makeNode(type?: ElementType) {
         if (!type) {
-            type = this.plugin.nodesType.types.values().next().value as ElementType;
+            type = this.plugin.types.nodes.types.values().next().value as ElementType;
         }
-        if (!Type.isSubtype(type, this.plugin.nodesType)) {
+        if (!Type.isSubtype(type, this.plugin.types.nodes)) {
             throw new Error("type must be a kind of node");
         }
         const value = new ElementValue(type, this.environment);
@@ -89,9 +141,9 @@ export class Model {
 
     makeEdge(type: ElementType | undefined, from: ElementValue, to: ElementValue) {
         if (!type) {
-            type = this.plugin.edgesType.types.values().next().value as ElementType;
+            type = this.plugin.types.edges.types.values().next().value as ElementType;
         }
-        if (!Type.isSubtype(type, this.plugin.edgesType)) {
+        if (!Type.isSubtype(type, this.plugin.types.edges)) {
             throw new Error("type must be a kind of edge");
         }
         const value = new ElementValue(type, this.environment);
@@ -104,10 +156,10 @@ export class Model {
     }
 
     delete(value: ElementValue) {
-        if (Type.isSubtype(value.type, this.plugin.nodesType)) {
+        if (Type.isSubtype(value.type, this.plugin.types.nodes)) {
             this.nodes.delete(value);
             this.collect();
-        } else if (Type.isSubtype(value.type, this.plugin.edgesType)) {
+        } else if (Type.isSubtype(value.type, this.plugin.types.edges)) {
             this.edges.delete(value);
             this.collect();
         } else {
@@ -125,6 +177,8 @@ export class Model {
         for (const v of this.values()) {
             otherValues.delete(v);
         }
+        otherValues.delete(this.graph.get("nodes"));
+        otherValues.delete(this.graph.get("edges"));
 
         const nodes: { [uuid: string]: any } = {};
         for (const node of this.nodes) {

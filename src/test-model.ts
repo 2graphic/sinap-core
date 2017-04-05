@@ -1,10 +1,11 @@
 /// <reference path="../typings/index.d.ts" />
 import { expect } from "chai";
 import { ExamplePlugin } from "./test-custom-loader";
-import { Value } from "sinap-types";
+import { Value, Type } from "sinap-types";
 import { Model, Plugin, getInterpreterInfo } from "./index";
 import * as path from "path";
 import { PluginLoader, InterpreterInfo } from "./plugin-loader";
+import { pluginTypes } from "./model";
 
 describe("Model", () => {
     const loader: PluginLoader = {
@@ -29,11 +30,30 @@ describe("Model", () => {
         expect(node.get("label")).to.be.instanceof(Value.Primitive);
     });
 
+    it("creates edge graph", () => {
+        const model = new Model(examplePlugin);
+        const n1 = model.makeNode();
+        const n2 = model.makeNode();
+        expect(model.nodes.size).to.equal(2);
+        const e1 = model.makeEdge(undefined, n1, n2);
+        expect(model.edges.size).to.equal(1);
+        expect(e1.get("source")).to.equal(n1);
+        expect(e1.get("destination")).to.equal(n2);
+    });
+
     it("deletes", () => {
         const model = new Model(examplePlugin);
         const node = model.makeNode();
         model.delete(node);
         expect(model.nodes.size).to.equal(0);
+    });
+
+    it("canonicalizes types", () => {
+        // dangerous and unstable?
+        const { toName, toType } = pluginTypes(examplePlugin);
+        expect(toType.get("string")!.equals(new Type.Primitive("string"))).to.be.true;
+        expect(toType.get(toName.get(examplePlugin.types.graph)!)).to.equal(examplePlugin.types.graph);
+        expect(toType.get(toName.get(examplePlugin.types.nodes)!)).to.equal(examplePlugin.types.nodes);
     });
 
     it("serializes simple graph", () => {
