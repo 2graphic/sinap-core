@@ -65,19 +65,23 @@ export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new 
 export const drawableGraphType = new Type.CustomObject("DrawableGraph", null, new Map<string, Type.Type>([
 ]));
 
-function typesToUnion(types: Type.CustomObject[], drawable: Type.CustomObject, func?: (t: Type.CustomObject) => void) {
-    return new ElementUnion(new Set(imap(t => {
-        if (func) {
-            func(t);
-        }
-        return new ElementType(t, drawable);
-    }, types)));
-};
-
 export function fromRaw(types: RawPluginTypes): types is PluginTypes {
+    const edgeArray = new Value.ArrayType('undefined' as any);
+
     const p = types as PluginTypes;
-    p.nodes = typesToUnion(p.rawNodes, drawableNodeType);
-    p.edges = typesToUnion(p.rawEdges, drawableEdgeType, (edge) => {
+    for (const node of p.rawNodes) {
+        if (!node.members.has("parents")) {
+            node.members.set("parents", edgeArray);
+        }
+        if (!node.members.has("children")) {
+            node.members.set("children", edgeArray);
+        }
+        (node as any).visibility.set("parents", false);
+        (node as any).visibility.set("children", false);
+    }
+    p.nodes = new ElementUnion(new Set(imap(t => new ElementType(t, drawableNodeType), p.rawNodes)));
+
+    for (const edge of p.rawEdges) {
         if (!edge.members.has("source")) {
             edge.members.set("source", p.nodes);
         }
@@ -86,7 +90,11 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
         }
         (edge as any).visibility.set("source", false);
         (edge as any).visibility.set("destination", false);
-    });
+    }
+
+    p.edges = new ElementUnion(new Set(imap(t => new ElementType(t, drawableEdgeType), p.rawEdges)));
+    (edgeArray as any).typeParameter = p.edges;
+
     if (!p.rawGraph.members.has("nodes")) {
         p.rawGraph.members.set("nodes", p.nodes);
     }

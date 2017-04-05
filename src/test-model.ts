@@ -66,6 +66,8 @@ describe("Model", () => {
             nodes: { [node.uuid]: node.serialRepresentation },
             edges: {},
             others: {
+                [node.get("parents").uuid]: node.get("parents").serialRepresentation,
+                [node.get("children").uuid]: node.get("children").serialRepresentation,
                 [node.get("label").uuid]: node.get("label").serialRepresentation,
                 [node.get("color").uuid]: node.get("color").serialRepresentation,
                 [node.get("position").uuid]: node.get("position").serialRepresentation,
