@@ -70,6 +70,7 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
     const nodesUnion = new Type.Union(p.rawNodes);
     const edgesUnion = new Type.Union(p.rawEdges);
     const edgeArray = new Value.ArrayType(edgesUnion);
+    const nodesArray = new Value.ArrayType(nodesUnion);
 
     for (const node of p.rawNodes) {
         if (!node.members.has("parents")) {
@@ -98,10 +99,10 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
     (edgeArray as any).typeParameter = p.edges;
 
     if (!p.rawGraph.members.has("nodes")) {
-        p.rawGraph.members.set("nodes", p.nodes);
+        p.rawGraph.members.set("nodes", nodesArray);
     }
     if (!p.rawGraph.members.has("edges")) {
-        p.rawGraph.members.set("edges", p.edges);
+        p.rawGraph.members.set("edges", edgeArray);
     }
     (p.rawGraph as any).visibility.set("nodes", false);
     (p.rawGraph as any).visibility.set("edges", false);
