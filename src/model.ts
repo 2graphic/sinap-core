@@ -3,7 +3,7 @@ import { Plugin } from "./plugin";
 import { ireduce } from "sinap-types/lib/util";
 
 
-export function pluginTypes(plugin: Plugin): { toType: Map<string, Type.Type>, toName: Map<Type.Type, string> } {
+export function pluginTypes(plugin: Plugin): { toType: (a: string) => Type.Type, toName: (t: Type.Type) => string } {
     const initialTypes: Type.Type[] = [
         plugin.types.state,
         plugin.types.nodes,
@@ -88,7 +88,29 @@ export function pluginTypes(plugin: Plugin): { toType: Map<string, Type.Type>, t
         toType.set(name, type);
     }
 
-    return { toName: toName, toType: toType };
+    return {
+        toName: (t) => {
+            const name = toName.get(t);
+            if (!name) {
+                const potentialTypes = names.get(t.name);
+                if (potentialTypes) {
+                    for (const pt of potentialTypes) {
+                        if (t.equals(pt)) {
+                            return toName.get(pt)!;
+                        }
+                    }
+                }
+                throw new Error("type not on record");
+            }
+            return name;
+        }, toType: (n) => {
+            const type = toType.get(n);
+            if (!type) {
+                throw new Error("unknown type given");
+            }
+            return type;
+        }
+    };
 }
 
 export class ElementType extends Type.Intersection {
@@ -176,8 +198,22 @@ export class Model {
         this.environment.garbageCollect(this.values());
     }
 
+    private makeSerial(v: Value.Value, convert: (t: Type.Type) => string) {
+        return {
+            type: convert(v.type),
+            rep: v.serialRepresentation,
+        };
+    }
+
+    private loadSerial(uuid: string, v: { type: string, rep: any }, convert: (a: string) => Type.Type) {
+        return this.environment.fromSerial(convert(v.type), v.rep, uuid);
+    }
+
     serialize() {
         this.collect();
+
+        const { toName } = pluginTypes(this.plugin);
+
         const otherValues = new Set(this.environment.values.values());
         for (const v of this.values()) {
             otherValues.delete(v);
@@ -187,22 +223,46 @@ export class Model {
 
         const nodes: { [uuid: string]: any } = {};
         for (const node of this.nodes) {
-            nodes[node.uuid] = node.serialRepresentation;
+            nodes[node.uuid] = this.makeSerial(node, toName);
         }
         const edges: { [uuid: string]: any } = {};
         for (const edge of this.edges) {
-            edges[edge.uuid] = edge.serialRepresentation;
+            edges[edge.uuid] = this.makeSerial(edge, toName);
         }
         const others: { [uuid: string]: any } = {};
         for (const other of otherValues) {
-            others[other.uuid] = other.serialRepresentation;
+            others[other.uuid] = this.makeSerial(other, toName);
         }
 
         return {
-            graph: { [this.graph.uuid]: this.graph.serialRepresentation },
+            graph: { [this.graph.uuid]: this.makeSerial(this.graph, toName) },
             nodes: nodes,
             edges: edges,
             others: others,
         };
+    }
+
+    static fromSerial(jso: any, plugin: Plugin): Model {
+        const ret = new Model(plugin);
+
+        const { toType } = pluginTypes(plugin);
+
+        for (const uuid in jso.graph) {
+            (ret as any).graph = ret.loadSerial(uuid, jso.graph[uuid], toType);
+        }
+
+        for (const uuid in jso.nodes) {
+            ret.nodes.add(ret.loadSerial(uuid, jso.nodes[uuid], toType) as ElementValue);
+        }
+
+        for (const uuid in jso.edges) {
+            ret.edges.add(ret.loadSerial(uuid, jso.edges[uuid], toType) as ElementValue);
+        }
+
+        for (const uuid in jso.others) {
+            ret.loadSerial(uuid, jso.others[uuid], toType);
+        }
+
+        return ret;
     }
 }

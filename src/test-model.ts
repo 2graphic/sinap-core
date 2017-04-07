@@ -6,6 +6,7 @@ import { Model, Plugin, getInterpreterInfo } from "./index";
 import * as path from "path";
 import { InterpreterInfo } from "./plugin-loader";
 import { pluginTypes } from "./model";
+import { ifilter } from "sinap-types/lib/util";
 
 describe("Model", () => {
     let examplePlugin: Plugin;
@@ -47,9 +48,9 @@ describe("Model", () => {
     it("canonicalizes types", () => {
         // dangerous and unstable?
         const { toName, toType } = pluginTypes(examplePlugin);
-        expect(toType.get("string")!.equals(new Type.Primitive("string"))).to.be.true;
-        expect(toType.get(toName.get(examplePlugin.types.graph)!)).to.equal(examplePlugin.types.graph);
-        expect(toType.get(toName.get(examplePlugin.types.nodes)!)).to.equal(examplePlugin.types.nodes);
+        expect(toType("string").equals(new Type.Primitive("string"))).to.be.true;
+        expect(toType(toName(examplePlugin.types.graph))).to.equal(examplePlugin.types.graph);
+        expect(toType(toName(examplePlugin.types.nodes))).to.equal(examplePlugin.types.nodes);
     });
 
     it("serializes simple graph", () => {
@@ -57,29 +58,119 @@ describe("Model", () => {
         model.makeNode();
         const raw = model.serialize();
         const node = model.nodes.values().next().value;
+        const { toName } = pluginTypes(examplePlugin);
         expect(raw).to.deep.equal({
-            graph: { [model.graph.uuid]: model.graph.serialRepresentation },
-            nodes: { [node.uuid]: node.serialRepresentation },
+            graph: {
+                [model.graph.uuid]: {
+                    type: "Graph & DrawableGraph",
+                    rep: model.graph.serialRepresentation
+                }
+            },
+            nodes: {
+                [node.uuid]: {
+                    type: "(Node & DrawableNode)[1]",
+                    rep: node.serialRepresentation
+                }
+            },
             edges: {},
             others: {
-                [node.get("parents").uuid]: node.get("parents").serialRepresentation,
-                [node.get("children").uuid]: node.get("children").serialRepresentation,
-                [node.get("label").uuid]: node.get("label").serialRepresentation,
-                [node.get("color").uuid]: node.get("color").serialRepresentation,
-                [node.get("position").uuid]: node.get("position").serialRepresentation,
-                [node.get("shape").uuid]: node.get("shape").serialRepresentation,
-                [(node.get("shape") as Value.Union).value.uuid]: (node.get("shape") as Value.Union).value.serialRepresentation,
-                [node.get("image").uuid]: node.get("image").serialRepresentation,
-                [node.get("anchorPoints").uuid]: node.get("anchorPoints").serialRepresentation,
-                [node.get("borderColor").uuid]: node.get("borderColor").serialRepresentation,
-                [node.get("borderStyle").uuid]: node.get("borderStyle").serialRepresentation,
-                [(node.get("borderStyle") as Value.Union).value.uuid]: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
-                [node.get("borderWidth").uuid]: node.get("borderWidth").serialRepresentation,
-                [(node.get("position") as Value.Record).value.x.uuid]: (node.get("position") as Value.Record).value.x.serialRepresentation,
-                [(node.get("position") as Value.Record).value.y.uuid]: (node.get("position") as Value.Record).value.y.serialRepresentation,
+                [node.get("parents").uuid]: {
+                    type: toName(node.get("parents").type),
+                    rep: node.get("parents").serialRepresentation
+                },
+                [node.get("children").uuid]: {
+                    type: toName(node.get("children").type),
+                    rep: node.get("children").serialRepresentation
+                },
+                [node.get("label").uuid]: {
+                    type: "string",
+                    rep: node.get("label").serialRepresentation
+                },
+                [node.get("color").uuid]: {
+                    type: "color",
+                    rep: node.get("color").serialRepresentation
+                },
+                [node.get("position").uuid]: {
+                    type: "Point",
+                    rep: node.get("position").serialRepresentation
+                },
+                [node.get("shape").uuid]: {
+                    type: '"circle" | "square" | "ellipse" | "rectangle" | "image"',
+                    rep: node.get("shape").serialRepresentation
+                },
+                [(node.get("shape") as Value.Union).value.uuid]: {
+                    type: '"circle"',
+                    rep: (node.get("shape") as Value.Union).value.serialRepresentation
+                },
+                [node.get("image").uuid]: {
+                    type: "file",
+                    rep: node.get("image").serialRepresentation
+                },
+                [node.get("anchorPoints").uuid]: {
+                    type: "(Array)[1]",
+                    rep: node.get("anchorPoints").serialRepresentation
+                },
+                [node.get("borderColor").uuid]: {
+                    type: "color",
+                    rep: node.get("borderColor").serialRepresentation
+                },
+                [node.get("borderStyle").uuid]: {
+                    type: '"solid" | "dotted" | "dashed"',
+                    rep: node.get("borderStyle").serialRepresentation,
+                },
+                [(node.get("borderStyle") as Value.Union).value.uuid]: {
+                    type: '"solid"',
+                    rep: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
+                },
+                [node.get("borderWidth").uuid]: {
+                    type: "number",
+                    rep: node.get("borderWidth").serialRepresentation,
+                },
+                [(node.get("position") as Value.Record).value.x.uuid]: {
+                    type: "number",
+                    rep: (node.get("position") as Value.Record).value.x.serialRepresentation,
+                },
+                [(node.get("position") as Value.Record).value.y.uuid]: {
+                    type: "number",
+                    rep: (node.get("position") as Value.Record).value.y.serialRepresentation,
+                },
             },
         });
+
+        expect(Model.fromSerial(raw, examplePlugin).graph.deepEqual(model.graph)).to.be.true;
     });
+
+    it("serializes complex graph", () => {
+        let model = new Model(examplePlugin);
+        {
+            const s1 = model.environment.make(new Type.Primitive("string"));
+            const s2 = model.environment.make(new Type.Primitive("string"));
+            s1.value = "hello";
+            s2.value = "hi";
+
+            const n1 = model.makeNode();
+            n1.set("label", s2);
+            const n2 = model.makeNode();
+            const n3 = model.makeNode();
+            const n4 = model.makeNode();
+
+            model.makeEdge(undefined, n1, n2);
+            model.makeEdge(undefined, n1, n3).set("label", s1);
+            model.makeEdge(undefined, n3, n4);
+            model.makeEdge(undefined, n3, n1);
+            model.makeEdge(undefined, n4, n1);
+        }
+        model = Model.fromSerial(model.serialize(), examplePlugin);
+        expect(model.nodes.size).to.equal(4);
+        expect(model.edges.size).to.equal(5);
+        const n1 = ifilter((n) => (n.get("label") as Value.Primitive).value === "hi"
+            , model.nodes)[Symbol.iterator]().next().value;
+        const outgoing = [...ifilter((e) => (e.get("source") as Value.Union).value === n1, model.edges)];
+        expect(outgoing.length).to.equal(2);
+        expect([...ifilter(e => (e.get("label") as Value.Primitive).value === "hello", outgoing)].length).to.equal(1);
+    });
+
+
 
     describe("Graph.nodes/edges", () => {
         it("infers nodes", () => {
