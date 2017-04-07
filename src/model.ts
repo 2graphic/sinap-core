@@ -1,5 +1,6 @@
 import { Type, Value } from "sinap-types";
 import { Plugin } from "./plugin";
+import { ireduce } from "sinap-types/lib/util";
 
 
 export function pluginTypes(plugin: Plugin): { toType: Map<string, Type.Type>, toName: Map<Type.Type, string> } {
@@ -129,7 +130,7 @@ export class Model {
         if (!type) {
             type = this.plugin.types.nodes.types.values().next().value as ElementType;
         }
-        if (!Type.isSubtype(type, this.plugin.types.nodes)) {
+        if (!ireduce((a, t2) => a || Type.isSubtype(type!, t2), false, this.plugin.types.nodes.types)) {
             throw new Error("type must be a kind of node");
         }
         const value = new ElementValue(type, this.environment);
@@ -143,23 +144,27 @@ export class Model {
         if (!type) {
             type = this.plugin.types.edges.types.values().next().value as ElementType;
         }
-        if (!Type.isSubtype(type, this.plugin.types.edges)) {
+        if (!ireduce((a, t2) => a || Type.isSubtype(type!, t2), false, this.plugin.types.edges.types)) {
             throw new Error("type must be a kind of edge");
         }
         const value = new ElementValue(type, this.environment);
         this.environment.add(value);
         value.initialize();
-        value.set("source", from);
-        value.set("destination", to);
+        const sourceUnion = new Value.Union(new Type.Union([from.type]), this.environment);
+        sourceUnion.value = from;
+        const destUnion = new Value.Union(new Type.Union([from.type]), this.environment);
+        destUnion.value = to;
+        value.set("source", sourceUnion);
+        value.set("destination", destUnion);
         this.edges.add(value);
         return value;
     }
 
     delete(value: ElementValue) {
-        if (Type.isSubtype(value.type, this.plugin.types.nodes)) {
+        if (ireduce((a, t2) => a || Type.isSubtype(value.type, t2), false, this.plugin.types.nodes.types)) {
             this.nodes.delete(value);
             this.collect();
-        } else if (Type.isSubtype(value.type, this.plugin.types.edges)) {
+        } else if (ireduce((a, t2) => a || Type.isSubtype(value.type, t2), false, this.plugin.types.edges.types)) {
             this.edges.delete(value);
             this.collect();
         } else {

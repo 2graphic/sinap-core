@@ -37,8 +37,8 @@ describe("Model", () => {
         expect(model.nodes.size).to.equal(2);
         const e1 = model.makeEdge(undefined, n1, n2);
         expect(model.edges.size).to.equal(1);
-        expect(e1.get("source")).to.equal(n1);
-        expect(e1.get("destination")).to.equal(n2);
+        expect((e1.get("source") as Value.Union).value).to.equal(n1);
+        expect((e1.get("destination") as Value.Union).value).to.equal(n2);
     });
 
     it("deletes", () => {
@@ -72,15 +72,15 @@ describe("Model", () => {
                 [node.get("color").uuid]: node.get("color").serialRepresentation,
                 [node.get("position").uuid]: node.get("position").serialRepresentation,
                 [node.get("shape").uuid]: node.get("shape").serialRepresentation,
+                [(node.get("shape") as Value.Union).value.uuid]: (node.get("shape") as Value.Union).value.serialRepresentation,
                 [node.get("image").uuid]: node.get("image").serialRepresentation,
                 [node.get("anchorPoints").uuid]: node.get("anchorPoints").serialRepresentation,
                 [node.get("borderColor").uuid]: node.get("borderColor").serialRepresentation,
                 [node.get("borderStyle").uuid]: node.get("borderStyle").serialRepresentation,
+                [(node.get("borderStyle") as Value.Union).value.uuid]: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
                 [node.get("borderWidth").uuid]: node.get("borderWidth").serialRepresentation,
                 [(node.get("position") as Value.Record).value.x.uuid]: (node.get("position") as Value.Record).value.x.serialRepresentation,
                 [(node.get("position") as Value.Record).value.y.uuid]: (node.get("position") as Value.Record).value.y.serialRepresentation,
-                [node.get("shape").uuid]: node.get("shape").serialRepresentation,
-                [node.get("borderStyle").uuid]: node.get("borderStyle").serialRepresentation,
             },
         });
     });
