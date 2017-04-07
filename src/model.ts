@@ -150,9 +150,9 @@ export class Model {
         const value = new ElementValue(type, this.environment);
         this.environment.add(value);
         value.initialize();
-        const sourceUnion = new Value.Union(new Type.Union([from.type]), this.environment);
+        const sourceUnion = new Value.Union(type.members.get("source") as Type.Union, this.environment);
         sourceUnion.value = from;
-        const destUnion = new Value.Union(new Type.Union([from.type]), this.environment);
+        const destUnion = new Value.Union(type.members.get("destination") as Type.Union, this.environment);
         destUnion.value = to;
         value.set("source", sourceUnion);
         value.set("destination", destUnion);
