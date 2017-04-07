@@ -69,7 +69,7 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
     const p = types as PluginTypes;
     const nodesUnion = new Type.Union(p.rawNodes);
     const edgesUnion = new Type.Union(p.rawEdges);
-    const edgeArray = new Value.ArrayType(edgesUnion);
+    const edgesArray = new Value.ArrayType(edgesUnion);
     const nodesArray = new Value.ArrayType(nodesUnion);
 
     function unionOrDefault(t: Type.Type | undefined, def: Type.Union) {
@@ -82,19 +82,19 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
         }
     }
 
-    function arrayUnionOrDefault(t: Type.Type | undefined, def: Value.ArrayType) {
+    function arrayUnionOrDefault(t: Type.Type | undefined, def: Value.ArrayType, kind: string) {
         if (!t) {
             return def;
         } else if (!(t instanceof Value.ArrayType)) {
-            throw new Error("parents/children must be an array");
+            throw new Error(`${kind} must be an array`);
         } else {
             return new Value.ArrayType(unionOrDefault(t.typeParameter, edgesUnion));
         }
     }
 
     for (const node of p.rawNodes) {
-        node.members.set("parents", arrayUnionOrDefault(node.members.get("parents"), edgeArray));
-        node.members.set("children", arrayUnionOrDefault(node.members.get("children"), edgeArray));
+        node.members.set("parents", arrayUnionOrDefault(node.members.get("parents"), edgesArray, "parents"));
+        node.members.set("children", arrayUnionOrDefault(node.members.get("children"), edgesArray, "children"));
         (node as any).visibility.set("parents", false);
         (node as any).visibility.set("children", false);
     }
@@ -108,14 +108,19 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
     }
 
     p.edges = new ElementUnion(new Set(imap(t => new ElementType(t, drawableEdgeType), p.rawEdges)));
-    (edgeArray as any).typeParameter = p.edges;
+    (edgesArray as any).typeParameter = p.edges;
 
-    if (!p.rawGraph.members.has("nodes")) {
-        p.rawGraph.members.set("nodes", nodesArray);
+    p.rawGraph.members.set("nodes", arrayUnionOrDefault(p.rawGraph.members.get("nodes"), nodesArray, "nodes"));
+    p.rawGraph.members.set("edges", arrayUnionOrDefault(p.rawGraph.members.get("edges"), edgesArray, "edges"));
+
+    if (!Type.isSubtype(nodesArray, p.rawGraph.members.get("nodes")!)) {
+        throw new Error("Graph nodes field must allow all node kinds");
     }
-    if (!p.rawGraph.members.has("edges")) {
-        p.rawGraph.members.set("edges", edgeArray);
+
+    if (!Type.isSubtype(edgesArray, p.rawGraph.members.get("edges")!)) {
+        throw new Error("Graph edges field must allow all edge kinds");
     }
+
     (p.rawGraph as any).visibility.set("nodes", false);
     (p.rawGraph as any).visibility.set("edges", false);
     p.graph = new ElementType(p.rawGraph, drawableGraphType);

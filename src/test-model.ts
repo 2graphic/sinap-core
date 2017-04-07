@@ -4,21 +4,17 @@ import { ExamplePlugin } from "./test-custom-loader";
 import { Value, Type } from "sinap-types";
 import { Model, Plugin, getInterpreterInfo } from "./index";
 import * as path from "path";
-import { PluginLoader, InterpreterInfo } from "./plugin-loader";
+import { InterpreterInfo } from "./plugin-loader";
 import { pluginTypes } from "./model";
 
 describe("Model", () => {
-    const loader: PluginLoader = {
-        load: (pluginInfo: InterpreterInfo) => {
-            return Promise.resolve(new ExamplePlugin(pluginInfo));
-        },
-        name: "example"
-    };
-
     let examplePlugin: Plugin;
+    let interpreterInfo: InterpreterInfo;
     before(() => {
-        return getInterpreterInfo(path.join("test-support", "dfa")).then((info) => loader.load(info.interpreterInfo)).then((plugin) => {
-            examplePlugin = plugin;
+        return getInterpreterInfo(path.join("test-support", "dfa")).then((info) => {
+            interpreterInfo = info.interpreterInfo;
+        }).then(() => {
+            examplePlugin = new ExamplePlugin(interpreterInfo, [['hello', new Type.Primitive("string")]]);
         });
     });
 
@@ -82,6 +78,46 @@ describe("Model", () => {
                 [(node.get("position") as Value.Record).value.x.uuid]: (node.get("position") as Value.Record).value.x.serialRepresentation,
                 [(node.get("position") as Value.Record).value.y.uuid]: (node.get("position") as Value.Record).value.y.serialRepresentation,
             },
+        });
+    });
+
+    describe("Graph.nodes/edges", () => {
+        it("infers nodes", () => {
+            const plugin = new ExamplePlugin(interpreterInfo, []);
+            const nodes = plugin.types.graph.members.get("nodes") as Value.ArrayType;
+            expect(nodes).to.instanceof(Value.ArrayType);
+            expect(nodes.typeParameter).to.instanceof(Type.Union);
+        });
+
+        it("infers edges", () => {
+            const plugin = new ExamplePlugin(interpreterInfo, []);
+            const edges = plugin.types.graph.members.get("edges") as Value.ArrayType;
+            expect(edges).to.instanceof(Value.ArrayType);
+            expect(edges.typeParameter).to.instanceof(Type.Union);
+        });
+
+        it("allows exhaustive edges", () => {
+            const cedg1 = new Type.CustomObject("Edge1", null, new Map());
+            const cedg2 = new Type.CustomObject("Edge2", null, new Map());
+            expect(() => new ExamplePlugin(interpreterInfo, [['edges', new Value.ArrayType(new Type.Union([cedg1, cedg2]))]], undefined, [cedg1, cedg2])).to.not.throw();
+        });
+
+        it("complains about non-exhaustive edges", () => {
+            const cedg1 = new Type.CustomObject("Edge1", null, new Map());
+            const cedg2 = new Type.CustomObject("Edge2", null, new Map());
+            expect(() => new ExamplePlugin(interpreterInfo, [['edges', new Value.ArrayType(new Type.Union([cedg1]))]], undefined, [cedg1, cedg2])).to.throw();
+        });
+
+        it("allows exhaustive nodes", () => {
+            const node1 = new Type.CustomObject("Node1", null, new Map());
+            const node2 = new Type.CustomObject("Node2", null, new Map());
+            expect(() => new ExamplePlugin(interpreterInfo, [['nodes', new Value.ArrayType(new Type.Union([node1, node2]))]], [node1, node2])).to.not.throw();
+        });
+
+        it("complains about non-exhaustive nodes", () => {
+            const node1 = new Type.CustomObject("Node1", null, new Map());
+            const node2 = new Type.CustomObject("Node2", null, new Map());
+            expect(() => new ExamplePlugin(interpreterInfo, [['nodes', new Value.ArrayType(new Type.Union([node1]))]], [node1, node2])).to.throw();
         });
     });
 });
