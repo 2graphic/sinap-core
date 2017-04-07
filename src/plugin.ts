@@ -72,25 +72,37 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
     const edgeArray = new Value.ArrayType(edgesUnion);
     const nodesArray = new Value.ArrayType(nodesUnion);
 
+    function unionOrDefault(t: Type.Type | undefined, def: Type.Union) {
+        if (!t) {
+            return def;
+        } else if (t instanceof Type.Union) {
+            return t;
+        } else {
+            return new Type.Union([t]);
+        }
+    }
+
+    function arrayUnionOrDefault(t: Type.Type | undefined, def: Value.ArrayType) {
+        if (!t) {
+            return def;
+        } else if (!(t instanceof Value.ArrayType)) {
+            throw new Error("parents/children must be an array");
+        } else {
+            return new Value.ArrayType(unionOrDefault(t.typeParameter, edgesUnion));
+        }
+    }
+
     for (const node of p.rawNodes) {
-        if (!node.members.has("parents")) {
-            node.members.set("parents", edgeArray);
-        }
-        if (!node.members.has("children")) {
-            node.members.set("children", edgeArray);
-        }
+        node.members.set("parents", arrayUnionOrDefault(node.members.get("parents"), edgeArray));
+        node.members.set("children", arrayUnionOrDefault(node.members.get("children"), edgeArray));
         (node as any).visibility.set("parents", false);
         (node as any).visibility.set("children", false);
     }
     p.nodes = new ElementUnion(new Set(imap(t => new ElementType(t, drawableNodeType), p.rawNodes)));
 
     for (const edge of p.rawEdges) {
-        if (!edge.members.has("source")) {
-            edge.members.set("source", nodesUnion);
-        }
-        if (!edge.members.has("destination")) {
-            edge.members.set("destination", nodesUnion);
-        }
+        edge.members.set("source", unionOrDefault(edge.members.get("source"), nodesUnion));
+        edge.members.set("destination", unionOrDefault(edge.members.get("destination"), nodesUnion));
         (edge as any).visibility.set("source", false);
         (edge as any).visibility.set("destination", false);
     }
