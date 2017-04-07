@@ -79,8 +79,8 @@ describe("Model", () => {
                 [node.get("borderWidth").uuid]: node.get("borderWidth").serialRepresentation,
                 [(node.get("position") as Value.Record).value.x.uuid]: (node.get("position") as Value.Record).value.x.serialRepresentation,
                 [(node.get("position") as Value.Record).value.y.uuid]: (node.get("position") as Value.Record).value.y.serialRepresentation,
-                [(node.get("shape") as Value.Union).value.uuid]: (node.get("shape") as Value.Union).value.serialRepresentation,
-                [(node.get("borderStyle") as Value.Union).value.uuid]: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
+                [node.get("shape").uuid]: node.get("shape").serialRepresentation,
+                [node.get("borderStyle").uuid]: node.get("borderStyle").serialRepresentation,
             },
         });
     });
