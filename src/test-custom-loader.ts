@@ -29,7 +29,6 @@ export class ExamplePlugin implements Plugin {
         return {
             plugin: this,
             model: model,
-            environment: model.environment,
             validate: () => null,
             run: () => { return { steps: [] }; }
         };
