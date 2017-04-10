@@ -215,11 +215,10 @@ export class Model {
         const { toName } = pluginTypes(this.plugin);
 
         const otherValues = new Set(this.environment.values.values());
+
         for (const v of this.values()) {
             otherValues.delete(v);
         }
-        otherValues.delete(this.graph.get("nodes"));
-        otherValues.delete(this.graph.get("edges"));
 
         const nodes: { [uuid: string]: any } = {};
         for (const node of this.nodes) {
