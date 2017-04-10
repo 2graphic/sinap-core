@@ -30,7 +30,7 @@ export class ExamplePlugin implements Plugin {
             plugin: this,
             model: model,
             validate: () => null,
-            run: () => { return { steps: [] }; }
+            run: () => { return Promise.resolve({ steps: [] }); }
         };
     }
 }
