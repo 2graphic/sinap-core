@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
 import { expect } from "chai";
 import { getInterpreterInfo, PluginInfo } from "./index";
 import * as path from "path";

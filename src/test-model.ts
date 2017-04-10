@@ -1,4 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
 import { expect } from "chai";
 import { ExamplePlugin } from "./test-custom-loader";
 import { Value, Type } from "sinap-types";
