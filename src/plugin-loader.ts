@@ -6,12 +6,20 @@ const pluginFileKey = "plugin-file";
 const pluginKindKey = "kind";
 const pluginLoaderKey = "loader";
 
-function nullPromise<T>(obj: T, name: string): Promise<T> {
-    return obj ? Promise.resolve(obj) : Promise.reject(`${name} may not be null.`);
-}
-
 export class PluginInfo {
-    constructor(readonly interpreterInfo: InterpreterInfo, readonly pluginKind: string[], readonly description: string) {
+    public readonly interpreterInfo: InterpreterInfo;
+    constructor(public readonly packageJson: any, directory: string) {
+        const sinap = packageJson.sinap;
+        const file = path.join(directory, sinap[pluginFileKey]);
+        this.interpreterInfo = new InterpreterInfo(file, sinap[pluginLoaderKey], directory);
+    }
+
+    get pluginKind(): string[] {
+        return this.packageJson.sinap[pluginKindKey];
+    }
+
+    get description(): string {
+        return this.packageJson.description;
     }
 }
 
@@ -25,20 +33,7 @@ export interface PluginLoader {
     name: string;
 }
 
-export function getInterpreterInfo(directory: string): Promise<PluginInfo> {
-    return readFile(path.join(directory, "package.json"))
-        .then((contents): Promise<PluginInfo> => {
-            const pack = JSON.parse(contents);
-            const description = pack.description ? pack.description : "No plugin description provided.";
-            return nullPromise(pack.sinap, "sinap").then((sinapJson) => {
-                const filePromise = nullPromise(sinapJson[pluginFileKey], `sinap.${pluginFileKey}`);
-                const pluginKind = nullPromise(sinapJson[pluginKindKey], `sinap.${pluginKindKey}`);
-                const loader = nullPromise(sinapJson[pluginLoaderKey], `sinap.${pluginLoaderKey}`);
-                return Promise.all([filePromise, pluginKind, loader]);
-            })
-                .then(([pluginFile, pluginKind, pluginLoader]): PluginInfo => {
-                    const interp = new InterpreterInfo(path.join(directory, pluginFile), pluginLoader, directory);
-                    return new PluginInfo(interp, pluginKind, description);
-                });
-        });
+export async function getPluginInfo(directory: string): Promise<PluginInfo> {
+    const json = JSON.parse(await readFile(path.join(directory, "package.json")));
+    return new PluginInfo(json, directory);
 }

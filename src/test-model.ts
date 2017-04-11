@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ExamplePlugin } from "./test-custom-loader";
 import { Value, Type } from "sinap-types";
-import { Model, Plugin, getInterpreterInfo } from "./index";
+import { Model, Plugin, getPluginInfo } from "./index";
 import * as path from "path";
 import { PluginInfo } from "./plugin-loader";
 import { pluginTypes } from "./model";
@@ -10,8 +10,9 @@ import { ifilter } from "sinap-types/lib/util";
 describe("Model", () => {
     let examplePlugin: Plugin;
     let pluginInfo: PluginInfo;
-    before(() => {
-        return getInterpreterInfo(path.join("test-support", "dfa")).then((info) => {
+    before(async () => {
+        pluginInfo = await getPluginInfo(path.join("test-support", "dfa"));
+        return getPluginInfo(path.join("test-support", "dfa")).then((info) => {
             pluginInfo = info;
         }).then(() => {
             examplePlugin = new ExamplePlugin(pluginInfo, [['hello', new Type.Primitive("string")]]);
