@@ -1,5 +1,5 @@
 import { Type } from "sinap-types";
-import { Plugin, InterpreterInfo, Model, Program, PluginTypes, RawPluginTypes, fromRaw } from ".";
+import { Plugin, Model, Program, PluginTypes, RawPluginTypes, fromRaw, PluginInfo } from ".";
 
 
 const stringType = new Type.Primitive("string");
@@ -7,7 +7,7 @@ const stringType = new Type.Primitive("string");
 export class ExamplePlugin implements Plugin {
     types: PluginTypes;
 
-    constructor(readonly pluginInfo: InterpreterInfo, graphMembers: [string, Type.Type][], nodeTypes?: Type.CustomObject[], edgeTypes?: Type.CustomObject[]) {
+    constructor(readonly pluginInfo: PluginInfo, graphMembers: [string, Type.Type][], nodeTypes?: Type.CustomObject[], edgeTypes?: Type.CustomObject[]) {
         const types: RawPluginTypes = {
             state: new Type.CustomObject("State", null, new Map([['hello', stringType]])),
             rawNodes: nodeTypes || [new Type.CustomObject("Node", null, new Map())],

@@ -1,5 +1,5 @@
 import { Program } from "./program";
-import { InterpreterInfo } from "./plugin-loader";
+import { PluginInfo } from "./plugin-loader";
 import { Type, Value } from "sinap-types";
 import { Model, ElementType, ElementValue, ElementUnion } from "./model";
 import { imap } from "sinap-types/lib/util";
@@ -26,7 +26,7 @@ export interface RawPluginTypes {
 }
 
 export interface Plugin {
-    pluginInfo: InterpreterInfo;
+    pluginInfo: PluginInfo;
     readonly types: Readonly<PluginTypes>;
 
     validateEdge(src: ElementValue, dst?: ElementValue, like?: ElementValue): boolean;
