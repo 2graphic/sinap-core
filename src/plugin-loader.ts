@@ -21,7 +21,7 @@ export class InterpreterInfo {
 }
 
 export interface PluginLoader {
-    load(pluginInfo: InterpreterInfo): Promise<Plugin>;
+    load(pluginInfo: PluginInfo): Promise<Plugin>;
     name: string;
 }
 
