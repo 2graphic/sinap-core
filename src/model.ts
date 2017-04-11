@@ -209,10 +209,18 @@ export class Model {
         return this.environment.fromSerial(convert(v.type), v.rep, uuid);
     }
 
-    serialize() {
+    serialize(supressUnknownTypes = false) {
         this.collect();
 
-        const { toName } = pluginTypes(this.plugin);
+        const { toName: toNameReal } = pluginTypes(this.plugin);
+
+        const toName = supressUnknownTypes ? (n: Type.Type) => {
+            try {
+                return toNameReal(n);
+            } catch (err) {
+                return "unknown type";
+            }
+        } : toNameReal;
 
         const otherValues = new Set(this.environment.values.values());
 
