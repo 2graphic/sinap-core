@@ -1,6 +1,6 @@
 # Introduction
 
-In order to support arbitrary graph based languages, sinap uses plugins to determine how to execute a graph. These plugins can be written in a number of langauges (currently [TypeScript](https://www.github.com/2graphic/sinap-typescript)).
+In order to support arbitrary graph based languages, sinap uses plugins to determine how to execute a graph. These plugins can be written in a number of langauges (currently [TypeScript](https://www.github.com/2graphic/sinap-typescript-loader)).
 
 ## PluginLoaderManager
 
