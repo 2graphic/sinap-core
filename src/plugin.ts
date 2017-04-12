@@ -25,11 +25,53 @@ export interface RawPluginTypes {
     result: Type.Type;
 }
 
+export function validateEdge(plugin: Plugin, src?: ElementValue, dst?: ElementValue, like?: ElementValue) {
+    const srcT = src ? src.type.pluginType : undefined;
+    const dstT = dst ? dst.type.pluginType : undefined;
+    const edgeT = like ? like.type.pluginType : undefined;
+    const edgeSource = edgeT ? edgeT.members.get("source") : undefined;
+    const edgeDest = edgeT ? edgeT.members.get("destination") : undefined;
+    const srcChildren = srcT ? srcT.members.get("children") as Value.ArrayType : undefined;
+    const destParents = dstT ? dstT.members.get("parents") as Value.ArrayType : undefined;
+
+    if (srcChildren && edgeT) {
+        if (!Type.isSubtype(edgeT, srcChildren.typeParameter)) {
+            return false;
+        }
+    }
+
+    if (destParents && edgeT) {
+        if (!Type.isSubtype(edgeT, destParents.typeParameter)) {
+            return false;
+        }
+    }
+
+    if (edgeSource && srcT) {
+        if (!Type.isSubtype(srcT, edgeSource)) {
+            return false;
+        }
+    }
+
+    if (edgeDest && dstT) {
+        if (!Type.isSubtype(dstT, edgeDest)) {
+            return false;
+        }
+    }
+
+
+    if (plugin.validateEdge) {
+        return plugin.validateEdge(src, dst, like);
+    }
+    return true;
+}
+
+
+
 export interface Plugin {
     pluginInfo: PluginInfo;
     readonly types: Readonly<PluginTypes>;
 
-    validateEdge(src: ElementValue, dst?: ElementValue, like?: ElementValue): boolean;
+    validateEdge?(src?: ElementValue, dst?: ElementValue, like?: ElementValue): boolean;
     makeProgram(model: Model): Program;
 }
 
