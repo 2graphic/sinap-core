@@ -137,16 +137,16 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
     for (const node of p.rawNodes) {
         node.members.set("parents", arrayUnionOrDefault(node.members.get("parents"), edgesArray, "parents"));
         node.members.set("children", arrayUnionOrDefault(node.members.get("children"), edgesArray, "children"));
-        (node as any).visibility.set("parents", false);
-        (node as any).visibility.set("children", false);
+        node._visibility.set("parents", false);
+        node._visibility.set("children", false);
     }
     p.nodes = new ElementUnion(new Set(imap(t => new ElementType(t, drawableNodeType), p.rawNodes)));
 
     for (const edge of p.rawEdges) {
         edge.members.set("source", unionOrDefault(edge.members.get("source"), nodesUnion));
         edge.members.set("destination", unionOrDefault(edge.members.get("destination"), nodesUnion));
-        (edge as any).visibility.set("source", false);
-        (edge as any).visibility.set("destination", false);
+        edge._visibility.set("source", false);
+        edge._visibility.set("destination", false);
     }
 
     p.edges = new ElementUnion(new Set(imap(t => new ElementType(t, drawableEdgeType), p.rawEdges)));
@@ -163,8 +163,8 @@ export function fromRaw(types: RawPluginTypes): types is PluginTypes {
         throw new Error("Graph edges field must allow all edge kinds");
     }
 
-    (p.rawGraph as any).visibility.set("nodes", false);
-    (p.rawGraph as any).visibility.set("edges", false);
+    p.rawGraph._visibility.set("nodes", false);
+    p.rawGraph._visibility.set("edges", false);
     p.graph = new ElementType(p.rawGraph, drawableGraphType);
 
     return true;
