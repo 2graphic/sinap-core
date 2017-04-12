@@ -125,7 +125,7 @@ export class ElementUnion extends Type.Union {
     }
 }
 
-export class ElementValue extends Value.Intersection {
+export class ElementValue extends Value.CustomObject {
     constructor(readonly type: ElementType, environment: Value.Environment) {
         super(type, environment);
     }
