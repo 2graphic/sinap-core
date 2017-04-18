@@ -40,6 +40,8 @@ export function pluginTypes(plugin: Plugin): { toType: (a: string) => Type.Type,
             traverse(type.typeParameter);
         } else if (type instanceof Value.ArrayType) {
             traverse(type.typeParameter);
+        } else if (type instanceof Value.TupleType) {
+            type.typeParameters.map(traverse);
         } else if (type instanceof Value.MapType) {
             traverse(type.keyType);
             traverse(type.valueType);

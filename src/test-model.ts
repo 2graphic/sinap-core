@@ -211,4 +211,25 @@ describe("Model", () => {
             expect(() => new ExamplePlugin(pluginInfo, [['nodes', new Value.ArrayType(new Type.Union([node1]))]], [node1, node2])).to.throw();
         });
     });
+
+    it("serializes Tuples", async () => {
+        const pluginInfo = await getPluginInfo(path.join("test-support", "dfa"));
+        examplePlugin = new ExamplePlugin(pluginInfo, [['hello', new Value.TupleType([new Type.Primitive("string")])]]);
+        const model = new Model(examplePlugin);
+        model.graph.set("hello", new Value.TupleObject(new Value.TupleType([new Type.Primitive("string")]), model.environment));
+        const serial = model.serialize();
+        for (const key in serial.graph) {
+            const id = serial.graph[key].rep.hello.uuid;
+            const serialTuple = serial.others[id].rep;
+            expect(serialTuple).to.instanceof(Array);
+            expect(serialTuple.length).to.equal(1);
+            expect(serial.others[serialTuple[0].uuid]).to.deep.equal({ type: "string", rep: "" });
+        }
+
+        const deSerial = Model.fromSerial(serial, examplePlugin);
+        const reTuple = deSerial.graph.simpleRepresentation.hello as Value.TupleObject;
+        expect(reTuple).to.instanceof(Value.TupleObject);
+        expect(reTuple.index(0)).to.instanceof(Value.Primitive);
+        expect((reTuple.index(0) as Value.Primitive).value).to.equal("");
+    });
 });

@@ -1,7 +1,7 @@
 {
   "name": "sinap-core",
   "description": "Core Utilities for dealing with plugins",
-  "version": "3.9.2",
+  "version": "3.9.3",
   "readme": "README.md",
   "license": "MIT",
   "repository": {
@@ -19,7 +19,7 @@
     "build": "tsc -p .",
     "test:nobuild": "mocha --colors lib/test-*.js",
     "test": "npm run build && npm run test:nobuild",
-    "prepublish": "npm run lint && npm run test",
+    "prepublishOnly": "npm run lint && npm run test",
     "clean": "rimraf ./lib ./node_modules ./typings"
   },
   "devDependencies": {
@@ -34,6 +34,6 @@
     "typescript-formatter": "^5.1.2"
   },
   "dependencies": {
-    "sinap-types": "~0.3.1"
+    "sinap-types": "~0.3.3"
   }
 }
