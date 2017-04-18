@@ -137,6 +137,7 @@ export class Model {
     environment = new Value.Environment();
     constructor(readonly plugin: Plugin) {
         this.graph = new ElementValue(this.plugin.types.graph, this.environment);
+        this.graph.initialize();
         this.environment.add(this.graph);
     }
 

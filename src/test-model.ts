@@ -134,6 +134,18 @@ describe("Model", () => {
                     type: "number",
                     rep: (node.get("position") as Value.Record).value.y.serialRepresentation,
                 },
+                [model.graph.get("hello").uuid]: {
+                    type: "string",
+                    rep: model.graph.get("hello").serialRepresentation,
+                },
+                [model.graph.get("edges").uuid]: {
+                    type: "(Array)[0]",
+                    rep: [],
+                },
+                [model.graph.get("nodes").uuid]: {
+                    type: "(Array)[2]",
+                    rep: [],
+                },
             },
         });
 
