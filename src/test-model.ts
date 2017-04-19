@@ -113,8 +113,12 @@ describe("Model", () => {
                     rep: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
                 },
                 [node.get("borderWidth").uuid]: {
-                    type: { primitive: "number" },
+                    type: { union: [{ "literal": "thin" }, { "literal": "medium" }, { "literal": "thick" }, { "primitive": "number" }] },
                     rep: node.get("borderWidth").serialRepresentation,
+                },
+                [(node.get("borderWidth") as Value.Union).value.uuid]: {
+                    type: { "literal": "thin" },
+                    rep: (node.get("borderWidth") as Value.Union).value.serialRepresentation,
                 },
                 [(node.get("position") as Value.Record).value.x.uuid]: {
                     type: { primitive: "number" },

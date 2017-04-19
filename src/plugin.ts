@@ -81,6 +81,7 @@ const colorType = new Type.Primitive("color");
 const booleanType = new Type.Primitive("boolean");
 const pointType = new Type.Record(new Map([["x", numberType], ["y", numberType]]));
 const styleType = new Type.Union([new Type.Literal("solid"), new Type.Literal("dotted"), new Type.Literal("dashed")]);
+const widthType = new Type.Union([new Type.Literal("thin"), new Type.Literal("medium"), new Type.Literal("thick"), numberType]);
 
 export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new Map<string, Type.Type>([
     ["label", stringType],
@@ -91,14 +92,14 @@ export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new 
     ["anchorPoints", new Value.ArrayType(pointType)],
     ["borderColor", colorType],
     ["borderStyle", styleType],
-    ["borderWidth", numberType],
+    ["borderWidth", widthType],
 ]));
 
 export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<string, Type.Type>([
     ["label", stringType],
     ["color", colorType],
     ["lineStyle", styleType],
-    ["lineWidth", new Type.Union([new Type.Literal(1), new Type.Literal(3), new Type.Literal(5), numberType])],
+    ["lineWidth", widthType],
     ["showSourceArrow", booleanType],
     ["showDestinationArrow", booleanType],
 ]));
