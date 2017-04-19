@@ -79,7 +79,6 @@ const stringType = new Type.Primitive("string");
 const numberType = new Type.Primitive("number");
 const colorType = new Type.Primitive("color");
 const booleanType = new Type.Primitive("boolean");
-const fileType = new Type.Primitive("file");
 const pointType = new Type.Record("Point", new Map([["x", numberType], ["y", numberType]]));
 const styleType = new Type.Union([new Type.Literal("solid"), new Type.Literal("dotted"), new Type.Literal("dashed")]);
 
@@ -88,7 +87,7 @@ export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new 
     ["color", colorType],
     ["position", pointType],
     ["shape", new Type.Union([new Type.Literal("circle"), new Type.Literal("square"), new Type.Literal("ellipse"), new Type.Literal("rectangle"), new Type.Literal("image")])],
-    ["image", fileType],
+    ["image", stringType],
     ["anchorPoints", new Value.ArrayType(pointType)],
     ["borderColor", colorType],
     ["borderStyle", styleType],
@@ -99,7 +98,7 @@ export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new 
     ["label", stringType],
     ["color", colorType],
     ["lineStyle", styleType],
-    ["lineWidth", numberType],
+    ["lineWidth", new Type.Union([new Type.Literal(1), new Type.Literal(3), new Type.Literal(5), numberType])],
     ["showSourceArrow", booleanType],
     ["showDestinationArrow", booleanType],
 ]));

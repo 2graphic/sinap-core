@@ -1,119 +1,7 @@
 import { Type, Value } from "sinap-types";
 import { Plugin } from "./plugin";
 import { ireduce } from "sinap-types/lib/util";
-
-
-export function pluginTypes(plugin: Plugin): { toType: (a: string) => Type.Type, toName: (t: Type.Type) => string } {
-    const initialTypes: Type.Type[] = [
-        plugin.types.state,
-        plugin.types.nodes,
-        plugin.types.edges,
-        plugin.types.graph,
-        plugin.types.result,
-        ...plugin.types.arguments,
-    ];
-
-    const seen = new Set<Type.Type>();
-    const names = new Map<string, Type.Type[]>();
-
-    function traverse(type: Type.Type) {
-        if (seen.has(type)) {
-            return;
-        }
-        seen.add(type);
-        let bucket = names.get(type.name);
-        if (!bucket) {
-            bucket = [];
-            names.set(type.name, bucket);
-        }
-        bucket.push(type);
-
-        if (type instanceof Type.CustomObject) {
-            for (const t2 of type.members.values()) {
-                traverse(t2);
-            }
-        } else if (type instanceof Type.Record) {
-            for (const t2 of type.members.values()) {
-                traverse(t2);
-            }
-        } else if (type instanceof Value.SetType) {
-            traverse(type.typeParameter);
-        } else if (type instanceof Value.ArrayType) {
-            traverse(type.typeParameter);
-        } else if (type instanceof Value.TupleType) {
-            type.typeParameters.map(traverse);
-        } else if (type instanceof Value.MapType) {
-            traverse(type.keyType);
-            traverse(type.valueType);
-        } else if (type instanceof Type.Union) {
-            for (const t2 of type.types) {
-                traverse(t2);
-            }
-        } else if (type instanceof Type.Intersection) {
-            for (const t2 of type.types) {
-                traverse(t2);
-            }
-        } else if ((type instanceof Type.Literal) || (type instanceof Type.Primitive)) {
-        } else {
-            throw new Error("unknown type encountered");
-        }
-    }
-
-    for (const t of initialTypes) {
-        traverse(t);
-    }
-
-    const toName = new Map<Type.Type, string>();
-
-    for (const [prefix, bucket] of names) {
-        for (let i = 0; i < bucket.length; i++) {
-            const toSet = [bucket[i]];
-            for (let j = bucket.length; j > i; j--) {
-                if (bucket[i].equals(bucket[j])) {
-                    toSet.push(bucket[j]);
-                    bucket.splice(j, 1);
-                }
-            }
-            let name = prefix;
-            if (bucket.length !== 1) {
-                name = `(${prefix})[${i}]`;
-            }
-            for (const el of toSet) {
-                toName.set(el, name);
-            }
-        }
-    }
-
-    const toType = new Map<string, Type.Type>();
-
-    for (const [type, name] of toName) {
-        toType.set(name, type);
-    }
-
-    return {
-        toName: (t) => {
-            const name = toName.get(t);
-            if (!name) {
-                const potentialTypes = names.get(t.name);
-                if (potentialTypes) {
-                    for (const pt of potentialTypes) {
-                        if (t.equals(pt)) {
-                            return toName.get(pt)!;
-                        }
-                    }
-                }
-                throw new Error("type not on record");
-            }
-            return name;
-        }, toType: (n) => {
-            const type = toType.get(n);
-            if (!type) {
-                throw new Error("unknown type given");
-            }
-            return type;
-        }
-    };
-}
+import { TypeSerializer } from "./serial-types";
 
 export class ElementType extends Type.Intersection {
     constructor(readonly pluginType: Type.CustomObject, readonly drawableType: Type.CustomObject) {
@@ -135,10 +23,18 @@ export class ElementValue extends Value.CustomObject {
 
 export class Model {
     environment = new Value.Environment();
+    private typeSerializer = new TypeSerializer();
     constructor(readonly plugin: Plugin) {
         this.graph = new ElementValue(this.plugin.types.graph, this.environment);
         this.graph.initialize();
         this.environment.add(this.graph);
+
+        this.typeSerializer.addType(plugin.types.state);
+        this.typeSerializer.addType(plugin.types.nodes);
+        this.typeSerializer.addType(plugin.types.edges);
+        this.typeSerializer.addType(plugin.types.graph);
+        this.typeSerializer.addType(plugin.types.result);
+        plugin.types.arguments.map(t => this.typeSerializer.addType(t));
     }
 
     readonly nodes = new Set<ElementValue>();
@@ -201,29 +97,19 @@ export class Model {
         this.environment.garbageCollect(this.values());
     }
 
-    private makeSerial(v: Value.Value, convert: (t: Type.Type) => string) {
+    private makeSerial(v: Value.Value) {
         return {
-            type: convert(v.type),
+            type: this.typeSerializer.addType(v.type),
             rep: v.serialRepresentation,
         };
     }
 
-    private loadSerial(uuid: string, v: { type: string, rep: any }, convert: (a: string) => Type.Type) {
-        return this.environment.fromSerial(convert(v.type), v.rep, uuid);
+    private loadSerial(uuid: string, v: { type: any, rep: any }) {
+        return this.environment.fromSerial(this.typeSerializer.getType(v.type), v.rep, uuid);
     }
 
-    serialize(supressUnknownTypes = false) {
+    serialize() {
         this.collect();
-
-        const { toName: toNameReal } = pluginTypes(this.plugin);
-
-        const toName = supressUnknownTypes ? (n: Type.Type) => {
-            try {
-                return toNameReal(n);
-            } catch (err) {
-                return "unknown type";
-            }
-        } : toNameReal;
 
         const otherValues = new Set(this.environment.values.values());
 
@@ -233,19 +119,19 @@ export class Model {
 
         const nodes: { [uuid: string]: any } = {};
         for (const node of this.nodes) {
-            nodes[node.uuid] = this.makeSerial(node, toName);
+            nodes[node.uuid] = this.makeSerial(node);
         }
         const edges: { [uuid: string]: any } = {};
         for (const edge of this.edges) {
-            edges[edge.uuid] = this.makeSerial(edge, toName);
+            edges[edge.uuid] = this.makeSerial(edge);
         }
         const others: { [uuid: string]: any } = {};
         for (const other of otherValues) {
-            others[other.uuid] = this.makeSerial(other, toName);
+            others[other.uuid] = this.makeSerial(other);
         }
 
         return {
-            graph: { [this.graph.uuid]: this.makeSerial(this.graph, toName) },
+            graph: { [this.graph.uuid]: this.makeSerial(this.graph) },
             nodes: nodes,
             edges: edges,
             others: others,
@@ -255,22 +141,20 @@ export class Model {
     static fromSerial(jso: any, plugin: Plugin): Model {
         const ret = new Model(plugin);
 
-        const { toType } = pluginTypes(plugin);
-
         for (const uuid in jso.graph) {
-            (ret as any).graph = ret.loadSerial(uuid, jso.graph[uuid], toType);
+            (ret as any).graph = ret.loadSerial(uuid, jso.graph[uuid]);
         }
 
         for (const uuid in jso.nodes) {
-            ret.nodes.add(ret.loadSerial(uuid, jso.nodes[uuid], toType) as ElementValue);
+            ret.nodes.add(ret.loadSerial(uuid, jso.nodes[uuid]) as ElementValue);
         }
 
         for (const uuid in jso.edges) {
-            ret.edges.add(ret.loadSerial(uuid, jso.edges[uuid], toType) as ElementValue);
+            ret.edges.add(ret.loadSerial(uuid, jso.edges[uuid]) as ElementValue);
         }
 
         for (const uuid in jso.others) {
-            ret.loadSerial(uuid, jso.others[uuid], toType);
+            ret.loadSerial(uuid, jso.others[uuid]);
         }
 
         return ret;

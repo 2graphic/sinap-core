@@ -4,7 +4,6 @@ import { Value, Type } from "sinap-types";
 import { Model, Plugin, getPluginInfo } from "./index";
 import * as path from "path";
 import { PluginInfo } from "./plugin-loader";
-import { pluginTypes } from "./model";
 import { ifilter } from "sinap-types/lib/util";
 
 describe("Model", () => {
@@ -45,105 +44,96 @@ describe("Model", () => {
         expect(model.nodes.size).to.equal(0);
     });
 
-    it("canonicalizes types", () => {
-        // dangerous and unstable?
-        const { toName, toType } = pluginTypes(examplePlugin);
-        expect(toType("string").equals(new Type.Primitive("string"))).to.be.true;
-        expect(toType(toName(examplePlugin.types.graph))).to.equal(examplePlugin.types.graph);
-        expect(toType(toName(examplePlugin.types.nodes))).to.equal(examplePlugin.types.nodes);
-    });
-
     it("serializes simple graph", () => {
         const model = new Model(examplePlugin);
         model.makeNode();
         const raw = model.serialize();
         const node = model.nodes.values().next().value;
-        const { toName } = pluginTypes(examplePlugin);
         expect(raw).to.deep.equal({
             graph: {
                 [model.graph.uuid]: {
-                    type: "Graph & DrawableGraph",
+                    type: { intersection: [{ object: "Graph" }, { object: "DrawableGraph" }] },
                     rep: model.graph.serialRepresentation
                 }
             },
             nodes: {
                 [node.uuid]: {
-                    type: "(Node & DrawableNode)[1]",
+                    type: { intersection: [{ object: "Node" }, { object: "DrawableNode" }] },
                     rep: node.serialRepresentation
                 }
             },
             edges: {},
             others: {
                 [node.get("parents").uuid]: {
-                    type: toName(node.get("parents").type),
+                    type: { array: { union: [{ intersection: [{ object: "Edge" }, { object: "DrawableEdge" }] }] } },
                     rep: node.get("parents").serialRepresentation
                 },
                 [node.get("children").uuid]: {
-                    type: toName(node.get("children").type),
+                    type: { array: { union: [{ intersection: [{ object: "Edge" }, { object: "DrawableEdge" }] }] } },
                     rep: node.get("children").serialRepresentation
                 },
                 [node.get("label").uuid]: {
-                    type: "string",
+                    type: { primitive: "string" },
                     rep: node.get("label").serialRepresentation
                 },
                 [node.get("color").uuid]: {
-                    type: "color",
+                    type: { primitive: "color" },
                     rep: node.get("color").serialRepresentation
                 },
                 [node.get("position").uuid]: {
-                    type: "Point",
+                    type: { record: "Point" },
                     rep: node.get("position").serialRepresentation
                 },
                 [node.get("shape").uuid]: {
-                    type: '"circle" | "square" | "ellipse" | "rectangle" | "image"',
+                    type: { union: [{ literal: "circle" }, { literal: "square" }, { literal: "ellipse" }, { literal: "rectangle" }, { literal: "image" }] },
                     rep: node.get("shape").serialRepresentation
                 },
                 [(node.get("shape") as Value.Union).value.uuid]: {
-                    type: '"circle"',
+                    type: { literal: "circle" },
                     rep: (node.get("shape") as Value.Union).value.serialRepresentation
                 },
                 [node.get("image").uuid]: {
-                    type: "file",
+                    type: { primitive: "string" },
                     rep: node.get("image").serialRepresentation
                 },
                 [node.get("anchorPoints").uuid]: {
-                    type: "(Array)[1]",
+                    type: { array: { record: "Point" } },
                     rep: node.get("anchorPoints").serialRepresentation
                 },
                 [node.get("borderColor").uuid]: {
-                    type: "color",
+                    type: { primitive: "color" },
                     rep: node.get("borderColor").serialRepresentation
                 },
                 [node.get("borderStyle").uuid]: {
-                    type: '"solid" | "dotted" | "dashed"',
+                    type: { union: [{ literal: "solid" }, { literal: "dotted" }, { literal: "dashed" }] },
                     rep: node.get("borderStyle").serialRepresentation,
                 },
                 [(node.get("borderStyle") as Value.Union).value.uuid]: {
-                    type: '"solid"',
+                    type: { literal: "solid" },
                     rep: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
                 },
                 [node.get("borderWidth").uuid]: {
-                    type: "number",
+                    type: { primitive: "number" },
                     rep: node.get("borderWidth").serialRepresentation,
                 },
                 [(node.get("position") as Value.Record).value.x.uuid]: {
-                    type: "number",
+                    type: { primitive: "number" },
                     rep: (node.get("position") as Value.Record).value.x.serialRepresentation,
                 },
                 [(node.get("position") as Value.Record).value.y.uuid]: {
-                    type: "number",
+                    type: { primitive: "number" },
                     rep: (node.get("position") as Value.Record).value.y.serialRepresentation,
                 },
                 [model.graph.get("hello").uuid]: {
-                    type: "string",
+                    type: { primitive: "string" },
                     rep: model.graph.get("hello").serialRepresentation,
                 },
                 [model.graph.get("edges").uuid]: {
-                    type: "(Array)[0]",
+                    type: { array: { union: [{ intersection: [{ object: "Edge" }, { object: "DrawableEdge" }] }] } },
                     rep: [],
                 },
                 [model.graph.get("nodes").uuid]: {
-                    type: "(Array)[2]",
+                    type: { array: { union: [{ object: "Node" }] } },
                     rep: [],
                 },
             },
@@ -235,7 +225,7 @@ describe("Model", () => {
             const serialTuple = serial.others[id].rep;
             expect(serialTuple).to.instanceof(Array);
             expect(serialTuple.length).to.equal(1);
-            expect(serial.others[serialTuple[0].uuid]).to.deep.equal({ type: "string", rep: "" });
+            expect(serial.others[serialTuple[0].uuid]).to.deep.equal({ type: { primitive: "string" }, rep: "" });
         }
 
         const deSerial = Model.fromSerial(serial, examplePlugin);
