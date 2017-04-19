@@ -20,7 +20,7 @@ export class TypeSerializer {
             const existing = this.types.get(t.name);
             if (existing) {
                 if (!existing.equals(t)) {
-                    throw new Error(`type-serializer: two types with same ${t.name} and different types`);
+                    throw new Error(`type-serializer: distinct types have the same name ${t.name}`);
                 }
                 serial = this.serials.get(t.name);
             } else {
