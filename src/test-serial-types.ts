@@ -47,14 +47,10 @@ describe("Types Serialize", () => {
     });
     it("serializes Records", () => {
         const ser = new TypeSerializer();
-        expect(ser.addType(new Type.Record("Rec1", new Map([["f1", new Type.Primitive("string")]]))))
-            .to.deep.equal({ record: "Rec1" });
-        expect(ser.addType(new Type.Record("Rec1", new Map([["f1", new Type.Primitive("string")]]))))
-            .to.deep.equal({ record: "Rec1" });
-        expect(() => ser.addType(new Type.Record("Rec1", new Map([["f1", new Type.Primitive("number")]])))).to.throw();
-
-        expect(ser.getType({ record: "Rec1" })
-            .equals(new Type.Record("Rec1", new Map([["f1", new Type.Primitive("string")]])))).to.be.true;
+        expect(ser.addType(new Type.Record(new Map([["f1", new Type.Primitive("string")]]))))
+            .to.deep.equal({ record: { f1: { primitive: "string" } } });
+        expect(ser.getType({ record: { f1: { primitive: "string" } } })
+            .equals(new Type.Record(new Map([["f1", new Type.Primitive("string")]])))).to.be.true;
     });
     it("serializes Literals", () => {
         const ser = new TypeSerializer();

@@ -81,7 +81,7 @@ describe("Model", () => {
                     rep: node.get("color").serialRepresentation
                 },
                 [node.get("position").uuid]: {
-                    type: { record: "Point" },
+                    type: { record: { x: { primitive: "number" }, y: { primitive: "number" } } },
                     rep: node.get("position").serialRepresentation
                 },
                 [node.get("shape").uuid]: {
@@ -97,7 +97,7 @@ describe("Model", () => {
                     rep: node.get("image").serialRepresentation
                 },
                 [node.get("anchorPoints").uuid]: {
-                    type: { array: { record: "Point" } },
+                    type: { array: { record: { x: { primitive: "number" }, y: { primitive: "number" } } } },
                     rep: node.get("anchorPoints").serialRepresentation
                 },
                 [node.get("borderColor").uuid]: {

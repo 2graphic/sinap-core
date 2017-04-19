@@ -10,7 +10,13 @@ export class TypeSerializer {
             serial = { literal: t.value };
         } else if (t instanceof Type.Primitive) {
             serial = { primitive: t.name };
-        } else if ((t instanceof Type.CustomObject) || (t instanceof Type.Record)) {
+        } else if (t instanceof Type.Record) {
+            const inner: any = {};
+            for (const [name, type] of t.members) {
+                inner[name] = this.addType(type);
+            }
+            serial = { record: inner };
+        } else if (t instanceof Type.CustomObject) {
             const existing = this.types.get(t.name);
             if (existing) {
                 if (!existing.equals(t)) {
@@ -18,20 +24,17 @@ export class TypeSerializer {
                 }
                 serial = this.serials.get(t.name);
             } else {
-                const key = t instanceof Type.CustomObject ? "object" : "record";
-                serial = { [key]: t.name };
+                serial = { object: t.name };
                 this.serials.set(t.name, serial);
                 this.types.set(t.name, t);
 
                 for (const type of t.members.values()) {
                     this.addType(type);
                 }
-                if (t instanceof Type.CustomObject) {
-                    for (const obj of t.methods.values()) {
-                        obj.argTypes.map((t) => this.addType(t));
-                        if (obj.returnType) {
-                            this.addType(obj.returnType);
-                        }
+                for (const obj of t.methods.values()) {
+                    obj.argTypes.map((t) => this.addType(t));
+                    if (obj.returnType) {
+                        this.addType(obj.returnType);
                     }
                 }
             }
@@ -78,7 +81,11 @@ export class TypeSerializer {
             } else if (key === "union") {
                 return new Type.Union(a[key].map((a: any) => this.getType(a)));
             } else if (key === "record") {
-                return this.insistExists(a[key]);
+                const params = new Map<string, Type.Type>();
+                for (const k in a[key]) {
+                    params.set(k, this.getType(a[key][k]));
+                }
+                return new Type.Record(params);
             } else if (key === "object") {
                 return this.insistExists(a[key]);
             } else if (key === "intersection") {

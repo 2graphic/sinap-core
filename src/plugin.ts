@@ -79,7 +79,7 @@ const stringType = new Type.Primitive("string");
 const numberType = new Type.Primitive("number");
 const colorType = new Type.Primitive("color");
 const booleanType = new Type.Primitive("boolean");
-const pointType = new Type.Record("Point", new Map([["x", numberType], ["y", numberType]]));
+const pointType = new Type.Record(new Map([["x", numberType], ["y", numberType]]));
 const styleType = new Type.Union([new Type.Literal("solid"), new Type.Literal("dotted"), new Type.Literal("dashed")]);
 
 export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new Map<string, Type.Type>([
