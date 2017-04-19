@@ -1,6 +1,7 @@
 import { TypeSerializer } from "./serial-types";
 import { Type, Value } from "sinap-types";
 import { expect } from "chai";
+import { ElementType } from "./index";
 
 describe("Types Serialize", () => {
     it("serializes CustomObjects", () => {
@@ -112,5 +113,16 @@ describe("Types Serialize", () => {
             .to.deep.equal({ intersection: [{ object: "Obj1" }, { object: "Obj2" }] });
         expect(ser.getType({ intersection: [{ object: "Obj1" }, { object: "Obj2" }] })
             .equals(new Type.Intersection([t1, t2]))).to.be.true;
+    });
+    it("serializes ElementType", () => {
+        const ser = new TypeSerializer();
+        const t1 = new Type.CustomObject("Obj1", null, new Map());
+        const t2 = new Type.CustomObject("Obj2", null, new Map());
+        expect(ser.addType(new ElementType(t1, t2)))
+            .to.deep.equal({ element: { plugin: { object: "Obj1" }, drawable: { object: "Obj2" } } });
+        expect(ser.getType({ element: { plugin: { object: "Obj1" }, drawable: { object: "Obj2" } } }))
+            .to.instanceof(ElementType);
+        expect(ser.getType({ element: { plugin: { object: "Obj1" }, drawable: { object: "Obj2" } } })
+            .equals(new ElementType(t1, t2))).to.be.true;
     });
 });

@@ -1,4 +1,5 @@
 import { Type, Value } from "sinap-types";
+import { ElementType } from "./index";
 
 export class TypeSerializer {
     readonly serials = new Map<string, any>();
@@ -46,6 +47,8 @@ export class TypeSerializer {
             serial = { map: [this.addType(t.keyType), this.addType(t.valueType)] };
         } else if (t instanceof Value.SetType) {
             serial = { set: this.addType(t.typeParameter) };
+        } else if (t instanceof ElementType) {
+            serial = { element: { plugin: this.addType(t.pluginType), drawable: this.addType(t.drawableType) } };
         } else if (t instanceof Type.Intersection) {
             serial = { intersection: [...t.types].map((t) => this.addType(t)) };
         } else if (t instanceof Type.Union) {
@@ -90,6 +93,10 @@ export class TypeSerializer {
                 return this.insistExists(a[key]);
             } else if (key === "intersection") {
                 return new Type.Intersection(a[key].map((a: any) => this.getType(a)));
+            } else if (key === "element") {
+                const pluginType = this.getType(a[key].plugin) as Type.CustomObject;
+                const drawableType = this.getType(a[key].drawable) as Type.CustomObject;
+                return new ElementType(pluginType, drawableType);
             }
         }
         throw new Error("type-deserializer: unknown type encountered");

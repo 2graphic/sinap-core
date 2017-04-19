@@ -52,24 +52,24 @@ describe("Model", () => {
         expect(raw).to.deep.equal({
             graph: {
                 [model.graph.uuid]: {
-                    type: { intersection: [{ object: "Graph" }, { object: "DrawableGraph" }] },
+                    type: { element: { plugin: { object: "Graph" }, drawable: { object: "DrawableGraph" } } },
                     rep: model.graph.serialRepresentation
                 }
             },
             nodes: {
                 [node.uuid]: {
-                    type: { intersection: [{ object: "Node" }, { object: "DrawableNode" }] },
+                    type: { element: { plugin: { object: "Node" }, drawable: { object: "DrawableNode" } } },
                     rep: node.serialRepresentation
                 }
             },
             edges: {},
             others: {
                 [node.get("parents").uuid]: {
-                    type: { array: { union: [{ intersection: [{ object: "Edge" }, { object: "DrawableEdge" }] }] } },
+                    type: { array: { union: [{ element: { plugin: { object: "Edge" }, drawable: { object: "DrawableEdge" } } }] } },
                     rep: node.get("parents").serialRepresentation
                 },
                 [node.get("children").uuid]: {
-                    type: { array: { union: [{ intersection: [{ object: "Edge" }, { object: "DrawableEdge" }] }] } },
+                    type: { array: { union: [{ element: { plugin: { object: "Edge" }, drawable: { object: "DrawableEdge" } } }] } },
                     rep: node.get("children").serialRepresentation
                 },
                 [node.get("label").uuid]: {
@@ -133,7 +133,7 @@ describe("Model", () => {
                     rep: model.graph.get("hello").serialRepresentation,
                 },
                 [model.graph.get("edges").uuid]: {
-                    type: { array: { union: [{ intersection: [{ object: "Edge" }, { object: "DrawableEdge" }] }] } },
+                    type: { array: { union: [{ element: { plugin: { object: "Edge" }, drawable: { object: "DrawableEdge" } } }] } },
                     rep: [],
                 },
                 [model.graph.get("nodes").uuid]: {
