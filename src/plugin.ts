@@ -72,7 +72,7 @@ export interface Plugin {
     readonly types: Readonly<PluginTypes>;
 
     validateEdge?(src?: ElementValue, dst?: ElementValue, like?: ElementValue): boolean;
-    makeProgram(model: Model): Program;
+    makeProgram(model: Model): Promise<Program>;
 }
 
 const stringType = new Type.Primitive("string");

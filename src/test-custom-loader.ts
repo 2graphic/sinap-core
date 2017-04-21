@@ -25,7 +25,7 @@ export class ExamplePlugin implements Plugin {
         return true;
     }
 
-    makeProgram(model: Model): Program {
+    async makeProgram(model: Model): Promise<Program> {
         return {
             plugin: this,
             model: model,
