@@ -9,6 +9,8 @@ Sinap IDE loads plugins via different loaders. Loaders conform to the [PluginLoa
 ## Plugin Architecture
 **TODO: Dyllon, describe the overall structure of an plugin, being a directory with some package.json**
 
+For a more complete picture of how to make a plugin, visit the readmes for the Typescript and Python loaders (linked to in the introduction).
+
 ## Model
 
 `Model` is the class that manages Sinap's representation of a graph. 
