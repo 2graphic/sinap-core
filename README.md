@@ -2,20 +2,14 @@
 
 In order to support arbitrary graph based languages, sinap uses plugins to determine how to execute a graph. These plugins can be written in a number of langauges (currently [TypeScript](https://www.github.com/2graphic/sinap-typescript-loader) and [Python](https://www.github.com/2graphic/sinap-python-loader)).
 
-## PluginLoaderManager
+## Plugin Loaders
 
-`PluginLoaderManager` is a class that manages various plugin loaders. For example, to load the TypeScript loader: 
-
-```
-const manager = new PluginLoaderManager();
-manager.loaders.set("typescript", new TypescriptPluginLoader());
-// ...
-// TODO: Dyllon, update to reflect the new, non-directory-based API
-manager.loadPlugin(directory, fs)
-```
+Sinap IDE loads plugins via different loaders. Loaders conform to the [PluginLoader](src/plugin-loader.ts) interface.
 
 ## Plugin Architecture
 **TODO: Dyllon, describe the overall structure of an plugin, being a directory with some package.json**
+
+For a more complete picture of how to make a plugin, visit the readmes for the Typescript and Python loaders (linked to in the introduction).
 
 ## Model
 
