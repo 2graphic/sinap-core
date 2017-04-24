@@ -26,7 +26,6 @@ export class Model {
     private typeSerializer = new TypeSerializer();
     constructor(readonly plugin: Plugin) {
         this.graph = new ElementValue(this.plugin.types.graph, this.environment);
-        this.graph.initialize();
         this.environment.add(this.graph);
 
         this.typeSerializer.addType(plugin.types.state);
@@ -56,7 +55,6 @@ export class Model {
         }
         const value = new ElementValue(type, this.environment);
         this.environment.add(value);
-        value.initialize();
         this.nodes.add(value);
         return value;
     }
@@ -70,7 +68,6 @@ export class Model {
         }
         const value = new ElementValue(type, this.environment);
         this.environment.add(value);
-        value.initialize();
         const sourceUnion = new Value.Union(type.members.get("source") as Type.Union, this.environment);
         sourceUnion.value = from;
         const destUnion = new Value.Union(type.members.get("destination") as Type.Union, this.environment);
