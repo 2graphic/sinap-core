@@ -49,99 +49,11 @@ describe("Model", () => {
         model.makeNode();
         const raw = model.serialize();
         const node = model.nodes.values().next().value;
-        expect(raw).to.deep.equal({
-            graph: {
-                [model.graph.uuid]: {
-                    type: { element: { plugin: { object: "Graph" }, drawable: { object: "DrawableGraph" } } },
-                    rep: model.graph.serialRepresentation
-                }
-            },
-            nodes: {
-                [node.uuid]: {
-                    type: { element: { plugin: { object: "Node" }, drawable: { object: "DrawableNode" } } },
-                    rep: node.serialRepresentation
-                }
-            },
-            edges: {},
-            others: {
-                [node.get("parents").uuid]: {
-                    type: { array: { union: [{ element: { plugin: { object: "Edge" }, drawable: { object: "DrawableEdge" } } }] } },
-                    rep: node.get("parents").serialRepresentation
-                },
-                [node.get("children").uuid]: {
-                    type: { array: { union: [{ element: { plugin: { object: "Edge" }, drawable: { object: "DrawableEdge" } } }] } },
-                    rep: node.get("children").serialRepresentation
-                },
-                [node.get("label").uuid]: {
-                    type: { primitive: "string" },
-                    rep: node.get("label").serialRepresentation
-                },
-                [node.get("color").uuid]: {
-                    type: { primitive: "color" },
-                    rep: node.get("color").serialRepresentation
-                },
-                [node.get("position").uuid]: {
-                    type: { record: { x: { primitive: "number" }, y: { primitive: "number" } } },
-                    rep: node.get("position").serialRepresentation
-                },
-                [node.get("shape").uuid]: {
-                    type: { union: [{ literal: "circle" }, { literal: "square" }, { literal: "ellipse" }, { literal: "rectangle" }, { literal: "image" }] },
-                    rep: node.get("shape").serialRepresentation
-                },
-                [(node.get("shape") as Value.Union).value.uuid]: {
-                    type: { literal: "circle" },
-                    rep: (node.get("shape") as Value.Union).value.serialRepresentation
-                },
-                [node.get("image").uuid]: {
-                    type: { primitive: "string" },
-                    rep: node.get("image").serialRepresentation
-                },
-                [node.get("anchorPoints").uuid]: {
-                    type: { array: { record: { x: { primitive: "number" }, y: { primitive: "number" } } } },
-                    rep: node.get("anchorPoints").serialRepresentation
-                },
-                [node.get("borderColor").uuid]: {
-                    type: { primitive: "color" },
-                    rep: node.get("borderColor").serialRepresentation
-                },
-                [node.get("borderStyle").uuid]: {
-                    type: { union: [{ literal: "solid" }, { literal: "dotted" }, { literal: "dashed" }] },
-                    rep: node.get("borderStyle").serialRepresentation,
-                },
-                [(node.get("borderStyle") as Value.Union).value.uuid]: {
-                    type: { literal: "solid" },
-                    rep: (node.get("borderStyle") as Value.Union).value.serialRepresentation,
-                },
-                [node.get("borderWidth").uuid]: {
-                    type: { union: [{ "literal": "thin" }, { "literal": "medium" }, { "literal": "thick" }, { "primitive": "number" }] },
-                    rep: node.get("borderWidth").serialRepresentation,
-                },
-                [(node.get("borderWidth") as Value.Union).value.uuid]: {
-                    type: { "literal": "thin" },
-                    rep: (node.get("borderWidth") as Value.Union).value.serialRepresentation,
-                },
-                [(node.get("position") as Value.Record).value.x.uuid]: {
-                    type: { primitive: "number" },
-                    rep: (node.get("position") as Value.Record).value.x.serialRepresentation,
-                },
-                [(node.get("position") as Value.Record).value.y.uuid]: {
-                    type: { primitive: "number" },
-                    rep: (node.get("position") as Value.Record).value.y.serialRepresentation,
-                },
-                [model.graph.get("hello").uuid]: {
-                    type: { primitive: "string" },
-                    rep: model.graph.get("hello").serialRepresentation,
-                },
-                [model.graph.get("edges").uuid]: {
-                    type: { array: { union: [{ element: { plugin: { object: "Edge" }, drawable: { object: "DrawableEdge" } } }] } },
-                    rep: [],
-                },
-                [model.graph.get("nodes").uuid]: {
-                    type: { array: { union: [{ object: "Node" }] } },
-                    rep: [],
-                },
-            },
-        });
+
+        expect(raw.nodes).to.have.all.keys(node.uuid);
+        expect(raw.others).to.have.any.keys(node.get("size").uuid);
+        expect(raw.others).to.have.any.keys(node.get("shape").uuid);
+        expect(raw.others).to.have.any.keys(node.get("label").uuid);
 
         expect(Model.fromSerial(raw, examplePlugin).graph.deepEqual(model.graph)).to.be.true;
     });
