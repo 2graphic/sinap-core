@@ -80,6 +80,7 @@ const numberType = new Type.Primitive("number");
 const colorType = new Type.Primitive("color");
 const booleanType = new Type.Primitive("boolean");
 const pointType = new Type.Record(new Map([["x", numberType], ["y", numberType]]));
+const sizeType = new Type.Record(new Map([["width", numberType], ["height", numberType]]));
 const styleType = new Type.Union([new Type.Literal("solid"), new Type.Literal("dotted"), new Type.Literal("dashed")]);
 const widthType = new Type.Union([new Type.Literal("thin"), new Type.Literal("medium"), new Type.Literal("thick"), numberType]);
 
@@ -87,12 +88,19 @@ export const drawableNodeType = new Type.CustomObject("DrawableNode", null, new 
     ["label", stringType],
     ["color", colorType],
     ["position", pointType],
-    ["shape", new Type.Union([new Type.Literal("circle"), new Type.Literal("square"), new Type.Literal("ellipse"), new Type.Literal("rectangle"), new Type.Literal("image")])],
+    ["origin", pointType],
+    ["size", sizeType],
+    ["shape", new Type.Union([new Type.Literal("circle"), new Type.Literal("square"), new Type.Literal("ellipse"), new Type.Literal("rectangle")])],
     ["image", stringType],
     ["anchorPoints", new Value.ArrayType(pointType)],
     ["borderColor", colorType],
     ["borderStyle", styleType],
     ["borderWidth", widthType],
+]), undefined, undefined, new Map<string, boolean>([
+    ["image", false],
+    ["origin", false],
+    ["size", false],
+    ["anchorPoints", false],
 ]));
 
 export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new Map<string, Type.Type>([
@@ -102,9 +110,16 @@ export const drawableEdgeType = new Type.CustomObject("DrawableEdge", null, new 
     ["lineWidth", widthType],
     ["showSourceArrow", booleanType],
     ["showDestinationArrow", booleanType],
+    ["sourcePoint", pointType],
+    ["destinationPoint", pointType],
+]), undefined, undefined, new Map<string, boolean>([
+    ["sourcePoint", false],
+    ["destinationPoint", false],
 ]));
 
 export const drawableGraphType = new Type.CustomObject("DrawableGraph", null, new Map<string, Type.Type>([
+    ["origin", pointType],
+    ["scale", numberType],
 ]));
 
 export function fromRaw(types: RawPluginTypes): types is PluginTypes {
