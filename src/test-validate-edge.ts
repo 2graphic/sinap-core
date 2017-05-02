@@ -19,6 +19,23 @@ describe("validateEdge", () => {
         }
     } as Plugin;
 
+    it("handles type unions", () => {
+        const { env, edgeA, nodeA, edgeB, nodeB } = setup();
+        const edgeC = new ElementType(new Type.CustomObject("EdgeC", null, new Map()), new Type.CustomObject("dc", null, new Map()));
+
+        const nodesType = new Type.Union([edgeA, edgeB]);
+        nodeA.pluginType.members.set("parents", new Value.ArrayType(nodesType));
+
+        const src = new ElementValue(nodeB, env);
+        const dest = new ElementValue(nodeA, env);
+        const edge_A = new ElementValue(edgeA, env);
+        const edge_B = new ElementValue(edgeB, env);
+        const edge_C = new ElementValue(edgeC, env);
+        expect(validateEdge(plugin, src, dest, edge_A)).to.be.true;
+        expect(validateEdge(plugin, src, dest, edge_B)).to.be.true;
+        expect(validateEdge(plugin, src, dest, edge_C)).to.be.false;
+    });
+
     it("checks 'parents'", () => {
         const { env, edgeA, nodeA, edgeB, nodeB } = setup();
 
