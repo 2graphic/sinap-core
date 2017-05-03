@@ -25,35 +25,68 @@ export interface RawPluginTypes {
     result: Type.Type;
 }
 
+function isAssignable(actual: Type.Type, expected: Type.Type): boolean {
+    const expUnion = expected instanceof Type.Union;
+    const actUnion = actual instanceof Type.Union;
+    if (expUnion && !actUnion) {
+        actual = new Type.Union([actual]);
+    } else if (actUnion && !expUnion) {
+        expected = new Type.Union([expected]);
+    }
+
+    return Type.isSubtype(actual, expected);
+}
+
 export function validateEdge(plugin: Plugin, src?: ElementValue, dst?: ElementValue, like?: ElementValue) {
+    function getTypeParam(type?: Type.Type): Type.Type | undefined {
+        if (type) {
+            if (type instanceof Value.ArrayType) {
+                type = type.typeParameter;
+            }
+
+            if (type instanceof ElementType) {
+                return type.pluginType;
+            } else if (type instanceof Type.Union) {
+                const newTypes: Type.Type[] = [];
+                for (const partType of type.types) {
+                    newTypes.push(getTypeParam(partType)!);
+                }
+                return new Type.Union(newTypes);
+            } else {
+                return type;
+            }
+        }
+        return undefined;
+    }
     const srcT = src ? src.type.pluginType : undefined;
     const dstT = dst ? dst.type.pluginType : undefined;
     const edgeT = like ? like.type.pluginType : undefined;
-    const edgeSource = edgeT ? edgeT.members.get("source") : undefined;
-    const edgeDest = edgeT ? edgeT.members.get("destination") : undefined;
-    const srcChildren = srcT ? srcT.members.get("children") as Value.ArrayType : undefined;
-    const destParents = dstT ? dstT.members.get("parents") as Value.ArrayType : undefined;
+    const edgeSource = getTypeParam(edgeT ? edgeT.members.get("source") : undefined);
+    const edgeDest = getTypeParam(edgeT ? edgeT.members.get("destination") : undefined);
+    const srcChildren = getTypeParam(srcT ? srcT.members.get("children") as Value.ArrayType : undefined);
+    const destParents = getTypeParam(dstT ? dstT.members.get("parents") as Value.ArrayType : undefined);
+
 
     if (srcChildren && edgeT) {
-        if (!Type.isSubtype(edgeT, srcChildren.typeParameter)) {
+        if (!isAssignable(edgeT, srcChildren)) {
             return false;
         }
     }
 
     if (destParents && edgeT) {
-        if (!Type.isSubtype(edgeT, destParents.typeParameter)) {
+        if (!isAssignable(edgeT, destParents)) {
             return false;
         }
     }
 
     if (edgeSource && srcT) {
-        if (!Type.isSubtype(srcT, edgeSource)) {
+        if (!isAssignable(srcT, edgeSource)) {
             return false;
         }
     }
 
     if (edgeDest && dstT) {
-        if (!Type.isSubtype(dstT, edgeDest)) {
+        if (!isAssignable(dstT, edgeDest)) {
             return false;
         }
     }
